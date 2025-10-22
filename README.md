@@ -1,23 +1,33 @@
-# ChainCircle Smart Contracts
+# ChainCircle
 
 > Decentralized savings circles on Push Chain - Save together, across any chain.
 
-ChainCircle is a blockchain-based savings platform that enables users from different blockchains (Ethereum, Solana, Push Chain) to participate in collaborative savings circles without bridging or network switching.
+ChainCircle is a full-stack blockchain-based savings platform that enables users from different blockchains (Ethereum, Solana, Push Chain) to participate in collaborative savings circles without bridging or network switching. The platform combines Solidity smart contracts with a modern React frontend to deliver a seamless Web3 savings experience.
 
 [![Push Chain](https://img.shields.io/badge/Push%20Chain-Testnet-purple)](https://push.org)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.22-blue)](https://soliditylang.org/)
+[![React](https://img.shields.io/badge/React-19.1.1-blue)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-7.1.7-yellow)](https://vitejs.dev)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+**Live Demo**: [chaincircle-beta1.vercel.app](#) | **Testnet**: Push Chain Donut
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
 - [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
-- [Deployment](#deployment)
-- [Testing](#testing)
+  - [Smart Contracts Setup](#smart-contracts-setup)
+  - [Frontend Setup](#frontend-setup)
+- [Project Structure](#project-structure)
 - [Contract Addresses](#contract-addresses)
-- [Frontend Integration](#frontend-integration)
+- [Frontend Application](#frontend-application)
+- [Smart Contract API](#smart-contract-api)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Constants & Configuration](#constants--configuration)
 - [Contributing](#contributing)
 - [License](#license)
 
