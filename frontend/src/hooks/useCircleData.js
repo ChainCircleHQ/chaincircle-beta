@@ -15,15 +15,37 @@ export function useUserCircles() {
       const contract = await getContract('core');
       const circleIds = await contract.getUserCircles(userAddress);
 
-      console.log('=== USER CIRCLES ===');
-      console.log('User Address:', userAddress);
-      console.log('Circle IDs:', circleIds.map(id => id.toString()));
 
       // Fetch details for each circle
       const circles = await Promise.all(
         circleIds.map(async (id) => {
           const details = await contract.getCircleDetails(id);
           const progress = await contract.getCircleProgress(id);
+
+          // Get member count for progress calculation
+          const maxMembers = Number(details.maxMembers);
+          const memberAddresses = [];
+
+          for (let i = 0; i < maxMembers; i++) {
+            try {
+              const memberAddress = await contract.circleMembers(id, i);
+              if (memberAddress !== '0x0000000000000000000000000000000000000000') {
+                memberAddresses.push(memberAddress);
+              }
+            } catch (e) {
+              break;
+            }
+          }
+
+          // Calculate progress based on circle status
+          const calculatedProgress = calculateProgress(
+            Number(details.currentRound),
+            Number(details.duration),
+            memberAddresses.length,
+            maxMembers,
+            details.isActive,
+            Number(details.status)
+          );
 
           return {
             id: id.toString(),
@@ -32,7 +54,8 @@ export function useUserCircles() {
             amount: ethers.formatUnits(details.amount, 6),
             duration: Number(details.duration),
             currentRound: Number(details.currentRound),
-            maxMembers: Number(details.maxMembers),
+            maxMembers: maxMembers,
+            members: memberAddresses.length,
             frequency: Number(details.frequency),
             isActive: details.isActive,
             status: Number(details.status),
@@ -40,24 +63,13 @@ export function useUserCircles() {
             startAt: Number(details.startAt),
             vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
             creator: details.creator,
-            progress: Number(progress.percentage),
+            progress: calculatedProgress,
+            contractProgress: Number(progress.percentage), // Keep contract value for reference
             icon: progress.icon
           };
         })
       );
 
-      console.log('User Circles:', circles);
-      circles.forEach((circle, idx) => {
-        console.log(`Circle ${idx}:`, {
-          id: circle.id,
-          name: circle.name,
-          isActive: circle.isActive,
-          status: circle.status,
-          currentRound: circle.currentRound,
-          maxMembers: circle.maxMembers
-        });
-      });
-      console.log('Active Circles:', circles.filter(c => c.isActive));
 
       return circles;
     },
@@ -83,8 +95,6 @@ export function useCircleDetails(circleId) {
   return useQuery({
     queryKey: ['circleDetails', circleId],
     queryFn: async () => {
-      console.log('Fetching circle details for ID:', circleId);
-
       try {
         const contract = await getContract('core');
         const details = await contract.getCircleDetails(circleId);
@@ -109,12 +119,15 @@ export function useCircleDetails(circleId) {
           }
         }
 
-        console.log('Circle details fetched:', {
-          details,
-          progress,
-          membersCount: memberAddresses.length,
-          inviteCode
-        });
+        // Calculate progress based on circle status
+        const calculatedProgress = calculateProgress(
+          Number(details.currentRound),
+          Number(details.duration),
+          memberAddresses.length,
+          Number(details.maxMembers),
+          details.isActive,
+          Number(details.status)
+        );
 
         return {
           id: circleId,
@@ -131,7 +144,8 @@ export function useCircleDetails(circleId) {
           startAt: Number(details.startAt),
           vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
           creator: details.creator,
-          progress: Number(progress.percentage),
+          progress: calculatedProgress,
+          contractProgress: Number(progress.percentage), // Keep contract value for reference
           icon: progress.icon,
           members: memberAddresses.length,
           memberAddresses: memberAddresses,
@@ -277,10 +291,6 @@ export function useGlobalStats() {
         contract.circleCounter()
       ]);
 
-      console.log('=== GLOBAL STATS FROM CONTRACT ===');
-      console.log('Total Pooled (raw):', totalPooled.toString());
-      console.log('Active Circle Count:', activeCircleCount.toString());
-      console.log('Circle Counter:', circleCounter.toString());
 
       const stats = {
         totalPooled: ethers.formatUnits(totalPooled, 6),
@@ -288,7 +298,6 @@ export function useGlobalStats() {
         totalCircles: Number(circleCounter)
       };
 
-      console.log('Formatted stats:', stats);
 
       return stats;
     },
@@ -406,7 +415,6 @@ export function useCircleByInviteCode(inviteCode) {
   return useQuery({
     queryKey: ['circleByInviteCode', inviteCode],
     queryFn: async () => {
-      console.log('Searching for circle with invite code:', inviteCode);
 
       const contract = await getContract('core');
 
@@ -414,7 +422,6 @@ export function useCircleByInviteCode(inviteCode) {
       const circleCounter = await contract.circleCounter();
       const totalCircles = Number(circleCounter);
 
-      console.log('Total circles to search:', totalCircles);
 
       // Search through all circles to find matching invite code
       // This is brute force but necessary since there's no direct lookup
@@ -423,7 +430,6 @@ export function useCircleByInviteCode(inviteCode) {
           const code = await contract.getCircleInviteCode(i);
 
           if (code.toLowerCase() === inviteCode.toLowerCase()) {
-            console.log('Found circle with ID:', i);
 
             // Fetch full circle details
             const details = await contract.getCircleDetails(i);
@@ -456,7 +462,6 @@ export function useCircleByInviteCode(inviteCode) {
       }
 
       // No circle found with this invite code
-      console.log('No circle found with invite code:', inviteCode);
       return null;
     },
     enabled: isConnected && !!inviteCode && inviteCode.length > 20, // Invite codes are hex strings

@@ -17,15 +17,6 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const { userAddress } = useCircleContract();
   const joinCircle = useJoinCircle();
 
-  // Debug logging
-  console.log('CirclePreview Debug:', {
-    circleId,
-    circle,
-    isLoading,
-    error,
-    userAddress
-  });
-
   const isCreator = circle?.creator?.toLowerCase() === userAddress?.toLowerCase();
 
   const handleJoin = async () => {
@@ -124,15 +115,15 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
 
         <div className="flex flex-col gap-6">
           {/* Circle Icon and Name */}
-          <div className="flex items-center gap-4">
-            <div className={`w-[102px] h-[102px] rounded-full flex items-center justify-center ${colors.bg} ${colors.text}`}>
-              <IconComponent size={isTabletOrMobile ? 33 : 44} />
+          <div className="flex items-center gap-4 lg:gap-6">
+            <div className={`w-[80px] h-[80px] lg:w-[120px] lg:h-[120px] rounded-full flex items-center justify-center ${colors.bg} ${colors.text}`}>
+              <IconComponent size={isTabletOrMobile ? 33 : 55} />
             </div>
             <div className="flex-1">
-              <h2 className="text-[32px] font-bold">{circle.name}</h2>
-              <p className="text-[#AAAAAA]">{circle.members || 0}/{circle.maxMembers} members</p>
+              <h2 className="text-[24px] lg:text-[38px] font-bold">{circle.name}</h2>
+              <p className="text-[14px] lg:text-[18px] text-[#AAAAAA]">{circle.members || 0}/{circle.maxMembers} members</p>
               {isCreator && (
-                <span className="inline-block mt-1 px-3 py-1 bg-[#D548EC] text-xs rounded-full">
+                <span className="inline-block mt-1 px-3 py-1 bg-[#D548EC] text-xs lg:text-sm rounded-full">
                   Your Circle
                 </span>
               )}
@@ -142,10 +133,10 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
           {/* Progress Bar */}
           <div className="w-full">
             <div className="flex justify-between mb-2">
-              <span className="text-sm text-[#AAAAAA]">Progress</span>
-              <span className="text-sm text-primary">{circle.progress}%</span>
+              <span className="text-sm lg:text-lg text-[#AAAAAA]">Progress</span>
+              <span className="text-sm lg:text-lg text-primary">{circle.progress}%</span>
             </div>
-            <div className="w-full h-3 bg-[#333] rounded-full overflow-hidden">
+            <div className="w-full h-3 lg:h-4 bg-[#333] rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-[#D548EC] to-[#F4AEFF] transition-all duration-300"
                 style={{ width: `${circle.progress}%` }}
@@ -154,55 +145,55 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
           </div>
 
           {/* Circle Details - Grid 1 */}
-          <div className="grid grid-cols-2 gap-4 font-dm">
+          <div className="grid grid-cols-2 gap-4 lg:gap-6 font-dm">
             <div>
-              <p className="text-[#AAAAAA] text-sm">Contribution Amount</p>
-              <p className="text-xl font-bold">{formatCurrency(circle.amount)}</p>
+              <p className="text-[#AAAAAA] text-sm lg:text-base">Contribution Amount</p>
+              <p className="text-lg lg:text-2xl font-bold">{formatCurrency(circle.amount)}</p>
             </div>
             <div>
-              <p className="text-[#AAAAAA] text-sm">Duration</p>
-              <p className="text-xl font-bold">{circle.duration} months</p>
+              <p className="text-[#AAAAAA] text-sm lg:text-base">Duration</p>
+              <p className="text-lg lg:text-2xl font-bold">{circle.duration} months</p>
             </div>
             <div>
-              <p className="text-[#AAAAAA] text-sm">Frequency</p>
-              <p className="text-xl font-bold">{formatFrequency(circle.frequency)}</p>
+              <p className="text-[#AAAAAA] text-sm lg:text-base">Frequency</p>
+              <p className="text-lg lg:text-2xl font-bold">{formatFrequency(circle.frequency)}</p>
             </div>
             <div>
-              <p className="text-[#AAAAAA] text-sm">Total Pool</p>
-              <p className="text-xl font-bold">{formatCurrency(circle.vaultBalance)}</p>
+              <p className="text-[#AAAAAA] text-sm lg:text-base">Total Pool</p>
+              <p className="text-lg lg:text-2xl font-bold">{formatCurrency(circle.vaultBalance)}</p>
             </div>
           </div>
 
           {/* Additional Details - Grid 2 */}
-          <div className="grid grid-cols-2 gap-4 font-dm">
+          <div className="grid grid-cols-2 gap-4 lg:gap-6 font-dm">
             <div>
-              <p className="text-[#AAAAAA] text-sm">Current Round</p>
-              <p className="text-lg font-semibold">{circle.currentRound}/{circle.duration}</p>
+              <p className="text-[#AAAAAA] text-sm lg:text-base">Current Round</p>
+              <p className="text-base lg:text-xl font-semibold">{circle.currentRound}/{circle.duration}</p>
             </div>
             <div>
-              <p className="text-[#AAAAAA] text-sm">Status</p>
-              <p className={`text-lg font-semibold ${circle.isActive ? 'text-green-400' : 'text-red-400'}`}>
+              <p className="text-[#AAAAAA] text-sm lg:text-base">Status</p>
+              <p className={`text-base lg:text-xl font-semibold ${circle.isActive ? 'text-green-400' : 'text-red-400'}`}>
                 {circle.isActive ? 'Active' : 'Inactive'}
               </p>
             </div>
             <div>
-              <p className="text-[#AAAAAA] text-sm">Created</p>
-              <p className="text-lg font-semibold">{formatDate(circle.createdAt)}</p>
+              <p className="text-[#AAAAAA] text-sm lg:text-base">Created</p>
+              <p className="text-base lg:text-xl font-semibold">{formatDate(circle.createdAt)}</p>
             </div>
             <div>
-              <p className="text-[#AAAAAA] text-sm">Started</p>
-              <p className="text-lg font-semibold">
+              <p className="text-[#AAAAAA] text-sm lg:text-base">Started</p>
+              <p className="text-base lg:text-xl font-semibold">
                 {circle.startAt > 0 ? formatDate(circle.startAt) : 'Not started'}
               </p>
             </div>
           </div>
 
           {/* Creator & Invite Code */}
-          <div className="border-t border-[#333] pt-4 space-y-3">
+          <div className="border-t border-[#333] pt-4 space-y-3 lg:space-y-4">
             <div>
-              <p className="text-[#AAAAAA] text-sm mb-1">Creator Address</p>
+              <p className="text-[#AAAAAA] text-sm lg:text-base mb-1">Creator Address</p>
               <div className="flex items-center gap-2">
-                <p className="text-sm font-mono bg-[#222] px-3 py-2 rounded flex-1 truncate">
+                <p className="text-xs lg:text-sm font-mono bg-[#222] px-3 py-2 rounded flex-1 truncate">
                   {circle.creator}
                 </p>
                 <button
@@ -210,16 +201,16 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
                   className="p-2 hover:bg-[#333] rounded transition-all"
                   title="Copy creator address"
                 >
-                  <FaCopy size={16} />
+                  <FaCopy size={isTabletOrMobile ? 16 : 20} />
                 </button>
               </div>
             </div>
 
             {circle.inviteCode && (
               <div>
-                <p className="text-[#AAAAAA] text-sm mb-1">Invite Code</p>
+                <p className="text-[#AAAAAA] text-sm lg:text-base mb-1">Invite Code</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-lg font-mono bg-[#222] px-3 py-2 rounded flex-1">
+                  <p className="text-sm lg:text-base font-mono bg-[#222] px-3 py-2 rounded flex-1 break-all">
                     {circle.inviteCode}
                   </p>
                   <button
@@ -227,7 +218,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
                     className="p-2 hover:bg-[#333] rounded transition-all"
                     title="Copy invite code"
                   >
-                    <FaCopy size={16} />
+                    <FaCopy size={isTabletOrMobile ? 16 : 20} />
                   </button>
                 </div>
               </div>
@@ -271,7 +262,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
           )}
 
           {!circle.isActive && !isCreator && (
-            <p className="text-center text-red-500 text-sm">This circle is not accepting new members</p>
+            <p className="text-center text-red-500 text-sm lg:text-base">This circle is not accepting new members</p>
           )}
         </div>
       </div>

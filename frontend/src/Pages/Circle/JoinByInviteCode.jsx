@@ -25,8 +25,6 @@ export default function JoinByInviteCode({ onClose }) {
 
     if (!circle) return;
 
-    console.log('Joining circle:', circle.id, 'isActive:', circle.isActive);
-
     try {
       await joinCircle.mutateAsync(circle.id);
       alert(`Successfully joined circle: ${circle.name}!`);
@@ -128,14 +126,6 @@ export default function JoinByInviteCode({ onClose }) {
             >
               {joinCircle.isPending ? "Joining..." : "Join Circle"}
             </button>
-
-            {console.log('Circle Debug:', {
-              id: circle.id,
-              isActive: circle.isActive,
-              status: circle.status,
-              members: circle.members,
-              maxMembers: circle.maxMembers
-            })}
           </div>
         )}
 

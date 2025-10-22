@@ -16,11 +16,25 @@ const formatDate = (dateInput) => {
   const diffHour = Math.floor(diffMin / 60);
   const diffDays = Math.floor(diffHour / 24);
 
-  // Return relative time for recent events
-  if (diffSec < 60) return `${diffSec} seconds ago`;
-  if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
-  if (diffHour < 24) return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  // Handle future dates (upcoming payouts)
+  if (diffMs < 0) {
+    const futureDiffSec = Math.abs(diffSec);
+    const futureDiffMin = Math.abs(diffMin);
+    const futureDiffHour = Math.abs(diffHour);
+    const futureDiffDays = Math.abs(diffDays);
+
+    if (futureDiffSec < 60) return `in ${futureDiffSec} seconds`;
+    if (futureDiffMin < 60) return `in ${futureDiffMin} minute${futureDiffMin > 1 ? 's' : ''}`;
+    if (futureDiffHour < 24) return `in ${futureDiffHour} hour${futureDiffHour > 1 ? 's' : ''}`;
+    if (futureDiffDays < 7) return `in ${futureDiffDays} day${futureDiffDays > 1 ? 's' : ''}`;
+    // For future dates > 7 days away, return formatted date (fall through to end)
+  } else {
+    // Return relative time for recent events (past)
+    if (diffSec < 60) return `${diffSec} seconds ago`;
+    if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+    if (diffHour < 24) return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  }
 
   // For older dates, return formatted date
   const dateOptions = {

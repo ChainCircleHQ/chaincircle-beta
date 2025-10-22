@@ -40,12 +40,12 @@ export default function Payout() {
         <h3 className="text-[21px] lg:text-[30px] font-bold ">Your Payouts</h3>
         <div className="px-4 py-1 lg:py-3 border border-[#F4AEFF] rounded-[16px] ">
           <select
-            className="pr-[13px] outline-none border-none bg-transparent text-[9px] lg:text-[21px]"
+            className="pr-[13px] outline-none border-none bg-transparent text-[9px] lg:text-[21px] cursor-pointer"
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
           >
-            <option value="only-upcoming">Only Upcoming</option>
-            <option value="history-upcoming">History + Upcoming</option>
+            <option value="only-upcoming" className="bg-[#111111] text-white">Only Upcoming</option>
+            <option value="history-upcoming" className="bg-[#111111] text-white">History + Upcoming</option>
           </select>
         </div>
       </div>

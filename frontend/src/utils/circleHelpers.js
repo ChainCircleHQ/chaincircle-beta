@@ -71,9 +71,36 @@ export function formatCircleStatus(status) {
 }
 
 // Calculate circle progress percentage
-export function calculateProgress(currentRound, duration) {
+// Logic:
+// - Active circles (full members): Show round completion (currentRound / duration)
+//   When active with currentRound=0, it means first round just started, so show small progress
+// - Pending circles (recruiting): Show 0% (don't show member recruitment %)
+// - Completed circles: Show 100%
+export function calculateProgress(currentRound, duration, members, maxMembers, isActive, status) {
   if (!duration || duration === 0) return 0;
-  return Math.min(100, Math.round((Number(currentRound) / Number(duration)) * 100));
+
+  const numStatus = Number(status);
+  const numCurrentRound = Number(currentRound);
+  const numDuration = Number(duration);
+
+  // Completed circles always show 100%
+  if (numStatus === 2) {
+    return 100;
+  }
+
+  // Active circles (members are full, circle has started)
+  // Show round completion progress
+  // Note: When circle just becomes active, currentRound is 0 (first round in progress)
+  // We add 1 to currentRound to show progress for the current round being paid
+  if (numStatus === 1 || isActive) {
+    const effectiveRound = numCurrentRound + 1; // +1 because we're IN the current round
+    const roundProgress = Math.min(100, Math.round((effectiveRound / numDuration) * 100));
+    return roundProgress;
+  }
+
+  // Pending circles (still recruiting members)
+  // Show 0% - don't show member recruitment percentage
+  return 0;
 }
 
 // Format activity type for display

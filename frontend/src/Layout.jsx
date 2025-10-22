@@ -12,7 +12,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 export default function chain() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { handleDisconnectFromPushWallet } = usePushWalletContext();
+  const { handleUserLogOutEvent } = usePushWalletContext();
 
   const isTabletOrMobile = window.innerWidth <= 1014;
   
@@ -84,19 +84,12 @@ export default function chain() {
           </div>
 
           <div
-            onClick={async () => {
-              try {
-                // Disconnect wallet first
-                if (handleDisconnectFromPushWallet) {
-                  await handleDisconnectFromPushWallet();
-                }
-                // Then navigate to home
-                navigate("/");
-              } catch (error) {
-                console.error('Error disconnecting wallet:', error);
-                // Still navigate even if disconnect fails
-                navigate("/");
+            onClick={() => {
+              // Disconnect wallet and navigate to home
+              if (handleUserLogOutEvent) {
+                handleUserLogOutEvent();
               }
+              navigate("/");
             }}
             className={`p-2 rounded-[8px] flex items-center gap-4 w-full justify-center cursor-pointer hover:bg-[#D548EC] transition-all `}
           >
