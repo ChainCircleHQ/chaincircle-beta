@@ -33,14 +33,14 @@ export default function CreateCircleModal({ onClose }) {
     circleName: '',
     goalType: '',
     goalDescription: '',
-    
+
     // Step 2 fields
     contributionAmount: '',
     currency: 'CUSD',
-    duration: 7,
+    duration: 3,
     frequency: 'Weekly',
     maxMembers: '',
-    
+
     // Step 3 fields
     themeColor: 'Chain yellow',
     estimatedFees: 200,
@@ -90,6 +90,18 @@ export default function CreateCircleModal({ onClose }) {
       // Validate required fields
       if (!formData.circleName || !formData.goalType || !formData.contributionAmount || !formData.maxMembers) {
         alert('Please fill in all required fields');
+        return;
+      }
+
+      // Validate minimum contribution amount
+      if (parseInt(formData.contributionAmount) < 100) {
+        alert('Minimum contribution amount is 100 CUSD');
+        return;
+      }
+
+      // Validate minimum duration
+      if (parseInt(formData.duration) < 3) {
+        alert('Minimum duration is 3 months');
         return;
       }
 
@@ -146,8 +158,8 @@ export default function CreateCircleModal({ onClose }) {
   }
   
   return (
-    <div className="absolute font-dm z-90 top-0 rounded-[35px] left-0 w-full h-[140%] bg-[#00000062] backdrop-blur-lg bg-opacity-50 flex flex-col items-center">
-      <div className="flex items-center gap-8 w-full px-5">
+    <div className="fixed font-dm z-[90] inset-0 bg-black/60 backdrop-blur-lg flex flex-col items-center justify-start overflow-y-auto py-8">
+      <div className="flex items-center gap-8 w-full max-w-[800px] px-5">
         <IoClose onClick={()=> onClose()} cursor={"pointer"} className='hover:scale-115 transition-all ease-in-out ' />
         <div className="py-5 w-[90%] flex flex-col items-center">
           <div className="relative w-[90%]  flex items-center justify-between py-4 ">
@@ -191,7 +203,7 @@ export default function CreateCircleModal({ onClose }) {
       </div>
 
       {/* Form Steps  */}
-      <div className="w-[95%] border-y border-y-[#aaa] py-2 lg:w-[50%] ">
+      <div className="w-[95%] max-w-[800px] border-y border-y-[#aaa] py-2">
         {step === 1 && (
           <Step1 formData={formData} updateFormData={updateFormData} />
         )}
@@ -209,7 +221,7 @@ export default function CreateCircleModal({ onClose }) {
       )}
 
       {/* Form Buttons */}
-      <div className="w-[95%] py-8 flex items-center justify-between ">
+      <div className="w-[95%] max-w-[800px] py-8 flex items-center justify-between">
         <TransBtn
           text={`${step === 1 ? "Clear all Fields" : "Back"}`}
           action={step === 1 ? handleClear : handlePrev}
@@ -274,16 +286,21 @@ const Step2 = ({ formData, updateFormData }) => {
       {/* Contribution Amount */}
       <div className="flex flex-col gap-2">
         <label className="text-[12px] lg:text-[18px]">
-          Contribution Amount:
+          Contribution Amount (Min: 100 CUSD):
         </label>
         <div className="flex gap-2">
           <input
-            type="text"
-            placeholder="Enter an Amount"
+            type="number"
+            placeholder="Enter an Amount (min 100)"
+            min="100"
             value={formData.contributionAmount}
-            onChange={(e) =>
-              updateFormData("contributionAmount", e.target.value)
-            }
+            onChange={(e) => {
+              const value = e.target.value;
+              // Allow empty string for clearing, otherwise enforce minimum
+              if (value === '' || parseInt(value) >= 100) {
+                updateFormData("contributionAmount", value);
+              }
+            }}
             className="flex-1 text-[12px] lg:text-[21px] border outline-none border-[#F4AEFF] rounded-[8px] p-3 bg-transparent text-gray-400 placeholder-gray-500"
           />
           <select
@@ -301,23 +318,35 @@ const Step2 = ({ formData, updateFormData }) => {
 
       {/* Duration */}
       <div className="flex flex-col gap-2">
-        <label className="text-[12px] lg:text-[18px]">Duration (months)</label>
+        <label className="text-[12px] lg:text-[18px]">Duration (months) - Min: 3</label>
         <div className="flex items-center gap-4">
           <div className="flex-1 flex p-[3px] items-center gap-[3px] bg-[#d648ec5e] h-[25px]">
-            {[...Array(12)].map((_, idx) => (
-              <div
-                className={`flex-1 text-[12px] flex items-center justify-center h-full hover:bg-[#D548EC] hover:text-white cursor-pointer ${
-                  idx < formData.duration ? "bg-[#D548EC] text-white" : "bg-transparent text-transparent"
-                }`}
-                onClick={() => updateFormData("duration", idx + 1)}
-              >{idx + 1}</div>
-            ))}
+            {[...Array(12)].map((_, idx) => {
+              const monthValue = idx + 1;
+              return (
+                <div
+                  key={idx}
+                  className={`flex-1 text-[12px] flex items-center justify-center h-full ${
+                    monthValue >= 3 ? "hover:bg-[#D548EC] hover:text-white cursor-pointer" : "cursor-not-allowed opacity-40"
+                  } ${
+                    monthValue <= formData.duration ? "bg-[#D548EC] text-white" : "bg-transparent text-transparent"
+                  }`}
+                  onClick={() => monthValue >= 3 && updateFormData("duration", monthValue)}
+                >{monthValue}</div>
+              );
+            })}
           </div>
           <div className="w-[60px] h-[40px] border border-[#F4AEFF] rounded-[8px] flex items-center justify-center bg-transparent">
             <input
               className="text-white text-[14px] outline-none bg-transparent w-full text-center"
+              type="number"
+              min="3"
+              max="12"
               value={formData.duration}
-              onChange={(e) => updateFormData("duration", e.target.value)}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 3;
+                updateFormData("duration", Math.max(3, Math.min(12, value)));
+              }}
             />
           </div>
         </div>
@@ -559,7 +588,7 @@ const TermsModal = ({ onClose }) => {
 
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6 text-white">
-          <p className="text-[#AAAAAA] text-sm lg:text-base">
+          <p className="text-[#AAAAAA] text-base lg:text-lg">
             Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
 
@@ -568,7 +597,7 @@ const TermsModal = ({ onClose }) => {
             <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
               1. Acceptance of Terms
             </h3>
-            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+            <p className="text-[#CCCCCC] text-base lg:text-lg leading-relaxed">
               By accessing and using ChainCircle ("the Platform"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms and Conditions, please do not use the Platform.
             </p>
           </section>
@@ -581,7 +610,7 @@ const TermsModal = ({ onClose }) => {
             <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
               ChainCircle is a decentralized savings circle platform built on Push Chain that enables users to:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-base lg:text-lg ml-4">
               <li>Create and join savings circles with other users</li>
               <li>Make periodic contributions using CUSD (Circle USD)</li>
               <li>Receive payouts according to the circle's schedule</li>
@@ -598,7 +627,7 @@ const TermsModal = ({ onClose }) => {
             <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
               As a user of ChainCircle, you agree to:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-base lg:text-lg ml-4">
               <li>Provide accurate and truthful information</li>
               <li>Maintain the security of your wallet and private keys</li>
               <li>Make timely contributions to circles you join</li>
@@ -616,7 +645,7 @@ const TermsModal = ({ onClose }) => {
             <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
               <strong className="text-white">IMPORTANT:</strong> By using ChainCircle, you acknowledge and accept the following risks:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-base lg:text-lg ml-4">
               <li>Circle members may default on their payment obligations</li>
               <li>Smart contract vulnerabilities may exist despite security audits</li>
               <li>Cryptocurrency values may fluctuate significantly</li>
@@ -634,7 +663,7 @@ const TermsModal = ({ onClose }) => {
             <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
               When creating or joining a circle:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-base lg:text-lg ml-4">
               <li>You commit to making all scheduled contributions on time</li>
               <li>Late payments may result in reputation penalties</li>
               <li>Circle creators are responsible for accurate configuration</li>
@@ -648,7 +677,7 @@ const TermsModal = ({ onClose }) => {
             <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
               6. Reputation System
             </h3>
-            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+            <p className="text-[#CCCCCC] text-base lg:text-lg leading-relaxed">
               ChainCircle uses a reputation system to track user behavior. Your reputation score is determined by payment history, circle completion, and other factors. Negative actions (late payments, defaults) will decrease your reputation and may limit your access to certain features.
             </p>
           </section>
@@ -658,7 +687,7 @@ const TermsModal = ({ onClose }) => {
             <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
               7. Smart Contract Interactions
             </h3>
-            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+            <p className="text-[#CCCCCC] text-base lg:text-lg leading-relaxed">
               All transactions on ChainCircle are executed through smart contracts on the Push Chain blockchain. Once a transaction is confirmed on the blockchain, it is irreversible. You are responsible for verifying all transaction details before confirmation.
             </p>
           </section>
@@ -668,7 +697,7 @@ const TermsModal = ({ onClose }) => {
             <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
               8. Limitation of Liability
             </h3>
-            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+            <p className="text-[#CCCCCC] text-base lg:text-lg leading-relaxed">
               ChainCircle and its developers shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages resulting from your use of the Platform, including but not limited to loss of funds, loss of profits, or loss of data.
             </p>
           </section>
@@ -681,7 +710,7 @@ const TermsModal = ({ onClose }) => {
             <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
               You may not:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-base lg:text-lg ml-4">
               <li>Use the Platform for money laundering or illegal activities</li>
               <li>Attempt to hack, exploit, or manipulate smart contracts</li>
               <li>Create circles with the intent to defraud other users</li>
@@ -695,7 +724,7 @@ const TermsModal = ({ onClose }) => {
             <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
               10. Privacy and Data
             </h3>
-            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+            <p className="text-[#CCCCCC] text-base lg:text-lg leading-relaxed">
               Your wallet address and on-chain activities are publicly visible on the blockchain. While ChainCircle does not collect personal information, blockchain transactions are transparent and permanent.
             </p>
           </section>
@@ -705,7 +734,7 @@ const TermsModal = ({ onClose }) => {
             <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
               11. Modifications to Terms
             </h3>
-            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+            <p className="text-[#CCCCCC] text-base lg:text-lg leading-relaxed">
               ChainCircle reserves the right to modify these Terms and Conditions at any time. Continued use of the Platform after changes constitutes acceptance of the modified terms. Material changes will be communicated through the Platform.
             </p>
           </section>
@@ -715,7 +744,7 @@ const TermsModal = ({ onClose }) => {
             <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
               12. Termination
             </h3>
-            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+            <p className="text-[#CCCCCC] text-base lg:text-lg leading-relaxed">
               ChainCircle may terminate or suspend your access to the Platform at any time for violation of these Terms and Conditions or for any other reason at our sole discretion, without prior notice.
             </p>
           </section>
@@ -725,7 +754,7 @@ const TermsModal = ({ onClose }) => {
             <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
               13. Governing Law
             </h3>
-            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+            <p className="text-[#CCCCCC] text-base lg:text-lg leading-relaxed">
               These Terms and Conditions shall be governed by and construed in accordance with applicable laws. Any disputes arising from these terms shall be resolved through binding arbitration.
             </p>
           </section>
@@ -738,7 +767,7 @@ const TermsModal = ({ onClose }) => {
             <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
               For questions or concerns about these Terms and Conditions, please contact us:
             </p>
-            <ul className="list-none space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+            <ul className="list-none space-y-2 text-[#CCCCCC] text-base lg:text-lg ml-4">
               <li>Email: legal@chaincircle.io</li>
               <li>Twitter: <a href="https://x.com/chaincircle_?s=21" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">@chaincircle_</a></li>
               <li>GitHub: <a href="https://github.com/ChainCircleHQ" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">ChainCircleHQ</a></li>
@@ -747,10 +776,10 @@ const TermsModal = ({ onClose }) => {
 
           {/* Agreement */}
           <section className="p-4 lg:p-6 border border-[#D548EC] rounded-lg bg-[#D548EC]/10">
-            <p className="text-white font-semibold text-base lg:text-lg mb-3">
+            <p className="text-white font-semibold text-lg lg:text-xl mb-3">
               By using ChainCircle, you acknowledge that:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-base lg:text-lg ml-4">
               <li>You have read and understood these Terms and Conditions</li>
               <li>You accept all risks associated with using the Platform</li>
               <li>You are solely responsible for your financial decisions</li>

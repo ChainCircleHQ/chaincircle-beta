@@ -435,6 +435,21 @@ export function useCircleByInviteCode(inviteCode) {
             const details = await contract.getCircleDetails(i);
             const progress = await contract.getCircleProgress(i);
 
+            // Fetch all members
+            const maxMembers = Number(details.maxMembers);
+            const memberAddresses = [];
+
+            for (let j = 0; j < maxMembers; j++) {
+              try {
+                const memberAddress = await contract.circleMembers(i, j);
+                if (memberAddress !== '0x0000000000000000000000000000000000000000') {
+                  memberAddresses.push(memberAddress);
+                }
+              } catch (e) {
+                break;
+              }
+            }
+
             return {
               id: i.toString(),
               name: details.name,
@@ -442,7 +457,8 @@ export function useCircleByInviteCode(inviteCode) {
               amount: ethers.formatUnits(details.amount, 6),
               duration: Number(details.duration),
               currentRound: Number(details.currentRound),
-              maxMembers: Number(details.maxMembers),
+              maxMembers: maxMembers,
+              members: memberAddresses.length,
               frequency: Number(details.frequency),
               isActive: details.isActive,
               status: Number(details.status),
