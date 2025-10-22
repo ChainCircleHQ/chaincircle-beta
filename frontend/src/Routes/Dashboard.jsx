@@ -8,26 +8,16 @@ import CirclePreview from '../Pages/Circle/CirclePreview';
 import { useUserStats, useUserCircles } from '../hooks/useCircleData';
 import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
 import { PiCirclesThreeBold } from "react-icons/pi";
-import Spinner from '../Components/Spinner';
 
 export default function Dashboard() {
   const [showBalance, setShowBalance] = React.useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedCircleId, setSelectedCircleId] = useState(null);
 
-  const { data: stats, isLoading: statsLoading } = useUserStats();
+  const { data: stats } = useUserStats();
   const { data: userCircles, isLoading: circlesLoading } = useUserCircles();
 
   const isTabletOrMobile = window.innerWidth <= 1014;
-
-  // Only show spinner on initial load, not when refetching
-  if (statsLoading && !stats) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <Spinner />
-      </div>
-    );
-  }
 
   const totalSaved = stats?.totalSaved ? parseFloat(stats.totalSaved) : 0;
   const totalCircleCount = userCircles?.length || 0;

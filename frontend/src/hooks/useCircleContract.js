@@ -4,6 +4,8 @@ import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../constants/contracts';
 import ChainCircleCoreABI from '../abis/ChainCircleCore.json';
 import ReputationManagerABI from '../abis/ReputationManager.json';
 import CUSDABI from '../abis/CUSD.json';
+import BadgeNFTABI from '../abis/BadgeNFT.json';
+import NameRegistryABI from '../abis/NameRegistry.json';
 
 export function useCircleContract() {
   const { connectionStatus } = usePushWalletContext();
@@ -26,6 +28,14 @@ export function useCircleContract() {
       cusd: {
         address: CONTRACT_ADDRESSES.CUSD,
         abi: CUSDABI.abi
+      },
+      badge: {
+        address: CONTRACT_ADDRESSES.BADGE_NFT,
+        abi: BadgeNFTABI.abi
+      },
+      nameRegistry: {
+        address: CONTRACT_ADDRESSES.NAME_REGISTRY,
+        abi: NameRegistryABI.abi
       }
     };
 

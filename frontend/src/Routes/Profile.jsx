@@ -3,7 +3,6 @@ import { FaSackDollar } from "react-icons/fa6";
 import ProfileDetails from "../Pages/Profile/ProfileDetails";
 import CountUp from "../Components/CountUp";
 import { useUserStats } from "../hooks/useCircleData";
-import Spinner from "../Components/Spinner";
 import { formatDate } from "../utils/formatDate";
 
 const isTabletOrMobile = window.innerWidth <= 1014;
@@ -37,18 +36,13 @@ const getTierBadge = (tier) => {
 };
 
 export default function Profile() {
-  const { data: stats, isLoading } = useUserStats();
-
-  if (isLoading && !stats) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner />
-      </div>
-    );
-  }
+  const { data: stats } = useUserStats();
 
   const reputation = stats?.reputation || {};
   const tierInfo = getTierBadge(reputation.tier);
+
+  // Use the same totalSaved as dashboard (from core contract, not reputation contract)
+  const totalSaved = stats?.totalSaved ? parseFloat(stats.totalSaved) : 0;
 
   return (
     <div className="flex flex-col gap-12">
@@ -77,12 +71,12 @@ export default function Profile() {
 
         <div className="lg:w-[480px] w-[90%] grid grid-cols-2 gap-x-4.5 gap-y-4 font-dm text-[12px] lg:text-[16px] ">
           <div className="w-full bg-[#ad3dc0] py-2 rounded-[8px]  flex items-center justify-center gap-2">
-            <p>User since {formatDate(reputation.accountAge || Date.now() / 1000)}</p>
+            <p>User since {reputation.accountAge && reputation.accountAge > 0 ? formatDate(reputation.accountAge) : 'New user'}</p>
           </div>
           <div className="w-full bg-[#ad3dc0] py-2 rounded-[8px]  flex items-center justify-center gap-2">
             <PiCirclesThreeBold size={isTabletOrMobile? 12 : 24} color="#AEFFDA" />
             <div className="flex items-center gap-1">
-              <CountUp target={reputation.completedCircles || 0} duration={300} />
+              <CountUp target={Number(reputation.completedCircles) || 0} duration={300} />
               <p> completed circles</p>
             </div>
           </div>
@@ -90,13 +84,13 @@ export default function Profile() {
             <FaSackDollar size={isTabletOrMobile? 12 : 24} color="#FBFFAE" />
             <div className="flex items-center gap-1">
               <p>$</p>
-              <CountUp target={parseFloat(reputation.totalSaved || 0)} duration={2500} />
+              <CountUp target={totalSaved} duration={2500} />
               <p> total saved</p>
             </div>
           </div>
           <div className="w-full bg-[#ad3dc0] py-2 rounded-[8px]  flex items-center justify-center gap-2">
             <FaSackDollar size={isTabletOrMobile? 12 : 24} color="#FBFFAE" />
-            <p>{reputation.onTimeRate || 0}% On-time rate</p>
+            <p>{Number(reputation.onTimeRate) || 0}% On-time rate</p>
           </div>
         </div>
       </header>

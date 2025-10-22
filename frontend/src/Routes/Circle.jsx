@@ -5,15 +5,17 @@ import { FaPlus } from "react-icons/fa";
 import { BsPin } from "react-icons/bs";
 import { FiBellOff } from "react-icons/fi";
 import { FaRegStopCircle } from "react-icons/fa";
+import { MdQrCode } from "react-icons/md";
 import CreateCircleModal from '../Pages/Circle/CreateCircleModal';
+import JoinByInviteCode from '../Pages/Circle/JoinByInviteCode';
 import { useUserCircles } from '../hooks/useCircleData';
 import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
-import Spinner from '../Components/Spinner';
 
 export default function Circle() {
-  const { data, isLoading } = useUserCircles();
+  const { data } = useUserCircles();
   const [activeModal, setActiveModal] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const isTabletOrMobile = window.innerWidth <= 1014;
 
@@ -35,15 +37,6 @@ export default function Circle() {
   const filteredCircles = data?.filter(circle =>
     circle.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
-
-  // Only show spinner on initial load, not when refetching
-  if (isLoading && !data) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner />
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-10 relative">
@@ -139,15 +132,27 @@ export default function Circle() {
         )}
       </div>
 
-      {/* Create Button */}
-      <button
-        className="ml-auto px-4 hover:scale-110 transition ease-in-out py-2 rounded-[8px] bg-[#D548EC] cursor-pointer flex items-center gap-2 z-20 relative"
-        onClick={handleShowCreate}
-        type="button"
-      >
-        <FaPlus size={isTabletOrMobile ? 12 : 40} />
-        <p className="lg:hidden text-[14px]">Create New</p>
-      </button>
+      {/* Action Buttons */}
+      <div className="ml-auto flex items-center gap-4 z-20 relative">
+        <button
+          className="px-4 hover:scale-110 transition ease-in-out py-2 rounded-[8px] bg-[#7C3A87] cursor-pointer flex items-center gap-2"
+          onClick={() => setShowInviteModal(true)}
+          type="button"
+          title="Join circle with invite code"
+        >
+          <MdQrCode size={isTabletOrMobile ? 12 : 40} />
+          <p className="lg:hidden text-[14px]">Join by Code</p>
+        </button>
+
+        <button
+          className="px-4 hover:scale-110 transition ease-in-out py-2 rounded-[8px] bg-[#D548EC] cursor-pointer flex items-center gap-2"
+          onClick={handleShowCreate}
+          type="button"
+        >
+          <FaPlus size={isTabletOrMobile ? 12 : 40} />
+          <p className="lg:hidden text-[14px]">Create New</p>
+        </button>
+      </div>
 
       {/* Background image */}
       <div className="absolute bottom-0 left-0 w-full h-[390px] translate-y-1/2 -z-10">
@@ -159,13 +164,21 @@ export default function Circle() {
         <div className="fixed inset-0 z-10" onClick={closeModal} />
       )}
 
-      {/* Modal */}
+      {/* Modals */}
       {showCreateModal && (
         <CreateCircleModal
           onClose={() => {
             setShowCreateModal(false);
           }}
           setShowCreateModal={setShowCreateModal}
+        />
+      )}
+
+      {showInviteModal && (
+        <JoinByInviteCode
+          onClose={() => {
+            setShowInviteModal(false);
+          }}
         />
       )}
     </div>

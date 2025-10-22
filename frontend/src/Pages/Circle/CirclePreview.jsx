@@ -2,17 +2,31 @@ import React from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
 import { useCircleDetails } from '../../hooks/useCircleData';
 import { useJoinCircle } from '../../hooks/useCircleActions';
+import { useCircleContract } from '../../hooks/useCircleContract';
 import { getGoalIcon, getGoalColors, formatFrequency, calculateProgress } from '../../utils/circleHelpers';
 import formatCurrency from '../../utils/formatCurrency';
+import { formatDate } from '../../utils/formatDate';
 import PurpleBtn from '../../Components/PurpleBtn';
-import Spinner from '../../Components/Spinner';
 import { IoClose } from "react-icons/io5";
+import { FaCopy } from "react-icons/fa";
 
 export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: circle, isLoading, error } = useCircleDetails(circleId);
+  const { userAddress } = useCircleContract();
   const joinCircle = useJoinCircle();
+
+  // Debug logging
+  console.log('CirclePreview Debug:', {
+    circleId,
+    circle,
+    isLoading,
+    error,
+    userAddress
+  });
+
+  const isCreator = circle?.creator?.toLowerCase() === userAddress?.toLowerCase();
 
   const handleJoin = async () => {
     try {
@@ -42,32 +56,64 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
     }
   };
 
-  if (isLoading) {
+  const copyInviteCode = () => {
+    if (circle?.inviteCode) {
+      navigator.clipboard.writeText(circle.inviteCode);
+      alert('Invite code copied to clipboard!');
+    }
+  };
+
+  const copyCreatorAddress = () => {
+    if (circle?.creator) {
+      navigator.clipboard.writeText(circle.creator);
+      alert('Creator address copied to clipboard!');
+    }
+  };
+
+  // Show error only if there's an actual error, not just loading
+  if (error) {
+    console.error('Circle preview error details:', error);
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Spinner />
+      <div className="fixed inset-0 z-90 bg-black bg-opacity-70 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] p-8 max-w-md">
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-red-500 text-xl font-bold">Circle not found</p>
+            <p className="text-[#AAAAAA] text-sm text-center">
+              Circle ID: {circleId}
+            </p>
+            <p className="text-[#AAAAAA] text-xs text-center font-mono">
+              {error?.message || 'Unknown error'}
+            </p>
+            <button
+              onClick={onClose || (() => navigate('/chain/circle'))}
+              className="mt-4 px-6 py-2 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all"
+            >
+              {onClose ? 'Close' : 'Go back to Circles'}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (error || !circle) {
+  // Show minimal loading state if no data yet
+  if (!circle) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-4">
-        <p className="text-red-500">Circle not found</p>
-        <button onClick={() => navigate('/chain/circle')} className="text-primary underline">
-          Go back to Circles
-        </button>
+      <div className="fixed inset-0 z-90 bg-black bg-opacity-70 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] p-8">
+          <p className="text-[#AAAAAA]">Loading circle details...</p>
+        </div>
       </div>
     );
   }
 
-  const IconComponent = getGoalIcon(circle.goalType);
-  const colors = getGoalColors(circle.goalType);
+  const IconComponent = getGoalIcon(circle.goalType || 0);
+  const colors = getGoalColors(circle.goalType || 0);
   const isTabletOrMobile = window.innerWidth <= 1014;
 
   return (
     <div className="fixed inset-0 z-90 bg-black bg-opacity-70 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] max-w-2xl w-full p-8 relative">
+      <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 relative">
         {onClose && (
           <IoClose
             onClick={onClose}
@@ -82,9 +128,14 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
             <div className={`w-[102px] h-[102px] rounded-full flex items-center justify-center ${colors.bg} ${colors.text}`}>
               <IconComponent size={isTabletOrMobile ? 33 : 44} />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-[32px] font-bold">{circle.name}</h2>
               <p className="text-[#AAAAAA]">{circle.members || 0}/{circle.maxMembers} members</p>
+              {isCreator && (
+                <span className="inline-block mt-1 px-3 py-1 bg-[#D548EC] text-xs rounded-full">
+                  Your Circle
+                </span>
+              )}
             </div>
           </div>
 
@@ -102,7 +153,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
             </div>
           </div>
 
-          {/* Circle Details */}
+          {/* Circle Details - Grid 1 */}
           <div className="grid grid-cols-2 gap-4 font-dm">
             <div>
               <p className="text-[#AAAAAA] text-sm">Contribution Amount</p>
@@ -122,24 +173,104 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-4 mt-4">
-            <div className="flex-1" onClick={handleJoin}>
-              <PurpleBtn
-                text={joinCircle.isPending ? "Joining..." : "Join Circle"}
-                font="bold"
-                disabled={joinCircle.isPending || !circle.isActive}
-              />
+          {/* Additional Details - Grid 2 */}
+          <div className="grid grid-cols-2 gap-4 font-dm">
+            <div>
+              <p className="text-[#AAAAAA] text-sm">Current Round</p>
+              <p className="text-lg font-semibold">{circle.currentRound}/{circle.duration}</p>
             </div>
-            <button
-              onClick={handleShare}
-              className="px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
-            >
-              Share
-            </button>
+            <div>
+              <p className="text-[#AAAAAA] text-sm">Status</p>
+              <p className={`text-lg font-semibold ${circle.isActive ? 'text-green-400' : 'text-red-400'}`}>
+                {circle.isActive ? 'Active' : 'Inactive'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[#AAAAAA] text-sm">Created</p>
+              <p className="text-lg font-semibold">{formatDate(circle.createdAt)}</p>
+            </div>
+            <div>
+              <p className="text-[#AAAAAA] text-sm">Started</p>
+              <p className="text-lg font-semibold">
+                {circle.startAt > 0 ? formatDate(circle.startAt) : 'Not started'}
+              </p>
+            </div>
           </div>
 
-          {!circle.isActive && (
+          {/* Creator & Invite Code */}
+          <div className="border-t border-[#333] pt-4 space-y-3">
+            <div>
+              <p className="text-[#AAAAAA] text-sm mb-1">Creator Address</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-mono bg-[#222] px-3 py-2 rounded flex-1 truncate">
+                  {circle.creator}
+                </p>
+                <button
+                  onClick={copyCreatorAddress}
+                  className="p-2 hover:bg-[#333] rounded transition-all"
+                  title="Copy creator address"
+                >
+                  <FaCopy size={16} />
+                </button>
+              </div>
+            </div>
+
+            {circle.inviteCode && (
+              <div>
+                <p className="text-[#AAAAAA] text-sm mb-1">Invite Code</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-mono bg-[#222] px-3 py-2 rounded flex-1">
+                    {circle.inviteCode}
+                  </p>
+                  <button
+                    onClick={copyInviteCode}
+                    className="p-2 hover:bg-[#333] rounded transition-all"
+                    title="Copy invite code"
+                  >
+                    <FaCopy size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          {!isCreator && (
+            <div className="flex gap-4 mt-4">
+              <div className="flex-1" onClick={handleJoin}>
+                <PurpleBtn
+                  text={joinCircle.isPending ? "Joining..." : "Join Circle"}
+                  font="bold"
+                  disabled={joinCircle.isPending || !circle.isActive}
+                />
+              </div>
+              <button
+                onClick={handleShare}
+                className="px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
+              >
+                Share
+              </button>
+            </div>
+          )}
+
+          {isCreator && (
+            <div className="flex gap-4 mt-4">
+              <button
+                onClick={handleShare}
+                className="flex-1 px-6 py-3 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold"
+              >
+                Share Circle
+              </button>
+              <button
+                onClick={onClose}
+                className="px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          )}
+
+          {!circle.isActive && !isCreator && (
             <p className="text-center text-red-500 text-sm">This circle is not accepting new members</p>
           )}
         </div>

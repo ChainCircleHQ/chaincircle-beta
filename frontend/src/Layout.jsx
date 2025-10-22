@@ -5,13 +5,14 @@ import { PiCirclesThreeBold } from "react-icons/pi";
 import { MdOutlineCreditCard } from "react-icons/md";
 import { FaRegUserCircle } from "react-icons/fa";
 import { FaRegBell } from "react-icons/fa6";
+import { PushUniversalAccountButton, usePushWalletContext } from '@pushchain/ui-kit';
 
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 
 export default function chain() {
   const location = useLocation();
-
   const navigate = useNavigate();
+  const { handleDisconnectFromPushWallet } = usePushWalletContext();
 
   const isTabletOrMobile = window.innerWidth <= 1014;
   
@@ -83,8 +84,21 @@ export default function chain() {
           </div>
 
           <div
-            onClick={() => navigate("/")}
-            className={`p-2 rounded-[8px] flex items-center gap-4 w-full justify-center cursor-pointer `}
+            onClick={async () => {
+              try {
+                // Disconnect wallet first
+                if (handleDisconnectFromPushWallet) {
+                  await handleDisconnectFromPushWallet();
+                }
+                // Then navigate to home
+                navigate("/");
+              } catch (error) {
+                console.error('Error disconnecting wallet:', error);
+                // Still navigate even if disconnect fails
+                navigate("/");
+              }
+            }}
+            className={`p-2 rounded-[8px] flex items-center gap-4 w-full justify-center cursor-pointer hover:bg-[#D548EC] transition-all `}
           >
             <TbArrowRightFromArc size={32} />
             <p>Log out</p>
@@ -98,13 +112,8 @@ export default function chain() {
             <FaRegBell size={isTabletOrMobile ? 24 : 35} cursor={"pointer"} />
             <div className="absolute rounded-full w-3 h-3 lg:w-4 lg:h-4 bg-[#DB0000] top-2 right-2 "></div>
           </div>
-          <div className="flex items-center gap-1.5 ">
-            <img
-              src="/assets/User-pic.png"
-              alt="profile"
-              className="w-[40px] h-[40px] rounded-full"
-            />
-            <p className="font-dm text-[24px] "> Winszn </p>
+          <div className="max-w-[200px]">
+            <PushUniversalAccountButton />
           </div>
         </div>
         <div className="flex-1">

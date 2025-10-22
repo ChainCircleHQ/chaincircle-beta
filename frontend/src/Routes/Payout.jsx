@@ -4,12 +4,11 @@ import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
 import { IoEllipsisHorizontalSharp } from "react-icons/io5";
 import { BsPin } from "react-icons/bs";
 import { FiBellOff } from "react-icons/fi";
-import Spinner from '../Components/Spinner';
 
 export default function Payout() {
   const isTabletOrMobile = window.innerWidth <= 1014;
-  const { data: payoutHistory, isLoading: historyLoading } = usePayoutHistory();
-  const { data: upcomingPayouts, isLoading: upcomingLoading } = useUpcomingPayouts();
+  const { data: payoutHistory } = usePayoutHistory();
+  const { data: upcomingPayouts } = useUpcomingPayouts();
 
   const [filterType, setFilterType] = useState('only-upcoming');
   const [activeModal, setActiveModal] = useState(null);
@@ -34,17 +33,6 @@ export default function Payout() {
       return [...upcoming, ...history].sort((a, b) => b.timestamp - a.timestamp);
     }
   }, [filterType, payoutHistory, upcomingPayouts]);
-
-  // Only show spinner on initial load, not when refetching
-  const isInitialLoad = (historyLoading && !payoutHistory) || (upcomingLoading && !upcomingPayouts);
-
-  if (isInitialLoad) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner />
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-10 relative ">

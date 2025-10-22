@@ -4,15 +4,17 @@ import { MdOutlineArrowOutward } from "react-icons/md";
 import { FiArrowDownLeft } from "react-icons/fi";
 import { FaSackDollar } from "react-icons/fa6";
 import { NETWORK_CONFIG } from '../../constants/contracts';
+import { useCircleContract } from '../../hooks/useCircleContract';
 import Spinner from '../../Components/Spinner';
 
 export default function DashboardTable() {
   const { data, isLoading, error } = useRecentActivities(10);
+  const { userAddress } = useCircleContract();
 
   const handleActivityClick = (activity) => {
-    // For now, open the explorer to the user's address
-    // In the future, we can add transaction hashes to activities
-    const explorerUrl = `${NETWORK_CONFIG.explorerUrl}/address/${activity.circleId}`;
+    // Open the user's address on the explorer to view their transaction history
+    // This allows them to see all their transactions on the blockchain
+    const explorerUrl = `${NETWORK_CONFIG.explorerUrl}/address/${userAddress}`;
     window.open(explorerUrl, '_blank');
   };
 
@@ -45,7 +47,7 @@ export default function DashboardTable() {
               }`}
               key={item.id}
               onClick={() => handleActivityClick(item)}
-              title="Click to view on block explorer"
+              title="Click to view your transactions on Push Chain explorer"
             >
               <div className="flex items-center gap-4 ">
                 <div className="h-20 w-20 rounded-full border border-[#333333] flex items-center justify-center ">

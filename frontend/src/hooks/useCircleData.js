@@ -83,35 +83,68 @@ export function useCircleDetails(circleId) {
   return useQuery({
     queryKey: ['circleDetails', circleId],
     queryFn: async () => {
-      const contract = await getContract('core');
-      const details = await contract.getCircleDetails(circleId);
-      const progress = await contract.getCircleProgress(circleId);
-      const members = await contract.circleMembers(circleId);
-      const inviteCode = await contract.getCircleInviteCode(circleId);
+      console.log('Fetching circle details for ID:', circleId);
 
-      return {
-        id: circleId,
-        name: details.name,
-        goalType: Number(details.goalType),
-        amount: ethers.formatUnits(details.amount, 6),
-        duration: Number(details.duration),
-        currentRound: Number(details.currentRound),
-        maxMembers: Number(details.maxMembers),
-        frequency: Number(details.frequency),
-        isActive: details.isActive,
-        status: Number(details.status),
-        createdAt: Number(details.createdAt),
-        startAt: Number(details.startAt),
-        vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
-        creator: details.creator,
-        progress: Number(progress.percentage),
-        icon: progress.icon,
-        members: members.length,
-        inviteCode
-      };
+      try {
+        const contract = await getContract('core');
+        const details = await contract.getCircleDetails(circleId);
+        const progress = await contract.getCircleProgress(circleId);
+        const inviteCode = await contract.getCircleInviteCode(circleId);
+
+        // Fetch all members by looping through the array
+        // maxMembers tells us how many to check
+        const maxMembers = Number(details.maxMembers);
+        const memberAddresses = [];
+
+        for (let i = 0; i < maxMembers; i++) {
+          try {
+            const memberAddress = await contract.circleMembers(circleId, i);
+            // Check if address is not zero address (empty slot)
+            if (memberAddress !== '0x0000000000000000000000000000000000000000') {
+              memberAddresses.push(memberAddress);
+            }
+          } catch (e) {
+            // Stop when we hit an out of bounds error
+            break;
+          }
+        }
+
+        console.log('Circle details fetched:', {
+          details,
+          progress,
+          membersCount: memberAddresses.length,
+          inviteCode
+        });
+
+        return {
+          id: circleId,
+          name: details.name,
+          goalType: Number(details.goalType),
+          amount: ethers.formatUnits(details.amount, 6),
+          duration: Number(details.duration),
+          currentRound: Number(details.currentRound),
+          maxMembers: Number(details.maxMembers),
+          frequency: Number(details.frequency),
+          isActive: details.isActive,
+          status: Number(details.status),
+          createdAt: Number(details.createdAt),
+          startAt: Number(details.startAt),
+          vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
+          creator: details.creator,
+          progress: Number(progress.percentage),
+          icon: progress.icon,
+          members: memberAddresses.length,
+          memberAddresses: memberAddresses,
+          inviteCode
+        };
+      } catch (error) {
+        console.error('Error fetching circle details:', error);
+        throw error;
+      }
     },
     enabled: isConnected && !!circleId,
     staleTime: 20000,
+    retry: 1, // Only retry once to fail faster
   });
 }
 
@@ -197,6 +230,17 @@ export function useUserStats() {
         reputationContract.getUserReputation(userAddress)
       ]);
 
+      // If accountAge is 0 but user has circles, get the first circle's creation date
+      let accountAge = Number(reputation.accountAge);
+      if (accountAge === 0 && userCircles.length > 0) {
+        try {
+          const firstCircleDetails = await contract.getCircleDetails(userCircles[0]);
+          accountAge = Number(firstCircleDetails.createdAt);
+        } catch (error) {
+          console.error('Error fetching first circle creation date:', error);
+        }
+      }
+
       return {
         totalSaved: ethers.formatUnits(totalContributions, 6),
         totalInterest: ethers.formatUnits(totalInterest, 6),
@@ -208,7 +252,7 @@ export function useUserStats() {
           completedCircles: Number(reputation.completedCircles),
           onTimeRate: Number(reputation.onTimeRate),
           totalSaved: ethers.formatUnits(reputation.totalSaved, 6),
-          accountAge: Number(reputation.accountAge),
+          accountAge: accountAge,
           longestStreak: Number(reputation.longestStreak)
         }
       };
@@ -352,5 +396,70 @@ export function useSearchCircles(searchTerm) {
     },
     enabled: isConnected && !!searchTerm && searchTerm.length >= 3,
     staleTime: 20000,
+  });
+}
+
+// Hook to find circle by invite code
+export function useCircleByInviteCode(inviteCode) {
+  const { getContract, isConnected } = useCircleContract();
+
+  return useQuery({
+    queryKey: ['circleByInviteCode', inviteCode],
+    queryFn: async () => {
+      console.log('Searching for circle with invite code:', inviteCode);
+
+      const contract = await getContract('core');
+
+      // Get total number of circles
+      const circleCounter = await contract.circleCounter();
+      const totalCircles = Number(circleCounter);
+
+      console.log('Total circles to search:', totalCircles);
+
+      // Search through all circles to find matching invite code
+      // This is brute force but necessary since there's no direct lookup
+      for (let i = 1; i <= totalCircles; i++) {
+        try {
+          const code = await contract.getCircleInviteCode(i);
+
+          if (code.toLowerCase() === inviteCode.toLowerCase()) {
+            console.log('Found circle with ID:', i);
+
+            // Fetch full circle details
+            const details = await contract.getCircleDetails(i);
+            const progress = await contract.getCircleProgress(i);
+
+            return {
+              id: i.toString(),
+              name: details.name,
+              goalType: Number(details.goalType),
+              amount: ethers.formatUnits(details.amount, 6),
+              duration: Number(details.duration),
+              currentRound: Number(details.currentRound),
+              maxMembers: Number(details.maxMembers),
+              frequency: Number(details.frequency),
+              isActive: details.isActive,
+              status: Number(details.status),
+              createdAt: Number(details.createdAt),
+              startAt: Number(details.startAt),
+              vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
+              creator: details.creator,
+              progress: Number(progress.percentage),
+              icon: progress.icon,
+              inviteCode: code
+            };
+          }
+        } catch (error) {
+          // Circle might not exist or other error, continue searching
+          continue;
+        }
+      }
+
+      // No circle found with this invite code
+      console.log('No circle found with invite code:', inviteCode);
+      return null;
+    },
+    enabled: isConnected && !!inviteCode && inviteCode.length > 20, // Invite codes are hex strings
+    staleTime: 60000, // Cache for 1 minute
   });
 }
