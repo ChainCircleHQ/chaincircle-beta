@@ -1,0 +1,5469 @@
+# Documentation Page
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/
+GitHub: https://raw.githubusercontent.com/pushchain/push-chain-website/refs/heads/main/docs/chain/01-Intro-Push-Chain.mdx
+
+---
+id: introduction
+title: Intro to Push Chain
+hide_title: true
+slug: ./
+displayed_sidebar: pushChainSidebar
+sidebar_position: 1
+image: '/assets/docs/previews/introduction--intro_to_push_chain.png'
+---
+
+import { useEffect } from 'react';
+import { useHistory } from '@docusaurus/router';
+
+export default function ChainRedirect() {
+  const history = useHistory();
+  
+  useEffect(() => {
+    history.replace('/docs');
+  }, [history]);
+
+return (
+<div>
+<h1>Redirecting...</h1>
+<p>If you are not redirected automatically, <a href="/docs">click here to go to the main docs</a>.</p>
+</div>
+);
+}
+
+<ChainRedirect />
+
+# Documentation Page
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/quickstart/
+GitHub: https://raw.githubusercontent.com/pushchain/push-chain-website/refs/heads/main/docs/chain/02-Quickstart-Push-Chain.mdx
+
+---
+id: docs-chain-quickstart
+title: Quickstart
+hide_title: false
+slug: ./quickstart
+displayed_sidebar: pushChainSidebar
+sidebar_position: 2
+image: "/assets/docs/previews/docs_chain--quickstart.png"
+---
+
+import { useEffect } from 'react';
+import { useHistory } from '@docusaurus/router';
+
+export default function ChainRedirect() {
+  const history = useHistory();
+  
+  useEffect(() => {
+    history.replace('/docs');
+  }, [history]);
+
+  return (
+    <div>
+      <h1>Redirecting...</h1>
+      <p>If you are not redirected automatically, <a href="/docs">click here to go to the main docs</a>.</p>
+    </div>
+  );
+}
+
+<ChainRedirect />
+
+# Documentation Page
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/important-concepts/
+GitHub: https://raw.githubusercontent.com/pushchain/push-chain-website/refs/heads/main/docs/chain/03-Important-Concepts.mdx
+
+---
+id: docs-chain-important-concepts
+title: Important Concepts
+hide_title: true
+slug: ./important-concepts
+displayed_sidebar: pushChainSidebar
+sidebar_position: 3
+image: "/assets/docs/previews/docs_chain--important_concepts.png"
+---
+
+import { useEffect } from 'react';
+import { useHistory } from '@docusaurus/router';
+
+export default function ChainRedirect() {
+  const history = useHistory();
+  
+  useEffect(() => {
+    history.replace('/docs');
+  }, [history]);
+
+  return (
+    <div>
+      <h1>Redirecting...</h1>
+      <p>If you are not redirected automatically, <a href="/docs">click here to go to the main docs</a>.</p>
+    </div>
+  );
+}
+
+<ChainRedirect />
+# Build a Counter App
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/tutorials/basics/tutorial-simple-counter/
+
+TutorialsBasicsBuild a Counter App
+Build a Counter App
+10 mins
+
+In this tutorial, you’ll write, deploy, and interact with a Counter contract on Push Chain.
+
+We will start with the most popular smart contract, i.e., Counter.sol, that all Solidity devs are familiar with. You would have done the following by the end:
+
+✅ Build and deploy Counter.sol
+✅ Interact with it from any chain
+✅ Understand the benefits of building Universal Apps
+✅ Use Live Playground to test and interact with Counter
+🔜 Extend to a Universal Counter that tracks chain specific users
+Write the Contract
+​
+
+The process of building a simple smart contract like a counter is exactly similar to any other EVM Chain. You can use the same tools, such as, remix, foundry, hardhat, etc.
+
+To get started, you can use the following contract:
+
+Counter Contract
+Counter.sol
+Open in Remix
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.22;
+
+contract Counter {
+    uint256 public countPC;
+    event CountIncremented(uint256 indexed countPC, address indexed caller);
+
+    function increment() public {
+        countPC += 1;
+        emit CountIncremented(countPC, msg.sender);
+    }
+
+    function reset() public {
+        countPC = 0;
+    }
+}
+
+Understanding the Contract
+​
+
+This contract is a minimal counter:
+
+The variable count stores the number of times the counter has been incremented.
+The increment() function adds +1 each time it is called.
+The getCount() function lets anyone read the current counter value.
+
+Key takeaway On Push Chain, this contract works universally. A user on Ethereum, Solana, Push or any other chain itself can all call increment() — with no code changes.
+
+Compile & Deploy
+​
+
+You can use any of the following guides to build and deploy this contract on Push Chain:
+
+Remix IDE
+Foundry Configuration
+Hardhat Configuration
+
+Once deployed, you can interact with the Counter contract just like on any other EVM-compatible chain.
+
+Verify Contract
+​
+
+If you are using Foundry or Hardhat, the contract is already verified for you. If you are using Remix, you can verify the contract on the Push Chain Explorer by going to verify and publish contract.
+
+Interact with Counter
+​
+
+The easiest way to interact with the contract is through the Live Playground. The Counter is already deployed on Push Chain Testnet.
+
+Counter Contract Address: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+
+Steps to interact:
+
+Connect your wallet to the Live Playground.
+You can connect a wallet from any supported chain (Push Chain, Ethereum, or Solana).
+Click Increment Counter to increase the counter.
+Click Refresh Counter Values to update the display.
+After each transaction, use the transaction hash link to view details in Push Chain Explorer.
+Live Playground
+​
+REACT PLAYGROUND
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+import {
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  usePushWalletContext,
+  usePushChainClient,
+  PushUI,
+} from '@pushchain/ui-kit';
+
+function CounterExample() {
+  // Define Wallet Config
+  const walletConfig = {
+    network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET,
+  };
+
+  // Define Counter ABI, taking minimal ABI for the demo
+  const UCABI = [
+    {
+      inputs: [],
+      name: 'increment',
+      outputs: [],
+      stateMutability: 'nonpayable',
+      type: 'function',
+    },
+    {
+      inputs: [],
+      name: 'countPC',
+      outputs: [
+        {
+          internalType: 'uint256',
+          name: '',
+          type: 'uint256',
+        },
+      ],
+      stateMutability: 'view',
+      type: 'function',
+    },
+  ];
+
+  // Contract address for Counter
+  const CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+
+  function Component() {
+    const { connectionStatus } = usePushWalletContext();
+    const { pushChainClient } = usePushChainClient();
+
+    // State to store counter values
+    const [countPC, setCountPC] = useState(-1);
+    const [isLoadingIncrement, setIsLoadingIncrement] = useState(false);
+    const [isLoadingReset, setIsLoadingReset] = useState(false);
+    const [txHash, setTxHash] = useState('');
+
+    // Function to encode increment transaction data
+    const getIncrementTxData = () => {
+      return PushChain.utils.helpers.encodeTxData({
+        abi: UCABI,
+        functionName: 'increment',
+      });
+    };
+
+    // Function to fetch counter values
+    const fetchCounters = async () => {
+      try {
+        const provider = new ethers.JsonRpcProvider(
+          'https://evm.rpc-testnet-donut-node1.push.org/'
+        );
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, UCABI, provider);
+
+        const pcCount = await contract.countPC();
+        setCountPC(Number(pcCount));
+      } catch (err) {
+        console.error('Error fetching counter values:', err);
+      }
+    };
+
+    // Fetch counter values on component mount
+    useEffect(() => {
+      fetchCounters();
+    }, []);
+
+    // Handle transaction to increment counter
+    const handleSendTransaction = async () => {
+      if (pushChainClient) {
+        try {
+          setIsLoadingIncrement(true);
+          const data = getIncrementTxData();
+
+          const tx = await pushChainClient.universal.sendTransaction({
+            to: CONTRACT_ADDRESS,
+            value: BigInt(0),
+            data: data,
+          });
+
+          setTxHash(tx.hash);
+          await tx.wait();
+
+          await fetchCounters();
+          setIsLoadingIncrement(false);
+        } catch (err) {
+          console.error('Transaction error:', err);
+          setIsLoadingIncrement(false);
+        }
+      }
+    };
+
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px',
+        }}
+      >
+        <h2>Counter Example</h2>
+
+        <PushUniversalAccountButton />
+
+        {connectionStatus !== PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED && (
+          <p>Please connect your wallet to interact with the counter.</p>
+        )}
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px',
+            width: '100%',
+            flexWrap: 'nowrap',
+          }}
+        >
+          <h3>Counter: {countPC == -1 ? '...' : countPC}</h3>
+        </div>
+
+        {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED && (
+          <div className='counter-container' style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
+              <button
+                className='increment-button'
+                onClick={handleSendTransaction}
+                disabled={isLoadingIncrement}
+                style={{
+                  backgroundColor: '#d946ef',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '20px',
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                {isLoadingIncrement ? 'Processing...' : 'Increment Counter'}
+              </button>
+            </div>
+
+            {txHash && pushChainClient && (
+              <div className='transaction-info' style={{ textAlign: 'center' }}>
+                <p>
+                  Transaction Hash:{' '}
+                  <a
+                    href={pushChainClient.explorer.getTransactionUrl(txHash)}
+                    target='_blank'
+                    style={{ color: '#d946ef', textDecoration: 'underline' }}
+                  >
+                    {txHash}
+                  </a>
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <PushUniversalWalletProvider config={walletConfig}>
+      <Component />
+    </PushUniversalWalletProvider>
+  );
+}
+
+LIVE APP PREVIEW
+Counter Example
+Connect Account
+
+Please connect your wallet to interact with the counter.
+
+Counter: ...
+Source Code
+​
+Counter Tutorial
+Full source code for the Universal Counter smart contract and example frontend.
+What we Achieved
+​
+
+This was just a simple tutorial. What we did in this tutorial:
+
+Deployed a counter contract on Push Chain.
+Interacted seamlessly with the contract from any chain. (Ethereum, Solana or Push Chain)
+Next Tutorial
+​
+
+The next tutorial introduces the true power of Universal Apps.
+
+Ethereum User
+
+Universal Counter Contract
+
+Solana User
+
+Push Chain User
+
+Ethereum Counter: 5
+
+Solana Counter: 3
+
+Push Chain Counter: 8
+
+In the next part, we modify this contract to implement the following:
+
+increment() called by users of any chain will now be attributed to them.
+The contract will natively detect which chain the msg.sender belongs to.
+The contract will maintain a count for each chain based on the caller’s origin.
+
+All of these features will be natively supported in the contract with no requirement of third-party oracles, interop providers or packages. This is only possible on Push Chain.
+
+Edit this page
+Previous
+Basics
+Next
+Build a Universal Counter App
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Write the Contract
+Understanding the Contract
+Compile & Deploy
+Verify Contract
+Interact with Counter
+Live Playground
+Source Code
+What we Achieved
+Next Tutorial
+# Build a Universal Counter App
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/tutorials/basics/tutorial-universal-counter/
+
+TutorialsBasicsBuild a Universal Counter App
+Build a Universal Counter App
+18 mins
+EXTENDS COUNTER APP
+
+This tutorial builds on the Counter. If you haven’t completed it yet, go there first as this tutorial builds directly on top of it.
+
+In the last tutorial, you built a counter that worked across chains with no code changes.
+
+Now, let’s take it further: instead of one shared counter, we’ll track counts per chain. This is your first truly Universal App. Let’s dive in 🤿.
+
+By the end of this tutorial you’ll be able to:
+
+✅ Build a counter app that tracks transactions from different chains.
+✅ Use the UEAFactory interface to detect a user’s origin.
+✅ Work with the UniversalAccountId struct to fetch chain details.
+What’s Unique About This App?
+​
+
+In the Counter, every increment was added to a single shared value. That worked fine, but it didn’t tell us who was incrementing or from where.
+
+With the Universal Counter, we take the next step:
+
+Each chain gets its own counter (countEth, countPC, countSol, …).
+The contract can natively detect the origin of the caller (msg.sender).
+The increment() function updates only the counter for the caller’s chain.
+Example​
+Alice (Ethereum) → calls increment() → only countEth goes up.
+Bob (Push Chain) → calls increment() → only countPC goes up.
+
+🚀 Why this matters
+
+You’re not just tracking clicks anymore. You’re building logic that’s aware of where your users come from. This is the foundation of truly universal apps, and it’s all natively supported on Push Chain.
+
+Write the Contract
+​
+
+Below is the Solidity code for the Universal Counter. In the Beginner version, chains are hardcoded for simplicity.
+
+BEGINNER VS PRO
+Beginner: Easier to follow. Great if you’re new to Solidity or Push Chain.
+Pro (Dynamic): Slightly more advanced. Switch to the Pro (Dynamic) version once you’re comfortable — it scales to any chain without edits.
+Universal Counter (Beginner)
+Universal Counter (Dynamic / Pro)
+Universal Counter Contract
+UniversalCounter.sol
+Open in Remix
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.22;
+
+// Universal Account ID Struct and IUEAFactory Interface
+struct UniversalAccountId {
+    string chainNamespace;
+    string chainId;
+    bytes owner;
+}
+
+interface IUEAFactory {
+    function getOriginForUEA(address addr) external view returns (UniversalAccountId memory account, bool isUEA);
+}
+
+contract UniversalCounter {
+    uint256 public countEth;
+    uint256 public countSol;
+    uint256 public countPC;
+
+    event CountIncremented(
+        uint256 newCount,
+        address indexed caller,
+        string chainNamespace,
+        string chainId
+    );
+
+    constructor() {}
+
+    function increment() public {
+        address caller = msg.sender;
+        (UniversalAccountId memory originAccount, bool isUEA) =
+            IUEAFactory(0x00000000000000000000000000000000000000eA).getOriginForUEA(caller);
+
+        if (!isUEA) {
+            // If it's a native Push Chain EOA (isUEA = false)
+            countPC += 1;
+        } else {
+            bytes32 chainHash = keccak256(abi.encodePacked(originAccount.chainNamespace, originAccount.chainId));
+
+            if (chainHash == keccak256(abi.encodePacked("solana","EtWTRABZaYq6iMfeYKouRu166VU2xqa1"))) {
+                countSol += 1;
+            } else if (chainHash == keccak256(abi.encodePacked("eip155","11155111"))) {
+                countEth += 1;
+            } else {
+                revert("Invalid chain");
+            }
+        }
+
+        emit CountIncremented(getCount(), caller, originAccount.chainNamespace, originAccount.chainId);
+    }
+
+    function getCount() public view returns (uint256) {
+        return countEth + countSol + countPC;
+    }
+}
+
+Understanding the Contract
+​
+
+This contract can now instantly determine key details about any user (msg.sender) instantly and natively.
+
+In simpler terms, for any given msg.sender address, the contract is able to quickly identify:
+
+the actual source chain of the caller
+the chain id of the source chain of the caller.
+the address of the caller on the source chain.
+
+These details are natively available for any smart contract built on Push Chain. This is enabled via UEAFactory Interface.
+
+Understanding UEAFactory Interface​
+
+We use UEAFactory interface to decide transaction origin of the user. It stands for Universal Execution Account (UEA). Think of a UEA like a passport contract, it proves which chain a user comes from.
+
+This can either be imported or directly included in your contract.
+
+This interfaces provides you with the function - getOriginForUEA().
+
+/**
+  * @dev Returns the owner key (UOA) for a given UEA address
+  * @param addr Any given address ( msg.sender ) on push chain
+  * @return account The Universal Account information associated with this UEA
+  * @return isUEA True if the address addr is a UEA contract. Else it is a native EOA of PUSH chain (i.e., isUEA = false)
+  */
+function getOriginForUEA(address addr) external view returns (UniversalAccountId memory account, bool isUEA);
+
+
+The function mainly returns 2 crucial values:
+
+The UniversalAccountId of the user, and
+A boolean that indicates whether or not this caller is a UEA.
+Designing the Increment Function​
+UniversalCounter.sol
+...
+function increment() public {
+  address caller = msg.sender;
+
+  (UniversalAccountId memory originAccount, bool isUEA) =
+
+      IUEAFactory(0x00000000000000000000000000000000000000eA).getOriginForUEA(caller);
+
+
+  if (!isUEA) {
+      // If it's a native Push Chain EOA (isUEA = false)
+      countPC += 1;
+  } else {
+      bytes32 chainHash = keccak256(abi.encodePacked(originAccount.chainNamespace, originAccount.chainId));
+
+      if (chainHash == keccak256(abi.encodePacked("solana","EtWTRABZaYq6iMfeYKouRu166VU2xqa1"))) {
+          countSol += 1;
+      } else if (chainHash == keccak256(abi.encodePacked("eip155","11155111"))) {
+          countEth += 1;
+      }
+      // ...
+  }
+  // ...
+}
+// ...
+
+
+The increment function is the main logic of this contract that updates the count variables based on user’s origin type.
+
+In order to achieve this, the increment function does the following:
+
+calls the getOriginForUEA() with msg.sender as argument
+this provides us with isUEA and UniversalAccountId for the caller.
+then we check if isUEA is false, this means the caller is a native Push User.
+for such users, the function increments countPC variable by 1
+Why isUEA = false means native Push User and true means other chains?
+Compile & Deploy
+​
+
+You can use any of the following guides to build and deploy this contract on Push Chain:
+
+Remix IDE
+Foundry Configuration
+Hardhat Configuration
+
+Once deployed, you can interact with the Counter contract just like on any other EVM-compatible chain.
+
+Verify Contract
+​
+
+If you are using Foundry or Hardhat, the contract is already verified for you. If you are using Remix, you can verify the contract on the Push Chain Explorer by going to verify and publish contract.
+
+Interact with Universal Counter
+​
+
+The easiest way to interact with the contract is through the Live Playground. The Universal Counter is already deployed on Push Chain Testnet.
+
+UniversalCounter (Beginner) : 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 UniversalCounter (Dynamic / Pro) : 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+
+Steps to interact:
+
+Connect your wallet to the Live Playground.
+You can connect a wallet from any supported chain (Push Chain, Ethereum, or Solana).
+Click Increment Counter to increase the counter for your chain.
+Click Refresh Counter Values to see updated counts across chains.
+Click View in Explorer to open the transaction in Push Chain Explorer.
+Live Playground
+​
+Universal Counter (Beginner)
+Universal Counter (Dynamic / Pro)
+REACT PLAYGROUND
+LIVE APP PREVIEW
+Universal Counter Example
+Connect Account
+
+Please connect your wallet to interact with the counter.
+
+Total Universal Count: ...
+ETH Counter: ...
+Sol Counter: ...
+PC Counter: ...
+Source Code
+​
+Universal Counter Tutorial
+Full source code for the Universal Counter (hard coded chains) smart contract and example frontend.
+Universal Counter (Dynamic) Tutorial
+Full source code for the Universal Counter (dynamic chains) smart contract and example frontend.
+What we Achieved
+​
+
+With Universal Counter, you can now:
+
+Identify callers natively from any chain.
+Build logic that adapts to the user’s origin chain.
+Simplify the developer experience for multi-chain apps.
+Eliminate reliance on third-party tooling or oracles.
+
+This makes your Counter smart contract truly universal, all in just a few lines of Solidity.
+
+Next Tutorial
+​
+
+The next tutorial introduces Universal ERC-20 tokens. Your tokens that can be minted by users of any chain.
+
+Ethereum User
+
+Universal ERC-20 Contract
+
+Solana User
+
+Push Chain User
+
+1000 $UNICORN
+
+1000 $UNICORN
+
+1000 $UNICORN
+
+In the next tutorial, you’ll learn how to:
+
+Deploy ERC-20 contract.
+Introduce mint() functionality accessible to any user.
+Mint from any chain.
+
+All of these features will be natively supported in the contract with no requirement of third-party oracles, interop providers or packages. This is only possible on Push Chain.
+
+Edit this page
+Previous
+Build a Counter App
+Next
+Mint Universal ERC-20 Tokens
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+What’s Unique About This App?
+Example
+Write the Contract
+Understanding the Contract
+Understanding UEAFactory Interface
+Designing the Increment Function
+Compile & Deploy
+Verify Contract
+Interact with Universal Counter
+Live Playground
+Source Code
+What we Achieved
+Next Tutorial
+# Mint Universal ERC-20 Tokens
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/tutorials/basics/tutorial-mint-erc-20-tokens/
+
+TutorialsBasicsMint Universal ERC-20 Tokens
+Mint Universal ERC-20 Tokens
+10 mins
+
+In this tutorial, you'll create, deploy, and interact with a simple ERC-20 token on Push Chain. The main difference is that this ERC-20 token is a universal token that can be minted by anyone on any chain.
+
+By the end of this tutorial you’ll be able to:
+
+✅ Build a universal ERC-20 token, we will call it $UNICORN.
+✅ Have users from any chain connect and interact with it.
+Write the Contract
+​
+
+We will start with taking the ERC-20 contract from OpenZeppelin. The only change we will make is removing the restriction of onlyOwner modifier in the functionality of minting new tokens.
+
+Universal ERC-20 Contract
+ERC20.sol
+Open in Remix
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.22;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract Token is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
+        _mint(msg.sender, 1_000_000 * 10 ** decimals());
+    }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
+
+Understanding the Contract
+​
+
+This contract is a simple ERC-20 token:
+
+We are minting 1,000,000 tokens with 18 decimals and giving it to the deployer of the contract.
+We have removed onlyOwner from mint() function in order to enable anyone to mint freely from this contract.
+Compile & Deploy
+​
+
+You can use any of the following guides to build and deploy this contract on Push Chain:
+
+Remix IDE
+Foundry Configuration
+Hardhat Configuration
+
+Once deployed, you can interact with the ERC-20 contract just like on any other EVM-compatible chain.
+
+Verify Contract
+​
+
+If you are using Foundry or Hardhat, the contract is already verified for you. If you are using Remix, you can verify the contract on the Push Chain Explorer by going to verify and publish contract.
+
+Interact with Universal ERC-20 Token
+​
+
+The Universal ERC-20 contract is deployed on Push Chain Testnet. This app lets any user — whether on Ethereum, Solana, or Push Chain — mint $UNICORN tokens directly from the frontend.
+
+Demo Token ERC-20 Contract Address: 0x0165878A594ca255338adfa4d48449f69242Eb8F
+
+Steps to interact:
+
+Connect your wallet (Ethereum, Solana, or Push Chain).
+Click the Mint Token button — this calls the ERC-20’s mint() function through Push Universal Transactions.
+Wait for the transaction to confirm.
+Your $UNICORN balance will update in the UI automatically.
+(Optional) Click View in Explorer to inspect the transaction on Push Chain Explorer.
+
+💡 Tip: Why this matters This is the simplest form of a Universal Token. Without bridges or wrapped assets, users on any chain can mint and hold the same ERC-20 natively on Push Chain.
+
+Live Playground
+​
+REACT PLAYGROUND
+LIVE APP PREVIEW
+Universal ERC-20 Mint
+Connect Account
+
+Please connect your wallet to mint tokens.
+
+Balance: ... $UNICORN
+Source Code
+​
+Mint Universal ERC-20 Tutorial
+Full source code for the Universal ERC-20 Mint Token smart contract and example frontend.
+What we Achieved
+​
+
+In this tutorial, we built the simplest possible ERC-20-style token interaction.
+
+We wrote and deployed a minimal ERC-20 contract with an open mint() function.
+We minted tokens and confirmed balances via the frontend.
+
+With just these two functions, you now have the foundation of a token system.
+
+Edit this page
+Previous
+Build a Universal Counter App
+Next
+Payments and DeFi
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Write the Contract
+Understanding the Contract
+Compile & Deploy
+Verify Contract
+Interact with Universal ERC-20 Token
+Live Playground
+Source Code
+What we Achieved
+# Mint Universal ERC-20 Tokens
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/tutorials/basics/tutorial-mint-erc-20-tokens/
+
+TutorialsBasicsMint Universal ERC-20 Tokens
+Mint Universal ERC-20 Tokens
+10 mins
+
+In this tutorial, you'll create, deploy, and interact with a simple ERC-20 token on Push Chain. The main difference is that this ERC-20 token is a universal token that can be minted by anyone on any chain.
+
+By the end of this tutorial you’ll be able to:
+
+✅ Build a universal ERC-20 token, we will call it $UNICORN.
+✅ Have users from any chain connect and interact with it.
+Write the Contract
+​
+
+We will start with taking the ERC-20 contract from OpenZeppelin. The only change we will make is removing the restriction of onlyOwner modifier in the functionality of minting new tokens.
+
+Universal ERC-20 Contract
+ERC20.sol
+Open in Remix
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.22;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract Token is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
+        _mint(msg.sender, 1_000_000 * 10 ** decimals());
+    }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
+
+Understanding the Contract
+​
+
+This contract is a simple ERC-20 token:
+
+We are minting 1,000,000 tokens with 18 decimals and giving it to the deployer of the contract.
+We have removed onlyOwner from mint() function in order to enable anyone to mint freely from this contract.
+Compile & Deploy
+​
+
+You can use any of the following guides to build and deploy this contract on Push Chain:
+
+Remix IDE
+Foundry Configuration
+Hardhat Configuration
+
+Once deployed, you can interact with the ERC-20 contract just like on any other EVM-compatible chain.
+
+Verify Contract
+​
+
+If you are using Foundry or Hardhat, the contract is already verified for you. If you are using Remix, you can verify the contract on the Push Chain Explorer by going to verify and publish contract.
+
+Interact with Universal ERC-20 Token
+​
+
+The Universal ERC-20 contract is deployed on Push Chain Testnet. This app lets any user — whether on Ethereum, Solana, or Push Chain — mint $UNICORN tokens directly from the frontend.
+
+Demo Token ERC-20 Contract Address: 0x0165878A594ca255338adfa4d48449f69242Eb8F
+
+Steps to interact:
+
+Connect your wallet (Ethereum, Solana, or Push Chain).
+Click the Mint Token button — this calls the ERC-20’s mint() function through Push Universal Transactions.
+Wait for the transaction to confirm.
+Your $UNICORN balance will update in the UI automatically.
+(Optional) Click View in Explorer to inspect the transaction on Push Chain Explorer.
+
+💡 Tip: Why this matters This is the simplest form of a Universal Token. Without bridges or wrapped assets, users on any chain can mint and hold the same ERC-20 natively on Push Chain.
+
+Live Playground
+​
+REACT PLAYGROUND
+LIVE APP PREVIEW
+Universal ERC-20 Mint
+Connect Account
+
+Please connect your wallet to mint tokens.
+
+Balance: ... $UNICORN
+Source Code
+​
+Mint Universal ERC-20 Tutorial
+Full source code for the Universal ERC-20 Mint Token smart contract and example frontend.
+What we Achieved
+​
+
+In this tutorial, we built the simplest possible ERC-20-style token interaction.
+
+We wrote and deployed a minimal ERC-20 contract with an open mint() function.
+We minted tokens and confirmed balances via the frontend.
+
+With just these two functions, you now have the foundation of a token system.
+
+Edit this page
+Previous
+Build a Universal Counter App
+Next
+Payments and DeFi
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Write the Contract
+Understanding the Contract
+Compile & Deploy
+Verify Contract
+Interact with Universal ERC-20 Token
+Live Playground
+Source Code
+What we Achieved
+# Setup Scaffold-ETH for Push
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/tutorials/integration-and-tooling/tutorial-scaffoldeth2/
+
+TutorialsIntegration and ToolingSetup Scaffold-ETH for Push
+Setup Scaffold-ETH for Push
+
+Welcome! In this tutorial, you’ll set up a fresh Scaffold‑ETH 2 project, deploy a new smart contract to the Push Chain Donut Testnet, and interact with it from the Scaffold‑ETH 2 app.
+
+We’ll cover:
+
+Add Push Chain Donut Testnet to Scaffold‑ETH 2
+Configure Hardhat for Push Chain
+Create a new example contract (Governance.sol)
+Write and run a deploy script to deploy on Push Chain
+Interact with the deployed contract from the Scaffold‑ETH 2 app
+
+If you already use Scaffold‑ETH 2, this will feel familiar—you’ll point the template at a new network, add a contract, and deploy it. Let’s go 🤿.
+
+Part 1: Configure Scaffold‑ETH 2 for Push Chain Donut Testnet
+​
+1.1. Create a new Scaffold‑ETH 2 workspace​
+npx create-eth@latest
+
+
+When prompted by the create-eth wizard, select the Hardhat option for your smart contract environment. This ensures your project is set up to deploy contracts to Push Chain using Hardhat.
+
+1.2. Add Push Chain Donut Testnet to scaffold.config.ts​
+
+Open packages/nextjs/scaffold.config.ts and add a custom chain entry for Push Chain Donut Testnet, then include it in targetNetworks so the app knows about it.
+
+packages/nextjs/scaffold.config.ts
+import * as chains from 'viem/chains';
+
+export type BaseConfig = {
+  targetNetworks: readonly chains.Chain[];
+  pollingInterval: number;
+  alchemyApiKey: string;
+  rpcOverrides?: Record<number, string>;
+  walletConnectProjectId: string;
+  onlyLocalBurnerWallet: boolean;
+};
+
+export type ScaffoldConfig = BaseConfig;
+
+export const DEFAULT_ALCHEMY_API_KEY =
+  process.env.NEXT_PUBLIC_ALCHEMY_KEY ?? 'REPLACE_ME';
+
+
+// Push Chain Donut Testnet
+
+export const pushDonutChain: chains.Chain = {
+
+  id: 42101,
+
+  name: 'Push Chain Donut Testnet',
+
+  nativeCurrency: { name: 'Push', symbol: 'PC', decimals: 18 },
+
+  rpcUrls: {
+
+    default: {
+
+      http: [
+
+        'https://evm.rpc-testnet-donut-node1.push.org/',
+
+        'https://evm.rpc-testnet-donut-node2.push.org/',
+
+      ],
+
+    },
+
+    public: {
+
+      http: [
+
+        'https://evm.rpc-testnet-donut-node1.push.org/',
+
+        'https://evm.rpc-testnet-donut-node2.push.org/',
+
+      ],
+
+    },
+
+  },
+
+  blockExplorers: {
+
+    default: {
+
+      name: 'Push Donut Explorer',
+
+      url: 'https://evm-explorer-testnet.push.org',
+
+    },
+
+  },
+
+};
+
+
+const scaffoldConfig = {
+
+  targetNetworks: [chains.hardhat, pushDonutChain],
+
+  pollingInterval: 30000,
+  alchemyApiKey: DEFAULT_ALCHEMY_API_KEY,
+  rpcOverrides: {},
+  walletConnectProjectId:
+    process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ??
+    'YOUR_WALLETCONNECT_ID',
+  onlyLocalBurnerWallet: true,
+} as const satisfies ScaffoldConfig;
+
+export default scaffoldConfig;
+
+
+✅ Why this matters: targetNetworks drives the chain list in the app and wagmi connectors. Adding pushDonutChain makes the UI aware of Push Chain.
+
+1.3. Configure Hardhat for Push Chain​
+
+Edit packages/hardhat/hardhat.config.ts to add a Push Chain Donut Testnet network.
+
+packages/hardhat/hardhat.config.ts
+import * as dotenv from 'dotenv';
+dotenv.config();
+import { HardhatUserConfig } from 'hardhat/config';
+import '@nomicfoundation/hardhat-ethers';
+import '@nomicfoundation/hardhat-chai-matchers';
+import '@typechain/hardhat';
+import 'hardhat-gas-reporter';
+import 'solidity-coverage';
+import '@nomicfoundation/hardhat-verify';
+import 'hardhat-deploy';
+import 'hardhat-deploy-ethers';
+import { task } from 'hardhat/config';
+import generateTsAbis from './scripts/generateTsAbis';
+
+const providerApiKey =
+  process.env.ALCHEMY_API_KEY;
+const deployerPrivateKey =
+  process.env.__RUNTIME_DEPLOYER_PRIVATE_KEY
+const etherscanApiKey =
+  process.env.ETHERSCAN_V2_API_KEY;
+
+const config: HardhatUserConfig = {
+  solidity: {
+    compilers: [
+      {
+        version: '0.8.20',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
+  },
+  defaultNetwork: 'localhost',
+  namedAccounts: {
+    deployer: {
+      default: 0,
+    },
+  },
+  networks: {
+    hardhat: {
+      forking: {
+        url: `https://eth-mainnet.alchemyapi.io/v2/${providerApiKey}`,
+        enabled: process.env.MAINNET_FORKING_ENABLED === 'true',
+      },
+    },
+
+    // Push Chain Donut Testnet
+
+    pushDonut: {
+
+      url: 'https://evm.rpc-testnet-donut-node1.push.org/',
+
+      chainId: 42101,
+
+      accounts: [deployerPrivateKey],
+
+    },
+
+  },
+  etherscan: {
+    apiKey: etherscanApiKey,
+  },
+  verify: {
+    etherscan: {
+      apiKey: etherscanApiKey,
+    },
+  },
+  sourcify: {
+    enabled: false,
+  },
+};
+
+task('deploy').setAction(async (args, hre, runSuper) => {
+  await runSuper(args);
+  await generateTsAbis(hre);
+});
+
+export default config;
+
+1.4. Generate a deployer account and fund it​
+
+You’ll need a funded testnet account to deploy contracts to Push Chain Donut.
+
+Generate a fresh account using the built‑in script:
+
+# from the repo root
+yarn generate
+# This prints a new Address
+
+
+Fund the generated address with Push Chain Donut testnet $PC using the Faucet. If you need funds, request them here:
+
+Faucet docs: Faucet
+Direct faucet: https://faucet.push.org/
+Part 2: Add and deploy the governance contract
+​
+2.1. Add Governance.sol​
+
+Place your contract at packages/hardhat/contracts/Governance.sol:
+
+What this sample contract does​
+
+This is a minimal governance example to demonstrate deployment and app wiring:
+
+Create proposals: Anyone can call createProposal(description, duration) which assigns an incremental id, stores the description, and sets a deadline as block.timestamp + duration. Emits ProposalCreated.
+Vote once per address: Call vote(id, support) before the deadline to cast a yes/no vote. Each address can vote only once per proposal. Emits Voted.
+Read state: Use getProposal(id) to fetch description, deadline, yes/no counts, and hasVoted(id, voter) to check if an address has voted.
+Purposely simple: No token‑weighting, quorum, execution, or proposal states beyond open/closed. It’s for tutorial/demo purposes.
+packages/hardhat/contracts/Governance.sol
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0 <0.9.0;
+
+contract SimpleGovernance {
+    /// @dev Emitted when a new proposal is created.
+    event ProposalCreated(uint256 indexed id, address indexed proposer, string description, uint256 deadline);
+    /// @dev Emitted when someone votes on a proposal.
+    event Voted(uint256 indexed id, address indexed voter, bool support);
+
+    struct Proposal {
+        string description;
+        uint256 deadline;
+        uint256 yesVotes;
+        uint256 noVotes;
+        mapping(address => bool) voted;
+        bool exists;
+    }
+
+    uint256 public proposalCount;
+    mapping(uint256 => Proposal) internal _proposals;
+
+    function createProposal(string calldata description, uint256 duration) external returns (uint256 id) {
+        require(duration > 0, "duration must be > 0");
+        id = ++proposalCount;
+        Proposal storage p = _proposals[id];
+        p.description = description;
+        p.deadline = block.timestamp + duration;
+        p.exists = true;
+        emit ProposalCreated(id, msg.sender, description, p.deadline);
+    }
+
+    function vote(uint256 id, bool support) external {
+        Proposal storage p = _getProposal(id);
+        require(block.timestamp < p.deadline, "voting closed");
+        require(!p.voted[msg.sender], "already voted");
+        p.voted[msg.sender] = true;
+        if (support) p.yesVotes += 1; else p.noVotes += 1;
+        emit Voted(id, msg.sender, support);
+    }
+
+    function getProposal(uint256 id) external view returns (string memory, uint256, uint256, uint256) {
+        Proposal storage p = _getProposal(id);
+        return (p.description, p.deadline, p.yesVotes, p.noVotes);
+    }
+
+    function hasVoted(uint256 id, address voter) external view returns (bool) {
+        return _getProposal(id).voted[voter];
+    }
+
+    function _getProposal(uint256 id) internal view returns (Proposal storage) {
+        require(id > 0 && id <= proposalCount, "Invalid proposal id");
+        Proposal storage p = _proposals[id];
+        require(p.exists, "Proposal does not exist");
+        return p;
+    }
+}
+
+2.2. Create the deploy script​
+
+Add packages/hardhat/deploy/00_deploy_your_contract.ts:
+
+packages/hardhat/deploy/00_deploy_your_contract.ts
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { DeployFunction } from 'hardhat-deploy/types';
+import { Contract } from 'ethers';
+
+const deployYourContract: DeployFunction = async function (
+  hre: HardhatRuntimeEnvironment
+) {
+  const { deployer } = await hre.getNamedAccounts();
+  const { deploy } = hre.deployments;
+
+  await deploy('SimpleGovernance', {
+    from: deployer,
+    args: [],
+    log: true,
+    autoMine: true,
+  });
+
+  const yourContract = await hre.ethers.getContract<Contract>(
+    'SimpleGovernance',
+    deployer
+  );
+  console.log('👋 Initial proposal count:', await yourContract.proposalCount());
+};
+
+export default deployYourContract;
+
+deployYourContract.tags = ['SimpleGovernance'];
+
+2.3. Deploy to Push Chain Donut​
+
+From the repo root, run:
+
+yarn deploy --network pushDonut
+
+
+You should see the contract address and the “Initial proposal count” log.
+
+Part 3: Interact from the Debug UI
+​
+
+After deployment, open your app and go to the /debug page. The Debug Contracts UI will automatically pick up your deployed contracts and expose handy actions. You can:
+
+Create a proposal using createProposal(description, duration)
+Vote on proposals with vote(id, true|false)
+Read current state via getProposal(id) and hasVoted(id, address)
+
+This gives you a ready‑made interface to test your contract on Push Chain without building a custom UI first.
+
+Conclusion
+​
+
+You’ve configured Scaffold‑ETH 2 to recognize Push Chain Donut Testnet, added a new contract (SimpleGovernance), wired a Hardhat network, and deployed. From here, you can keep iterating on contracts and UI as usual—just keep the Push Chain network in your configs.
+
+Next Steps​
+Explore universal transactions and cross‑chain UX - Learn about Universal Transactions and Universal Message Signing for seamless cross-chain interactions
+Integrate Push Universal Wallet - Add wallet abstraction to your app with our UI Kit integration guide
+
+For more about the framework used here, see the official Scaffold‑ETH 2 docs: https://docs.scaffoldeth.io/.
+
+Edit this page
+Previous
+Payments and DeFi
+Next
+Setup
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Part 1: Configure Scaffold‑ETH 2 for Push Chain Donut Testnet
+1.1. Create a new Scaffold‑ETH 2 workspace
+1.2. Add Push Chain Donut Testnet to scaffold.config.ts
+1.3. Configure Hardhat for Push Chain
+1.4. Generate a deployer account and fund it
+Part 2: Add and deploy the governance contract
+2.1. Add Governance.sol
+2.2. Create the deploy script
+2.3. Deploy to Push Chain Donut
+Part 3: Interact from the Debug UI
+Conclusion
+Next Steps
+# Wallet Setup
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/setup/tooling/wallet-setup/
+
+SetupToolingWallet Setup
+Wallet Setup
+
+It's recommended to add Push Chain as custom network to your wallet before building your app on Push Chain. This will help you to test your app on Push Chain before deploying it on mainnet.
+
+NOT REQUIRED FOR USERS
+
+This is not a requirement for your users as they will connect to Push Chain using their wallet and through UI Kit that will abstract away their wallet connection.
+
+Add Push Chain Specs to Wallet
+​
+
+Add the chain specs to your favorite EVM wallet under custom network. Some of the fields are optional depending on the wallet.
+
+🍩 Donut Testnet
+Mainnet - Coming Soon 🚀
+Field	Value
+Network Name	Push Chain Donut Testnet
+RPC URL	https://evm.rpc-testnet-donut-node1.push.org/, https://evm.rpc-testnet-donut-node2.push.org/
+Chain ID	42101
+Currency Symbol	PC
+Block Explorer URL	https://donut.push.network
+Add to Wallet (Testnet Donut)
+Next Steps
+​
+
+Congrats on setting up Push Chain in your wallet! Next steps:
+
+Get some testnet $PC from Faucet
+Edit this page
+Previous
+Tooling
+Next
+Faucet
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Add Push Chain Specs to Wallet
+Next Steps
+# Faucet
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/setup/tooling/faucet/
+
+SetupToolingFaucet
+Faucet
+
+Faucet is meant to give you some testnet $PC to play with, deploy your smart contracts, and test your app on Push Chain.
+
+Getting Testnet Tokens from Faucet
+​
+
+Push Chain's native token that powers the chain is $PC. You can get $PC by:
+
+Visiting our Faucet.
+Enter your wallet address and request testnet $PC.
+https://faucet.push.org/
+Load Faucet Page
+
+Incase of any issues, you can always reach out to us on Discord.
+
+Next Steps
+​
+
+Congrats!! You have successfully added Push Chain to your wallet and got some testnet $PC. Next steps:
+
+Check out Block Explorer to explore Push Chain transactions, blocks, and accounts.
+Setup your smart contract environment to interact with Push Chain. Check out Smart Contract Environment.
+Edit this page
+Previous
+Wallet Setup
+Next
+Block Explorer
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Getting Testnet Tokens from Faucet
+Next Steps
+# Block Explorer
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/setup/tooling/block-explorer/
+
+SetupToolingBlock Explorer
+Block Explorer
+
+Explore Push Chain transactions, blocks, and accounts in real time.
+
+Block Explorer
+​
+
+Mainnet explorer
+Coming Soon
+
+Testnet Explorer
+https://donut.push.network
+
+Enter a transaction hash, block number, or account address to see detailed information.
+
+https://donut.push.network
+Open Testnet Explorer
+Next Steps
+​
+
+Congrats on setting up Push Chain in your wallet! Next steps:
+
+Setup your Smart Contract Environment to interact with Push Chain. Check out Smart Contract Environment.
+Start building your app on Push Chain. Check out Quickstart.
+Edit this page
+Previous
+Faucet
+Next
+Smart Contract Environment
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Block Explorer
+Next Steps
+# Configure Hardhat
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/setup/smart-contract-environment/configure-hardhat/
+
+SetupSmart Contract EnvironmentConfigure Hardhat
+Configure Hardhat
+
+Hardhat is another popular development environment for Ethereum software, designed for professionals that need a flexible and extensible tool. Code with vibes and dawn your builder hat with Hardhat.
+
+Push Chain Specs
+Deploy Smart Contracts with Hardhat
+​
+1. Install Hardhat​
+
+First, create a new directory for your project and initialize it:
+
+mkdir myToken
+cd myToken
+npm init -y
+
+
+Install Hardhat and required dependencies:
+
+npm install --save-dev \
+  hardhat \
+  @nomicfoundation/hardhat-toolbox \
+  @nomicfoundation/hardhat-verify \
+  dotenv \
+  @openzeppelin/contracts
+
+
+This installs:
+
+Hardhat core framework
+Hardhat toolbox with common plugins
+Hardhat verify for contract verification
+dotenv for environment variable management
+OpenZeppelin contracts library
+
+
+
+2. Create a New Project​
+
+Initialize a new Hardhat project:
+
+npx hardhat init
+
+
+Select "Create a JavaScript project" when prompted. This will create a basic project structure:
+
+myToken/
+├── contracts/
+├── scripts/
+├── test/
+├── hardhat.config.js
+├── package.json
+└── node_modules/
+
+
+
+
+3. Configure for Push Chain​
+
+Update your hardhat.config.js file to include Push Chain testnet configuration:
+
+require('@nomicfoundation/hardhat-toolbox');
+require('@nomicfoundation/hardhat-verify');
+require('dotenv').config();
+
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
+  solidity: {
+    version: '0.8.22',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
+  networks: {
+    push_testnet: {
+      url: 'https://evm.rpc-testnet-donut-node1.push.org/',
+      chainId: 42101,
+      accounts: [process.env.PRIVATE_KEY],
+    },
+    push_testnet_alt: {
+      url: 'https://evm.rpc-testnet-donut-node2.push.org/',
+      chainId: 42101,
+      accounts: [process.env.PRIVATE_KEY],
+    },
+  },
+  etherscan: {
+    apiKey: {
+      // Blockscout doesn't require an actual API key, any non-empty string will work
+      push_testnet: 'blockscout',
+    },
+    customChains: [
+      {
+        network: 'push_testnet',
+        chainId: 42101,
+        urls: {
+          apiURL: 'https://donut.push.network/api/v2/verifyContract',
+          browserURL: 'https://donut.push.network/',
+        },
+      },
+    ],
+  },
+  sourcify: {
+    // Disable sourcify for manual verification
+    enabled: false,
+  },
+  paths: {
+    sources: './contracts',
+    tests: './test',
+    cache: './cache',
+    artifacts: './artifacts',
+  },
+  mocha: {
+    timeout: 40000,
+  },
+};
+
+
+This configuration includes:
+
+Solidity compiler version and optimization settings
+Push Chain testnet RPC endpoints
+Blockscout integration for contract verification
+Project structure paths
+Test configuration
+
+
+
+4. Write a Smart Contract​
+
+Create a file at contracts/MyToken.sol with this ERC20 token implementation:
+
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.22;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+/**
+ * @title MyToken
+ * @dev A simple ERC20 token for demonstration on PUSH CHAIN
+ */
+contract MyToken is ERC20, Ownable {
+  constructor() ERC20("MyToken", "MT") Ownable(msg.sender) {
+    _mint(msg.sender, 1000 * 10**18);
+  }
+
+  /**
+    * @dev Returns the number of decimals used to get its user representation.
+    */
+  function decimals() public view virtual override returns (uint8) {
+    return 18;
+  }
+
+  /**
+    * @dev Allows the owner to mint new tokens
+    * @param to The address that will receive the minted tokens.
+    * @param amount The amount of tokens to mint.
+    */
+  function mint(address to, uint256 amount) public onlyOwner {
+    _mint(to, amount);
+  }
+}
+
+
+
+
+5. Compile the Contract​
+
+Compile your contract with:
+
+npx hardhat compile
+
+
+If successful, you should see output indicating compilation was successful:
+
+Compiling 12 files with 0.8.22
+Solidity compilation finished successfully
+
+
+
+
+6. Deploy to Push Chain​
+6.1. Set up your deployer account​
+
+Create a .env file in your project root to securely store your private key:
+
+Then create a deployment script at scripts/deploy.js:
+
+const hre = require('hardhat');
+
+async function main() {
+  console.log('Deploying MyToken to PUSH Chain...');
+
+  const myToken = await hre.ethers.deployContract('MyToken');
+  await myToken.waitForDeployment();
+
+  const address = await myToken.getAddress();
+  console.log(`MyToken deployed to: ${address}`);
+}
+
+// We recommend this pattern to be able to use async/await everywhere
+// and properly handle errors.
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
+
+WARNING
+
+Never commit your .env file to version control. Add .env to your .gitignore file to prevent accidental exposure of private keys. Never use accounts with significant funds for test deployments.
+
+6.2. Get testnet tokens​
+
+Ensure you have testnet tokens to pay for deployment gas fees. If you don't have any, visit the Push Chain Faucet to request test tokens.
+
+6.3. Deploy your contract​
+
+Run the deployment script with:
+
+npx hardhat run scripts/deploy.js --network push_testnet
+
+
+This command:
+
+Runs your deployment script
+Connects to Push Chain testnet
+Uses your private key from the .env file
+Deploys your contract and waits for confirmation
+
+Deployment Results
+
+If successful, you'll see output similar to:
+
+Deploying MyToken to PUSH Chain...
+MyToken deployed to: 0x0B86e252B035027028C0d4D3B136d80Da4C98Ec1
+
+
+Save the contract address for verification and interaction.
+
+
+
+
+7. Verify the Contract​
+
+Verify your contract on the Push Chain BlockScout explorer:
+
+npx hardhat verify --network push_testnet 0x0B86e252B035027028C0d4D3B136d80Da4C98Ec1
+
+
+Note: Replace 0x0B86e252B035027028C0d4D3B136d80Da4C98Ec1 with your actual deployed contract address.
+
+Note: If you encounter issues with verification, you can refer to Blockscout's Hardhat verification plugin documentation for troubleshooting.
+
+When successful, you'll receive a confirmation message with a link to view your verified contract on the Push Chain explorer.
+
+That's it! You have successfully deployed and verified your smart contract on Push Chain using Hardhat.
+
+Next Steps
+​
+Jump into building and interacting with your smart contract using the Push Chain SDK
+Check out chain configuration or available helper contracts
+Abstract everything on frontend with UI Kit
+Edit this page
+Previous
+Configure Foundry
+Next
+Chain Configuration
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Deploy Smart Contracts with Hardhat
+1. Install Hardhat
+2. Create a New Project
+3. Configure for Push Chain
+4. Write a Smart Contract
+5. Compile the Contract
+6. Deploy to Push Chain
+7. Verify the Contract
+Next Steps
+# Chain Configuration
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/setup/chain-config/
+
+SetupChain Configuration
+Chain Configuration
+
+List of all the chain configurations, contract addresses and namespaces deployed.
+
+Chain Specs
+​
+🍩 Donut Testnet
+Mainnet - Coming Soon 🚀
+Field	Value
+Network Name	Push Chain Donut Testnet
+RPC URL	https://evm.rpc-testnet-donut-node1.push.org/, https://evm.rpc-testnet-donut-node2.push.org/
+Chain ID	42101
+Currency Symbol	PC
+Block Explorer URL	https://donut.push.network
+Add to Wallet (Testnet Donut)
+Chain Contracts
+​
+🍩 Donut Testnet
+Mainnet - Coming Soon 🚀
+Contract Name	Contract Address	Contract Purpose
+Universal Exector Factory	0x00000000000000000000000000000000000000eA	Factory contract to create Universal Executor Accounts (UEAs) on Push Chain.
+Universal Verification Precompile	0x00000000000000000000000000000000000000ca	Precompile module that verifies signature of source-chain wallet (UOAs)
+Universal Gateway Contracts
+​
+🍩 Donut Testnet
+Mainnet - Coming Soon 🚀
+Chain	Contract Address
+Ethereum Sepolia Testnet	0x05bD7a3D18324c1F7e216f7fBF2b15985aE5281A
+Solana Devnet	CFVSincHYbETh2k7w6u1ENEkjbSLtveRCEBupKidw2VS
+Universal Chain Namespace
+​
+
+Every external chain is represented as a particular string on Push Chain. Mentioned below are the supported testnet and mainnet chain namespaces on Push Chain.
+
+🍩 Donut Testnet
+Mainnet - Coming Soon 🚀
+Chain	Namespace	Assigned Constant
+Push Testnet (Donut)	eip155:42101	PUSH_TESTNET_DONUT
+Ethereum Sepolia	eip155:11155111	ETHEREUM_SEPOLIA
+Solana Devnet	solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1	SOLANA_DEVNET
+Next Steps
+​
+Create your Universal Signer with Create Universal Signer
+Send your first transaction via Send Universal Transaction
+Explore on-chain helpers in Contract Helpers
+Abstract on the frontend with UI Kit
+Edit this page
+Previous
+Configure Hardhat
+Next
+Build
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Chain Specs
+Chain Contracts
+Universal Gateway Contracts
+Universal Chain Namespace
+Next Steps
+# Recommended Practices
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/recommended-practices/
+
+BuildRecommended Practices
+Recommended Practices
+
+Push Chain enables developers to instantly 10x their userbase with the same codebase. This is possible because Push Chain is purpose built for true interoperability between chains. Since Push Chain is the first true universal blockchain, it's recommended to read through the best practices for building on Push Chain.
+
+Recommended Practices for Developers on Push Chain
+​
+
+Push Chain is a fully EVM-compatible blockchain, meaning that developers can deploy their existing Ethereum smart contracts to Push Chain without any code changes. If your contract is already built for Ethereum (e.g., tested on Sepolia or Mainnet), you can deploy it directly to Push Chain using the same deployment scripts and tooling, including Hardhat, Foundry, or Remix.
+
+This compatibility makes onboarding to Push Chain seamless and efficient for teams familiar with the Ethereum development ecosystem.
+
+Backend SDK:
+@pushchain/core
+​
+
+If you're building backend services, automation scripts, bots, or analytics pipelines, Push Chain offers an official SDK: @pushchain/core.
+
+@pushchain/core is ideal for:
+
+Server-side integrations
+Backend logic for dApps
+Indexing or monitoring tools that need to interact with the Push Chain network reliably and efficiently.
+UI Kit SDK:
+@pushchain/ui-kit
+​
+
+Push Chain also offers @pushchain/ui-kit which is a collection of React components that completely abstract away the complexity of wallet connections and user authentication.
+
+@pushchain/ui-kit is ideal for:
+
+Building user interfaces for dApps
+Abstracting away the complexity of wallet connections and user authentication (abstracted initialization of pushChainClient)
+Multi-chain connections: Users can sign in and connect using wallets from other blockchains
+Email login: For non-crypto native users, Push Wallet supports email login and onboarding, enabling apps to attract wider audiences
+Smart Contract Helper Functions
+​
+
+To understand where your users are coming from—whether directly on Push Chain or via another chain like Sepolia or Solana Devnet—Push Chain provides helper smart contracts. These helpers make it easy to track and categorize users/protocol usage depending on their origin chain. This is especially useful if you want to:
+
+Tailor app behavior depending on user origin
+Monitor multichain adoption
+Incentivize or reward activity coming from specific chains
+
+These helpers are already deployed and maintained, so you can easily integrate them into your logic with minimal effort.
+
+Speed run
+​
+VIRTUAL NODE IDE
+import { PushChain } from '@pushchain/core';
+
+import { ethers } from 'ethers';
+
+
+
+async function main() {
+
+  console.log('Creating Universal Signer - Ethers V6');
+
+
+
+  // Create random wallet
+
+  const wallet = ethers.Wallet.createRandom();
+
+
+
+  // Set up provider connected to Ethereum Sepolia Testnet
+
+  const provider = new ethers.JsonRpcProvider('https://gateway.tenderly.co/public/sepolia');
+
+  const signer = wallet.connect(provider);
+
+
+
+  // Convert ethers signer to Universal Signer
+
+  const universalSigner = await PushChain.utils.signer.toUniversal(signer);
+
+  console.log('🔑 Got universal signer');
+
+
+
+  // Initialize Push Chain SDK
+
+  const pushChainClient = await PushChain.initialize(universalSigner, {
+
+      network: PushChain.CONSTANTS.PUSH_NETWORK.TESTNET,
+
+  });
+
+  console.log('🚀 Got push chain client');
+
+  console.log(JSON.stringify(pushChainClient));
+
+}
+
+
+
+await main().catch(console.error)
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Next Steps
+​
+Create Universal Signer from existing signer
+Abstract away creation of the Universal Signer using UI Kit
+Revist Important Concepts
+Edit this page
+Previous
+Build
+Next
+Create Universal Signer
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Recommended Practices for Developers on Push Chain
+Backend SDK: @pushchain/core
+UI Kit SDK: @pushchain/ui-kit
+Smart Contract Helper Functions
+Speed run
+Next Steps
+# Create Universal Signer
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/create-universal-signer/
+
+BuildCreate Universal Signer
+Create Universal Signer
+Overview
+​
+
+Wrap any EVM or non-EVM signer (ethers, viem, Solana, etc.) into a UniversalSigner so you can send cross-chain transactions on Push Chain without touching your on-chain code.
+
+Prerequisite
+Remember to install and import required libraries. See Quickstart for install steps.
+
+Create Universal Signer
+​
+
+PushChain.utils.signer.toUniversal(signer): Promise<UniversalSigner>
+
+The most common way to create a Universal Signer is by converting an existing signer from supported libraries (Ethers, Viem, Solana).
+
+Ethers (v6)
+Viem
+Solana (Web3 JS)
+// Derive Ethers Signer
+const provider = new ethers.providers.JsonRpcProvider('<RPC_URL>');
+const ethersSigner = new ethers.Wallet('<PRIVATE_KEY>', provider);
+
+// Convert to Universal Signer
+const universalSigner = await PushChain.utils.signer.toUniversal(ethersSigner);
+
+PROVIDER DETERMINES THE CHAIN OF THE ACCOUNT
+RPC URL picks the chain – Sepolia RPC → Ethereum Sepolia, Donut RPC → Push Chain Testnet
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+signer	viem.WalletClient | ethers.Wallet | UniversalSignerSkeleton	The signer to convert to Universal Signer format.
+Returns `UniversalSigner` <object>
+
+Ready to dive in? Try the code in live playground 👇.
+
+Ethers (v6)
+Viem
+Solana (Web3 JS)
+UI Kit (Frontend / Abstracted)
+VIRTUAL NODE IDE
+// Import Push Chain Core
+
+import { PushChain } from '@pushchain/core';
+
+import { ethers } from 'ethers';
+
+
+
+async function main() {
+
+  console.log('Creating Universal Signer - Ethers V6');
+
+
+
+  // Create random wallet
+
+  const wallet = ethers.Wallet.createRandom();
+
+
+
+  // Set up provider
+
+  // Replace it with different JsonRpcProvider to target Ethereum Account, BNB Account, etc
+
+  // const provider = new ethers.JsonRpcProvider('https://gateway.tenderly.co/public/sepolia');
+
+  const provider = new ethers.JsonRpcProvider('https://evm.rpc-testnet-donut-node1.push.org/');
+
+  const signer = wallet.connect(provider);
+
+
+
+  // Convert ethers signer to Universal Signer
+
+  const universalSigner = await PushChain.utils.signer.toUniversal(signer);
+
+  console.log('🔑 Got universal signer - Ethers');
+
+  console.log(JSON.stringify(universalSigner));
+
+}
+
+
+
+await main().catch(console.error);
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Next Steps
+​
+Initialize Push Chain Client with the Universal Signer
+Abstract away creation of the Universal Signer using UI Kit
+Learn how to create Universal Signer from public / private keypair
+Create custom implementation of universal signer (Advanced)
+Edit this page
+Previous
+Recommended Practices
+Next
+Initialize Push Chain Client
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+Create Universal Signer
+Next Steps
+# Create Universal Signer
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/create-universal-signer/
+
+BuildCreate Universal Signer
+Create Universal Signer
+Overview
+​
+
+Wrap any EVM or non-EVM signer (ethers, viem, Solana, etc.) into a UniversalSigner so you can send cross-chain transactions on Push Chain without touching your on-chain code.
+
+Prerequisite
+Remember to install and import required libraries. See Quickstart for install steps.
+
+Create Universal Signer
+​
+
+PushChain.utils.signer.toUniversal(signer): Promise<UniversalSigner>
+
+The most common way to create a Universal Signer is by converting an existing signer from supported libraries (Ethers, Viem, Solana).
+
+Ethers (v6)
+Viem
+Solana (Web3 JS)
+// Derive Ethers Signer
+const provider = new ethers.providers.JsonRpcProvider('<RPC_URL>');
+const ethersSigner = new ethers.Wallet('<PRIVATE_KEY>', provider);
+
+// Convert to Universal Signer
+const universalSigner = await PushChain.utils.signer.toUniversal(ethersSigner);
+
+PROVIDER DETERMINES THE CHAIN OF THE ACCOUNT
+RPC URL picks the chain – Sepolia RPC → Ethereum Sepolia, Donut RPC → Push Chain Testnet
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+signer	viem.WalletClient | ethers.Wallet | UniversalSignerSkeleton	The signer to convert to Universal Signer format.
+Returns `UniversalSigner` <object>
+
+Ready to dive in? Try the code in live playground 👇.
+
+Ethers (v6)
+Viem
+Solana (Web3 JS)
+UI Kit (Frontend / Abstracted)
+VIRTUAL NODE IDE
+// Import Push Chain Core
+
+import { PushChain } from '@pushchain/core';
+
+import { ethers } from 'ethers';
+
+
+
+async function main() {
+
+  console.log('Creating Universal Signer - Ethers V6');
+
+
+
+  // Create random wallet
+
+  const wallet = ethers.Wallet.createRandom();
+
+
+
+  // Set up provider
+
+  // Replace it with different JsonRpcProvider to target Ethereum Account, BNB Account, etc
+
+  // const provider = new ethers.JsonRpcProvider('https://gateway.tenderly.co/public/sepolia');
+
+  const provider = new ethers.JsonRpcProvider('https://evm.rpc-testnet-donut-node1.push.org/');
+
+  const signer = wallet.connect(provider);
+
+
+
+  // Convert ethers signer to Universal Signer
+
+  const universalSigner = await PushChain.utils.signer.toUniversal(signer);
+
+  console.log('🔑 Got universal signer - Ethers');
+
+  console.log(JSON.stringify(universalSigner));
+
+}
+
+
+
+await main().catch(console.error);
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Next Steps
+​
+Initialize Push Chain Client with the Universal Signer
+Abstract away creation of the Universal Signer using UI Kit
+Learn how to create Universal Signer from public / private keypair
+Create custom implementation of universal signer (Advanced)
+Edit this page
+Previous
+Recommended Practices
+Next
+Initialize Push Chain Client
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+Create Universal Signer
+Next Steps
+# Recommended Practices
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/recommended-practices/
+
+BuildRecommended Practices
+Recommended Practices
+
+Push Chain enables developers to instantly 10x their userbase with the same codebase. This is possible because Push Chain is purpose built for true interoperability between chains. Since Push Chain is the first true universal blockchain, it's recommended to read through the best practices for building on Push Chain.
+
+Recommended Practices for Developers on Push Chain
+​
+
+Push Chain is a fully EVM-compatible blockchain, meaning that developers can deploy their existing Ethereum smart contracts to Push Chain without any code changes. If your contract is already built for Ethereum (e.g., tested on Sepolia or Mainnet), you can deploy it directly to Push Chain using the same deployment scripts and tooling, including Hardhat, Foundry, or Remix.
+
+This compatibility makes onboarding to Push Chain seamless and efficient for teams familiar with the Ethereum development ecosystem.
+
+Backend SDK:
+@pushchain/core
+​
+
+If you're building backend services, automation scripts, bots, or analytics pipelines, Push Chain offers an official SDK: @pushchain/core.
+
+@pushchain/core is ideal for:
+
+Server-side integrations
+Backend logic for dApps
+Indexing or monitoring tools that need to interact with the Push Chain network reliably and efficiently.
+UI Kit SDK:
+@pushchain/ui-kit
+​
+
+Push Chain also offers @pushchain/ui-kit which is a collection of React components that completely abstract away the complexity of wallet connections and user authentication.
+
+@pushchain/ui-kit is ideal for:
+
+Building user interfaces for dApps
+Abstracting away the complexity of wallet connections and user authentication (abstracted initialization of pushChainClient)
+Multi-chain connections: Users can sign in and connect using wallets from other blockchains
+Email login: For non-crypto native users, Push Wallet supports email login and onboarding, enabling apps to attract wider audiences
+Smart Contract Helper Functions
+​
+
+To understand where your users are coming from—whether directly on Push Chain or via another chain like Sepolia or Solana Devnet—Push Chain provides helper smart contracts. These helpers make it easy to track and categorize users/protocol usage depending on their origin chain. This is especially useful if you want to:
+
+Tailor app behavior depending on user origin
+Monitor multichain adoption
+Incentivize or reward activity coming from specific chains
+
+These helpers are already deployed and maintained, so you can easily integrate them into your logic with minimal effort.
+
+Speed run
+​
+VIRTUAL NODE IDE
+import { PushChain } from '@pushchain/core';
+
+import { ethers } from 'ethers';
+
+
+
+async function main() {
+
+  console.log('Creating Universal Signer - Ethers V6');
+
+
+
+  // Create random wallet
+
+  const wallet = ethers.Wallet.createRandom();
+
+
+
+  // Set up provider connected to Ethereum Sepolia Testnet
+
+  const provider = new ethers.JsonRpcProvider('https://gateway.tenderly.co/public/sepolia');
+
+  const signer = wallet.connect(provider);
+
+
+
+  // Convert ethers signer to Universal Signer
+
+  const universalSigner = await PushChain.utils.signer.toUniversal(signer);
+
+  console.log('🔑 Got universal signer');
+
+
+
+  // Initialize Push Chain SDK
+
+  const pushChainClient = await PushChain.initialize(universalSigner, {
+
+      network: PushChain.CONSTANTS.PUSH_NETWORK.TESTNET,
+
+  });
+
+  console.log('🚀 Got push chain client');
+
+  console.log(JSON.stringify(pushChainClient));
+
+}
+
+
+
+await main().catch(console.error)
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Next Steps
+​
+Create Universal Signer from existing signer
+Abstract away creation of the Universal Signer using UI Kit
+Revist Important Concepts
+Edit this page
+Previous
+Build
+Next
+Create Universal Signer
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Recommended Practices for Developers on Push Chain
+Backend SDK: @pushchain/core
+UI Kit SDK: @pushchain/ui-kit
+Smart Contract Helper Functions
+Speed run
+Next Steps
+# Initialize Push Chain Client
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/initialize-push-chain-client/
+
+BuildInitialize Push Chain Client
+Initialize Push Chain Client
+Overview
+​
+
+Initializing the SDK client gives you:
+
+Chain-agnostic PushChainClient for submitting on-chain calls
+Automatic RPC & block-explorer resolution (with optional overrides)
+Built-in UEA (Universal Executor Account) and origin-account getters
+End-to-end Universal fee abstraction, signature orchestration & debug traces
+
+Just pass your universal signer and network, and you’re ready to write and transact on Push Chain from any wallet.
+
+Initialize Push Chain Client
+​
+
+PushChain.initialize(signer, {options}): Promise<PushChainClient>
+
+// Import @pushchain/core and ethers
+// Ensure you have created Universal Signer. 
+// If not done, then check out Create Universal Signer.
+
+// Initialize Push Chain Client
+const pushChainClient = await PushChain.initialize(universalSigner, {
+  network: PushChain.CONSTANTS.PUSH_NETWORK.TESTNET,
+});
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Default	Description
+signer	UniversalSigner | UniversalAccount	-	Pass a UniversalSigner to enable full write/sign capabilities, or a UniversalAccount to initialize the client in read-only mode (no signing or transaction sending).
+options.network	PushChain.CONSTANTS.PUSH_NETWORK	-	Push Chain network to connect to. For example: PushChain.CONSTANTS.PUSH_NETWORK.TESTNET
+PushChain.CONSTANTS.PUSH_NETWORK
+
+options.rpcUrls	Partial<Record<CHAIN, string[]>>	{}	Custom RPC URLs mapped by chain IDs. If not provided, the default RPC URLs for the network will be used. Example: rpcUrls: {[CHAIN.ETHEREUM_SEPOLIA]: ['https://sepolia.infura.io/v3/your-api-key'], [CHAIN.SOLANA_DEVNET]: ['https://api.devnet.solana.com']}
+Advanced Arguments
+Returns `PushChainClient` <object>
+
+Let's create your first Push Chain client! Try the code in live playground 👇.
+
+Ethers (v6)
+Viem
+Solana (Web3 JS)
+UI Kit (Frontend / Abstracted)
+VIRTUAL NODE IDE
+import { PushChain } from '@pushchain/core';
+
+import { ethers } from 'ethers';
+
+
+
+async function main() {
+
+  console.log('Creating Universal Signer - Ethers V6');
+
+
+
+  // Create random wallet
+
+  const wallet = ethers.Wallet.createRandom();
+
+
+
+  // Set up provider connected to Ethereum Sepolia Testnet
+
+  const provider = new ethers.JsonRpcProvider('https://gateway.tenderly.co/public/sepolia');
+
+  const signer = wallet.connect(provider);
+
+
+
+  // Convert ethers signer to Universal Signer
+
+  const universalSigner = await PushChain.utils.signer.toUniversal(signer);
+
+  console.log('🔑 Got universal signer');
+
+
+
+  // Initialize Push Chain SDK
+
+  const pushChainClient = await PushChain.initialize(universalSigner, {
+
+      network: PushChain.CONSTANTS.PUSH_NETWORK.TESTNET,
+
+  });
+
+  console.log('🔑 Got push chain client');
+
+  console.log(JSON.stringify(pushChainClient));
+
+}
+
+
+
+await main().catch(console.error);
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Read-only Mode
+​
+
+PushChain.initialize(account, {options}): Promise<PushChainClient>
+
+You can initialize a read-only PushChainClient by passing a UniversalAccount (address + chain) instead of a UniversalSigner. This is useful when you want to inspect account state, resolve explorer URLs, or read metadata without signing or sending transactions.
+
+// Import @pushchain/core and ethers
+// Ensure you have created Universal Account. 
+// If not done, then check out Create Universal Account under Utility Functions.
+
+// Initialize Push Chain Client
+const pushChainClient = await PushChain.initialize(universalAccount, {
+  network: PushChain.CONSTANTS.PUSH_NETWORK.TESTNET,
+});
+
+Live Playground: Initialize Read-only Push Chain Client
+Reinitialize Client
+​
+
+pushChainClient.reinitialize(signerOrAccount, {options}): Promise<PushChainClient>
+
+You can reinitialize a PushChainClient with a different signer/account and/or updated configuration (RPCs, explorers, traces, progress hook).
+
+Reinitialize will take the same parameters that you have passed for initializing the previous client.
+To update the parameters, simply pass new ones in options object. Parameters list is same as initialize(...).
+Reinitialize always returns a new client instance; swap references accordingly.
+Changing the signer/account updates universal.origin and universal.account.
+// Import @pushchain/core and ethers
+// Ensure you have created Universal Account. 
+// If not done, then check out Create Universal Account under Utility Functions.
+
+// Initialize Push Chain Client
+const pushChainClient2 = await pushChainClient1.reinitialize(newSignerOrAccount, {
+  // pass new parameters if needed
+});
+
+Live Playground: Reinitialize Push Chain Client
+Access Account Information
+​
+
+Once initialized, your PushChainClient exposes:
+
+Property	Description
+pushChainClient.universal.account	Push Chain execution account: for native Push Chain wallets this is your EOA or smart account; for cross-chain wallets this is your UEA (Universal Executor Account) that holds gas and executes txns.
+pushChainClient.universal.origin	Origin account on the source chain (e.g. eip155:1), representing your wallet’s native address.
+// execution vs. origin accounts
+const execAccount = pushChainClient.universal.account; // Account that writes on Push Chain
+const originAccount = pushChainClient.universal.origin; // Source chain account that is mapped to the execution account
+
+Next Steps
+​
+Initialize your EVM client with Initialize EVM Client
+Send your first Universal Transaction with Send Universal Transaction
+Explore on-chain helper contracts in Contract Helpers
+Build wallet flows and abstract core SDK with the UI Kit
+Edit this page
+Previous
+Create Universal Signer
+Next
+Initialize EVM Client
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+Initialize Push Chain Client
+Read-only Mode
+Reinitialize Client
+Access Account Information
+Next Steps
+# Initialize EVM Client
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/initialize-evm-client/
+
+BuildInitialize EVM Client
+Initialize EVM Client
+Overview
+​
+
+Push Chain is fully EVM-compatible, so you can plug in your favorite Ethereum tooling—whether that’s Ethers.js or Viem. For more details on each library, check out:
+
+ethers.js documentation
+viem documentation
+Initialize EVM Client
+​
+Ethers (v6)
+Viem
+VIRTUAL NODE IDE
+import { ethers } from 'ethers';
+
+
+
+// ——— CONFIG ———
+
+const RPC_URL = 'https://evm.rpc-testnet-donut-node1.push.org/';
+
+
+
+function initEthers() {
+
+  const provider = new ethers.JsonRpcProvider(RPC_URL);
+
+  console.log('Got Ethers.js provider methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(provider)));
+
+}
+
+
+
+initEthers();
+
+                                                                                                                               
+
+Open in GitHub
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Live Playground: Fetch a Transaction by Hash
+Next Steps
+​
+Send your first universal transaction with Send Universal Transaction
+Learn about popular utilities in Utility Functions
+Skip core and directly jump to UI Kit that provides complete abstraction
+Edit this page
+Previous
+Initialize Push Chain Client
+Next
+Send Universal Transaction
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+Initialize EVM Client
+Next Steps
+# Sign Universal Message
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/sign-universal-message/
+
+BuildSign Universal Message
+Sign Universal Message
+Overview
+​
+
+Sign arbitrary data with your universal signer, across EVM, Solana, or any supported chain.
+
+Sign Universal Message
+​
+
+pushChainClient.universal.signMessage(message): Promise<string>
+
+// Create message data
+const message = new TextEncoder().encode('Hello, Push Chain!')
+
+// Sign the message
+const signature = await pushChainClient.universal.signMessage(message)
+
+Returns `signedMessage` <string>
+Live Playground: Get back Signed Message
+Sign Typed Data
+​
+
+pushChainClient.universal.signTypedData({typedData}): Promise<string>
+
+The signTypedData function signs structured data following the EIP-712 standard. This function is only supported when connected to an EVM compatible chain.
+
+// Sign the message
+const signature = await pushChainClient.universal.signTypedData({<TYPED_DATA>})
+
+Returns `signedTypedData` <string>
+Live Playground: Get back Signed Typed Data
+Next Steps
+​
+Query on-chain data with our Utility Functions
+Read contract state using the Blockchain State Reader
+Build rich UIs around your signer using the UI Kit
+Edit this page
+Previous
+Send Universal Transaction
+Next
+Utility Functions
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+Sign Universal Message
+Sign Typed Data
+Next Steps
+# Utility Functions
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/utility-functions/
+
+BuildUtility Functions
+Utility Functions
+Overview
+​
+
+This section covers the most commonly used helpers in the Push Chain Core SDK to simplify common workflows.
+
+Helper Utilities
+​
+Parse Units​
+
+PushChain.utils.helpers.parseUnits(value, exponent): bigint
+
+Converts a human-readable token amount into its smallest unit representation (bigint). It multiplies the given value by 10^decimals, ensuring amounts are safe for on-chain use.
+
+Commonly used when preparing transaction parameters (e.g., converting 1.5 into 1500000000000000000, similar to how you convert ETH to wei, PC to uPC, or any other tokens to its smallest denominator).
+
+const result = PushChain.utils.helpers.parseUnits('1.5', { decimals: 18 });
+// variation: const result = PushChain.utils.helpers.parseUnits('1.5', 18);
+
+// Returns: 1500000000000000000n (1.5 PC in uPC)
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+value	string	The string representation of the number to parse. Can include decimals (e.g., "1.5", "420", "0.1").
+exponent	number | { decimals: number }	Number of decimal places to scale by. Provide either a number (e.g., 18) or an object with decimals. Must be a non-negative integer. Examples: 18 for PC/ETH, 6 for USDC, 8 for BTC.
+Returns `value` <bigint>
+Live Playground: Parse Units for Common Token Scenarios
+Format Units​
+
+PushChain.utils.helpers.formatUnits(value, {options}): string
+
+Converts a raw token amount in smallest units (bigint) into a human-readable decimal string. It divides the given value by 10^decimals, making it easy to display amounts for users.
+
+Commonly used in UI or logs (e.g., turning 1500000000000000000 into 1.5 or any token from smallest unit to its human-readable value).
+
+const result = PushChain.utils.helpers.formatUnits('1500000000000000000', { decimals: 18 });
+// variation: const result = PushChain.utils.helpers.formatUnits('1500000000000000000', 18);
+
+// Returns: 1.5 (1.5 PC in uPC)
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+value	bigint | string	Raw amount in smallest units (e.g., '1500000000000000000' for 1.5 assuming 18 decimals).
+options.decimals	number	The number of decimal places to scale by. Must be a non-negative integer. For example, use 18 for PC or ETH, 6 for USDC, 8 for BTC.
+options.precision	number	The number of precision to scale by, will round up the value. Must be a non-negative integer. For example, use 4 for returning 4 digits after the decimal.
+Returns `value` <string>
+Live Playground: Format Units for Common Token Scenarios
+Encode Transaction Data​
+
+PushChain.utils.helpers.encodeTxData({abi, functionName, args}): string
+
+const encodedData = PushChain.utils.helpers.encodeTxData({
+  abi,
+  functionName: 'functionName',
+  args: []
+});
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Default	Description
+abi	any[]	-	The ABI array of the smart contract containing function definitions.
+functionName	string	-	The name of the function to encode transaction data for.
+args	any[]	[]	The arguments to pass to the function. Defaults to empty array for functions with no parameters.
+Returns `encodedData` <string>
+Live Playground: Encode Transaction Data for Smart Contract Function
+Chain Utilities
+​
+Get Chain Namespace from Chain Name​
+
+PushChain.utils.chains.getChainNamespace(chainName): string
+
+Every external chain is represented as a particular string on Push Chain. You can see the list of supported chains in the Chain Configuration section.
+
+const chainName = PushChain.utils.chains.getChainNamespace('PUSH_TESTNET_DONUT');
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+name	string	The chain name to convert to chain namespace. Eg: PUSH_TESTNET_DONUT converts to eip155:42101, ETHEREUM_SEPOLIA converts to eip155:11155111.
+Returns `chainNamespace` <string>
+Live Playground: Get Chain Namespace from Chain Name
+Get Chain Name from Chain Namespace​
+
+PushChain.utils.chains.getChainName(chainNamespace): string
+
+Every external chain is represented as a particular string on Push Chain. You can see the list of supported chains in the chain configuration section.
+
+const chainName = PushChain.utils.chains.getChainName('eip155:42101');
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+namespace	string	The chain namespace to convert to chain name. Eg: eip155:42101 converts to PUSH_TESTNET_DONUT, eip155:11155111 converts to ETHEREUM_SEPOLIA.
+Returns `chainName` <string>
+Live Playground: Get Chain Name from Chain Namespace
+Get Supported Chains​
+
+PushChain.utils.chains.getSupportedChains(pushNetwork): { chains: [] }
+
+Returns the list of chains supported for a given Push Network.
+
+const chains = PushChain.utils.chains.getSupportedChains(PushChain.CONSTANTS.PUSH_NETWORK.TESTNET);
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+pushNetwork	PushChain.CONSTANTS.PUSH_NETWORK	Push Chain network to retrieve list of supported chains from. For example: PushChain.CONSTANTS.PUSH_NETWORK.TESTNET
+PushChain.CONSTANTS.PUSH_NETWORK
+Returns `{ chains }` <object>
+Live Playground: Get Supported Chains for a given Push Network
+Account Utilities
+​
+Convert to Universal Account​
+
+PushChain.utils.account.toUniversal(address, {options}): <UniversalAccount>
+
+const account = PushChain.utils.account.toUniversal(address, {
+  chain: PushChain.CONSTANTS.CHAIN.ETHEREUM_SEPOLIA,
+});
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+address	string	An address string (e.g., 0xabc...).
+options.chain	CHAIN	The target chain for the signer. For example: PushChain.CONSTANTS.CHAIN.PUSH_TESTNET_DONUT
+PushChain.CONSTANTS.CHAIN
+Returns `UniversalAccount` <object>
+Live Playground: Convert Ethereum Sepolia Address to UniversalAccount
+Convert to Chain-Agnostic Address​
+
+PushChain.utils.account.toChainAgnostic(address, {options}): string
+
+const chainAgnosticAddress = PushChain.utils.account.toChainAgnostic(address, {
+  chain: PushChain.CONSTANTS.CHAIN.ETHEREUM_SEPOLIA,
+});
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+address	string	An address string (e.g., 0xabc...).
+options.chain	CHAIN	The target chain for the signer. For example: PushChain.CONSTANTS.CHAIN.PUSH_TESTNET_DONUT
+PushChain.CONSTANTS.CHAIN
+Returns `ChainAgnosticAddress` <string>
+Live Playground: Convert Ethereum Sepolia address to chain agnostic address
+Convert from Chain-Agnostic to Universal Account​
+
+PushChain.utils.account.fromChainAgnostic(chainAgnosticAddress): <UniversalAccount>
+
+const account = PushChain.utils.account.fromChainAgnostic(chainAgnosticAddress);
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+chainAgnosticAddress	string	A full chain agnostic address string (e.g., eip155:11155111:0x35B84d6848D16415177c64D64504663b998A6ab4).
+Returns `UniversalAccount` <object>
+Live Playground: Convert Ethereum Sepolia chain agnostic address to UniversalAccount
+Convert Origin to Executor Account​
+
+PushChain.utils.account.convertOriginToExecutor(account, {options}): Promise<ExecutorAccountInfo>
+
+Gives the deterministic executor account address for a given origin account (UOA). Also helps in checking if a given origin account (UOA) has an executor account (UEA) deployed on Push Chain.
+
+const info =
+  await PushChain.utils.account.convertOriginToExecutor(universalAccount);
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Default	Description
+account	UniversalAccount	-	A UniversalAccount object containing chain and address information.
+options.onlyCompute	boolean	false	Whether to check if the computed executor account is deployed. Set to true to include deployment status.
+Returns `ExecutorAccountInfo` <object>
+Live Playground: Convert Origin Account to Universal Executor Account
+Convert Executor Address to Origin Account​
+
+PushChain.utils.account.convertExecutorToOriginAccount(ueaAddress): Promise<OriginAccountInfo>
+
+Gives the origin account (UOA) for a given executor account (UEA).
+
+const { account, exists } = await PushChain.utils.account.convertExecutorToOriginAccount(ueaAddress);
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Default	Description
+ueaAddress	string	-	Address of the executor account (UEA).
+Returns `OriginAccountInfo` <object>
+Live Playground: Convert Executor Account to Origin Account
+Signer Utilities
+​
+Create Universal Signer from Keypair​
+
+PushChain.utils.signer.toUniversalFromKeypair(keypair, {options}): Promise<UniversalSigner>
+
+const universalSigner = await PushChain.utils.signer.toUniversalFromKeypair(
+  keypair,
+  {
+    chain: PushChain.CONSTANTS.CHAIN.SOLANA_DEVNET,
+    library: PushChain.CONSTANTS.LIBRARY.SOLANA_WEB3JS,
+  }
+);
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+keypair	Keypair	A keypair object from one of the supported libraries (ethers v5/v6, viem, or a custom UniversalSignerSkeleton)
+options.chain	CHAIN	The target chain for the signer. For example: PushChain.CONSTANTS.CHAIN.PUSH_TESTNET_DONUT
+PushChain.CONSTANTS.CHAIN
+
+options.library	LIBRARY	The library to use for the signer. For example: PushChain.CONSTANTS.LIBRARY.ETHEREUM_ETHERSV6
+PushChain.CONSTANTS.LIBRARY
+Returns `UniversalSigner` <object>
+Live Playground: Create Universal Signer from Keypair
+Token Utilities
+​
+Get Moveable Tokens​
+
+PushChain.utils.tokens.getMoveableTokens(chainOrClient?): { tokens: [] }
+
+Commonly used to get list of supported assets that can be moved across chains. See send universal transaction for more info.
+
+// All supported moveable tokens across chains
+const { tokens: allMoveable } = PushChain.utils.tokens.getMoveableTokens();
+
+// Filtered for a specific chain
+const { tokens: sepoliaMoveable } = PushChain.utils.tokens.getMoveableTokens(
+  PushChain.CONSTANTS.CHAIN.ETHEREUM_SEPOLIA
+);
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+chainOrClient	CHAIN | PushChain	Optional. A chain enum or an initialized client to filter tokens for that chain.
+Returns `{ tokens }` <object>
+Live Playground: List moveable tokens for a specific chain
+Get Payable Tokens​
+
+PushChain.utils.tokens.getPayableTokens(chainOrClient?): { tokens: [] }
+
+Commonly used to get list of supported assets to pay with (either for gas or token movement) across chains. See send universal transaction for more info.
+
+// All supported payable tokens across chains
+const { tokens: allPayable } = PushChain.utils.tokens.getPayableTokens();
+
+// Filtered for a specific chain
+const { tokens: solanaDevnetPayable } = PushChain.utils.tokens.getPayableTokens(
+  PushChain.CONSTANTS.CHAIN.SOLANA_DEVNET
+);
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+chainOrClient	CHAIN | PushChain	Optional. A chain enum or an initialized client to filter tokens for that chain.
+Returns `{ tokens }` <object>
+Live Playground: List payable tokens for a specific chain
+Conversion Utilities
+​
+Calculate Minimum Amount from Slippage​
+
+PushChain.utils.conversion.slippageToMinAmount(amount, { slippageBps }): string
+
+const minOut = PushChain.utils.conversion.slippageToMinAmount('100000000', {
+  slippageBps: 100, // 1%
+});
+// Returns: '99000000'
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+amount	string	Input amount in smallest units (e.g., '100000000' for 100 USDC as it has 6 decimals).
+options.slippageBps	number (integer)	Slippage in basis points. 100 = 1%, 50 = 0.5%.
+Returns `minOut` <string>
+Live Playground: Calculate minimum amount out from slippage
+Get Conversion Quote​
+
+pushChainClient.funds.getConversionQuote(amount, {options}): Promise<ConversionQuote>
+
+Note: This function is available only after initializing the Push Chain client.
+
+The function is used to get conversion quote especially when you want to pay with (from) one token, move as (to) another token. Used in send universal transaction for token movement across chains or to pay gas in other tokens instead of native token of the source chain.
+
+Convention: from = the token you pay with (Payable), to = the token you move as (Moveable).
+
+const quote = pushChainClient.funds.getConversionQuote('100000000', {
+  from: pushChainClient.payable.token.WETH, // PayableToken - Assuming client initialized with ETHEREUM_ 
+  to: pushChainClient.moveable.token.USDT // MoveableToken - Assuming client initialized with ETHEREUM_ 
+});
+
+// Returns: { "amountIn": "5000000000000000", "amountOut": "11813463066488417", "rate": 2362692613297.683, "route": [ "WETH", "USDT" ], "timestamp": 1758582899267 }
+
+Arguments	Type	Description
+amount	string	The string representation of the amount to parse. Can include decimals (e.g., "1.5", "420", "0.1").
+options.from	<PayableToken> (dynamic)	List of supported tokens provided dynamically through get getPayableTokens.
+options.to	<MoveableToken> (dynamic)	List of supported tokens provided dynamically through get getMoveableTokens.
+Supported chains
+Returns `ConversionQuote` <object>
+Live Playground: Quote WETH → USDT on Sepolia
+Explorer Utilities
+​
+Get Transaction URL​
+
+pushChainClient.explorer.getTransactionUrl(txHash): string
+
+Note: This function is available only after initializing the Push Chain client.
+
+// ... Initialize Push Chain Client
+const url = pushChainClient.explorer.getTransactionUrl(txHash);
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+txHash	string	The transaction hash to convert to explorer URL.
+Returns `url` <string>
+Live Playground: Get Explorer URL for a transaction hash
+List all Explorer URLs​
+
+pushChainClient.explorer.listUrls(): { urls: string[] }
+
+Note: This function is available only after initializing the Push Chain client.
+
+// ... Initialize Push Chain Client
+const urls = pushChainClient.explorer.listUrls();
+
+Returns `urls` <{ urls: string[] }>
+Live Playground: List all Explorer URLs
+Next Steps
+​
+Dive into reading blockchain state
+Harness our on-chain contract helpers to supercharge your app
+Explore and abstract away wallet and any chain-related logic using UI Kit
+Edit this page
+Previous
+Sign Universal Message
+Next
+Reading Blockchain State
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+Helper Utilities
+Parse Units
+Format Units
+Encode Transaction Data
+Chain Utilities
+Get Chain Namespace from Chain Name
+Get Chain Name from Chain Namespace
+Get Supported Chains
+Account Utilities
+Convert to Universal Account
+Convert to Chain-Agnostic Address
+Convert from Chain-Agnostic to Universal Account
+Convert Origin to Executor Account
+Convert Executor Address to Origin Account
+Signer Utilities
+Create Universal Signer from Keypair
+Token Utilities
+Get Moveable Tokens
+Get Payable Tokens
+Conversion Utilities
+Calculate Minimum Amount from Slippage
+Get Conversion Quote
+Explorer Utilities
+Get Transaction URL
+List all Explorer URLs
+Next Steps
+# Reading Blockchain State
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/reading-blockchain-state/
+
+BuildReading Blockchain State
+Reading Blockchain State
+Overview
+​
+
+Push Chain is an EVM-compatible blockchain, so you can use familiar Ethereum tools to fetch on-chain data. This guide shows you how to:
+
+Initialize HTTP client for one-off requests
+Fetch transactions and blocks
+Initialize WebSocket client for real-time streaming
+Subscribe to new blocks and filter for specific transactions
+
+For full reference on each library, see:
+
+ethers.js documentation
+viem documentation
+Initialize HTTP Client
+​
+Ethers (v6)
+Viem
+VIRTUAL NODE IDE
+import { ethers } from 'ethers';
+
+
+
+// HTTP JSON-RPC provider
+
+const provider = new ethers.JsonRpcProvider('https://evm.rpc-testnet-donut-node1.push.org/');
+
+console.log('Ethers provider methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(provider)));
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Fetch a Transaction by Hash
+​
+Ethers (v6)
+Viem
+VIRTUAL NODE IDE
+import { ethers } from 'ethers';
+
+
+
+const provider = new ethers.JsonRpcProvider('https://evm.rpc-testnet-donut-node1.push.org/');
+
+const txHash  = '0x04ee80f072ab06ec88092701e7ba223451d0a1376e26755085271bc6de45a6a1';
+
+
+
+const tx = await provider.getTransaction(txHash);
+
+console.log(JSON.stringify(tx, null, 2));
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Fetch Blocks
+​
+Latest Block​
+Ethers (v6)
+Viem
+VIRTUAL NODE IDE
+import { ethers } from 'ethers';
+
+
+
+const provider   = new ethers.JsonRpcProvider('https://evm.rpc-testnet-donut-node1.push.org/');
+
+const latestBlock = await provider.getBlock('latest');
+
+console.log(JSON.stringify(latestBlock, null, 2));
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+
+
+
+Block by Hash​
+Ethers (v6)
+Viem
+VIRTUAL NODE IDE
+import { ethers } from 'ethers';
+
+
+
+const provider  = new ethers.JsonRpcProvider('https://evm.rpc-testnet-donut-node1.push.org/');
+
+const blockHash = '0xa1a69fa217d219f71d44f4707f8aa4ded2aec52a0c737e0dca0dbf9096252b89';
+
+
+
+const block = await provider.getBlock(blockHash);
+
+console.log(JSON.stringify(block, null, 2));
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Websocket Client
+​
+Initialize WebSocket Client​
+Ethers (v6)
+Viem
+VIRTUAL NODE IDE
+import { ethers } from 'ethers';
+
+
+
+const ws = new ethers.WebSocketProvider('https://evm.rpc-testnet-donut-node1.push.org/');
+
+
+
+console.log('Connection Opened!');
+
+
+
+ws.on('block', async (blockNumber) => {
+
+  console.log("Block produced: ", blockNumber);
+
+});
+
+
+
+// Stop after 10s
+
+setTimeout(() => { ws.removeAllListeners(); ws.destroy(); console.log('Connection closed!'); }, 10000);
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+
+
+
+Subscribing to New Blocks​
+Ethers (v6)
+Viem
+VIRTUAL NODE IDE
+import { ethers } from 'ethers';
+
+
+
+const ws = new ethers.WebSocketProvider('https://evm.rpc-testnet-donut-node1.push.org/');
+
+
+
+console.log('Connection Opened!');
+
+ws.on('block', async (blockNumber) => {
+
+  console.log("Block produced: ", blockNumber);
+
+});
+
+
+
+// Stop after 10s
+
+setTimeout(() => { ws.removeAllListeners(); ws.destroy(); console.log('Connection closed!'); }, 20000);
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+
+
+
+Filtering New Blocks for Specific Transactions​
+Ethers (v6)
+Viem
+VIRTUAL NODE IDE
+import { ethers } from 'ethers';
+
+
+
+const ws = new ethers.WebSocketProvider('https://evm.rpc-testnet-donut-node1.push.org/');
+
+const watchedAddress = '0x0000000000000000000000000000000000042101';
+
+
+
+console.log('Listening for tx on:', watchedAddress, "Try sending some $PC here");
+
+
+
+ws.on('block', async (blockNumber) => {
+
+  const provider  = new ethers.JsonRpcProvider('https://evm.rpc-testnet-donut-node1.push.org');
+
+  const block = await provider.getBlock(blockNumber, true);
+
+
+
+  if (block && block.transactions) {
+
+    const txs = await Promise.all(block.transactions.map(hash => block.getTransaction(hash)));
+
+
+
+    txs
+
+      .filter((tx) => tx.to === watchedAddress)
+
+      .forEach((tx) => console.log('Tx detected →', tx.hash));
+
+
+
+    console.log("Block produced: ", blockNumber);
+
+  }
+
+});
+
+
+
+// Stop after 20s
+
+setTimeout(() => { ws.removeAllListeners(); ws.destroy(); console.log('Connection closed!'); }, 20000);
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Next Steps
+​
+Dive into our Contract Helpers to detect and work with both cross-chain accounts and native Push Chain smart accounts.
+Use our UI Kit to abstract away wallet and chain logic and accelerate your front-end development.
+Edit this page
+Previous
+Utility Functions
+Next
+Contract Helpers
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+Initialize HTTP Client
+Fetch a Transaction by Hash
+Fetch Blocks
+Latest Block
+Block by Hash
+Websocket Client
+Initialize WebSocket Client
+Subscribing to New Blocks
+Filtering New Blocks for Specific Transactions
+Next Steps
+# Contract Helpers
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/contract-helpers/
+
+BuildContract Helpers
+Contract Helpers
+Overview
+​
+
+When building smart contract applications on Push Chain, you’ll at times need helper contracts to surface on-chain metadata—like identifying external chain users or computing deterministic smart account addresses. Push Chain provides a set of helper interfaces under the hood to simplify these workflows.
+
+One primary helper is the Universal Executor Account Factory (UEAFactory), which underpins Push Chain’s multi‐chain smart account abstraction.
+
+Universal Executor Account Factory
+​
+
+As previously mentioned, Universal Executor Accounts (UEAs) are a type of executor smart accounts that represent external chain users on Push Chain, allowing them to interact with Push Chain applications without having to connect, bridge, or move to Push Chain.
+
+The Universal Executor Account Factory is the central contract responsible for deploying and managing Universal Executor Accounts (UEAs) for users from different blockchains.
+
+
+
+
+UEAFactory Features​
+
+The UEA Factory serves these key features:
+
+Multi-Chain Support: Register and manage UEAs for users from different blockchains
+Deterministic Addresses: Uses CREATE2 + minimal proxies for predictable UEA addresses
+Deployment Status: Optionally check if a UEA is already deployed
+Owner ↔ UEA Mapping: Bidirectional mapping between Universal Accounts and their UEAs, VM types and implementations.
+
+
+
+UEAFactory Interface​
+
+Deployed Address: 0x00000000000000000000000000000000000000eA
+
+This helper contract helps in fetching cross-chain information about an address. It also provides identity-mapping between source chain wallet address and Push Chain address and can determine if the address is native to Push Chain or is proxy for external chain user.
+
+In order to use the UEAFactory in your contract, you can either:
+
+1. Import it directly from Push Chain Core Repository​
+import "push-chain-core-contracts/src/Interfaces/IUEAFactory.sol";
+
+For Foundry Developers
+Or 2. Define the interface manually in your solidity contract​
+Use the following interface directly in your contract
+
+
+
+UEAFactory Methods​
+UEAFactory → getOriginForUEA​
+
+getOriginForUEA(address): (UniversalAccountId, bool)
+is external view
+
+Returns the owner information and UEA status for a given address on Push Chain.
+
+Commonly used for:
+
+Checking if a given address is a native account on Push Chain or is controlled by another chain user.
+Determining the source chain of a given address on Push Chain.
+Getting the Universal Account identity information associated with this address.
+
+Note: The returned origin address will be encoded in Hex format. For example, for Solana addresses, a base58 conversion should be done to get the readable format.
+
+/**
+ * @dev Returns the owner key (UOA) for a given UEA address
+ * @param addr Any given address ( msg.sender ) on push chain
+ * @return account The Universal Account identity information associated with this UEA
+ * @return isUEA True if the address addr is a UEA contract. False if it is a native account on PUSH chain (i.e., isUEA = false)
+*/
+function getOriginForUEA(
+    address addr
+)
+    external
+    view
+    returns (
+        UniversalAccountId memory account,
+        bool isUEA
+    );
+
+Arguments	Type	Description
+addr	address	Any address on Push Chain (typically msg.sender).
+Returns `UniversalAccountId`<struct> and `bool`
+On-chain usage
+Off-chain usage
+
+
+
+UEAFactory → getUEAForOrigin​
+
+getUEAForOrigin(UniversalAccountId): (address, bool)
+is external view
+
+Returns the computed UEA address for a given Universal Account. Additionaly, it also returns the deployment status of the UEA.
+
+Commonly used for:
+
+Get or compute the UEA address for a given Universal Account.
+Check if a given Universal Account is deployed or not.
+
+Note: UniversalAccountId is a struct that returns chainNamespace, chainId and owner. chainNamespace contains the chain namespace (e.g., "eip155" for EVM based chains, "solana" for Solana, etc.) and chainId contains the chain ID of the source chain of the owner of this UEA. owner contains the wallet address in bytes.
+
+/**
+ * @dev Returns the computed UEA address for a given Universal Account ID and deployment status
+ * @param _id The Universal Account identity information
+ * @return uea The address of the UEA (computed deterministically)
+ * @return isDeployed True if the UEA has already been deployed
+*/
+function getUEAForOrigin(
+    UniversalAccountId memory _id
+)
+    external
+    view
+    returns (
+        address uea,
+        bool    isDeployed
+    );
+
+Arguments	Type	Description
+_id	UniversalAccountId	The Universal Account identity information containing:
+ 
+- chainNamespace: Chain namespace identifier (e.g., "eip155" for EVM based chains, "solana" for Solana, etc.)
+- chainId: Chain ID of the source chain of the owner of this UEA.
+- owner: Owner's public key or address in bytes format.
+Returns `address` and `bool`
+On-chain usage
+Off-chain usage
+Next Steps
+​
+Wire up your SDK in Initialize Push Chain Client
+Simplify cross-chain workflows via Utility Functions
+Dive into on-chain reads with Reading Blockchain State
+Abstract wallet & UI flows with our UI Kit
+Go deeper into advanced patterns in Deep Dives
+Edit this page
+Previous
+Reading Blockchain State
+Next
+Advanced
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+Universal Executor Account Factory
+UEAFactory Features
+UEAFactory Interface
+UEAFactory Methods
+UEAFactory → getOriginForUEA
+UEAFactory → getUEAForOrigin
+Next Steps
+# Custom Universal Signer
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/build/advanced/custom-universal-signer/
+
+BuildAdvancedCustom Universal Signer
+Custom Universal Signer
+Overview
+​
+
+If you don't have a supported library signer or want to create a custom implementation, you can construct a Universal Signer manually.
+
+Custom Universal Signer
+​
+
+PushChain.utils.signer.construct(account, {options}): Promise<UniversalSigner>
+
+const account = {
+  address: '<WALLET_ADDRESS>',
+  chain: '<PushChain.CONSTANTS.CHAIN.CHAIN_TYPE'>
+};
+
+const customSignAndSendTransaction = async (unsignedTx) => {
+  return new Uint8Array('<RESPONSE_TO_SIGN_AND_SEND_TRANSACTION>');
+};
+
+const customSignMessage = async (data) => {
+  return new Uint8Array('<RESPONSE_TO_SIGN_MESSAGE>');
+};
+
+const customSignTypedData = async (typedDataArgs) => {
+  return new Uint8Array('<RESPONSE_TO_SIGN_TYPED_DATA>');
+};
+
+const skeleton = PushChain.utils.signer.construct(account, {
+  signMessage: customSignMessage,
+  signTransaction: customSignTransaction,
+  signTypedData: customSignTypedData
+});
+
+const universalSigner = await PushChain.utils.signer.toUniversal(skeleton);
+
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Description
+account	UniversalAccount	Account information containing address and chain
+options	Object	Object containing the signing function implementations
+options.signAndSendTransaction	(unsignedTx: Uint8Array) => Promise<Uint8Array>	Function to sign transaction data
+options.signMessage	(data: Uint8Array) => Promise<Uint8Array>	Function to sign raw message data
+options.signTypedData	(params) => Promise<Uint8Array>	Function to sign typed data (EIP-712)
+Returns `UniversalSignerSkeleton` <object>
+
+Live Playground: Creating Custom Universal Signer from Ethers.js 👇.
+
+VIRTUAL NODE IDE
+// Import Push Chain Core
+
+import { PushChain } from '@pushchain/core';
+
+
+
+// Import if you are using ethers
+
+import { ethers } from 'ethers';
+
+import readline from 'readline';
+
+
+
+async function main() {
+
+  // We need to pass the following to PushChain.utils.signer.construct(account, {options})
+
+  // 1. account which is a universal account
+
+  // 2. options which is an object with the following properties
+
+  // 2.1 signAndSendTransaction
+
+  // 2.2 signMessage
+
+  // 2.3 signTypedData
+
+
+
+  // 1. account to universal account
+
+  // Create random wallet
+
+  const wallet = ethers.Wallet.createRandom();
+
+
+
+  // Convert wallet.address to Universal Account
+
+  const universalAccount = PushChain.utils.account.toUniversal(wallet.address, {
+
+    chain: PushChain.CONSTANTS.CHAIN.ETHEREUM_SEPOLIA,
+
+  });
+
+  console.log('Created Universal Account', JSON.stringify(universalAccount))
+
+
+
+  // 2. options to construct
+
+  // 2.1 signAndSendTransaction
+
+
+
+  // create custom Sign and Send Transaction
+
+  const customSignAndSendTransaction = async (unsignedTx) => {
+
+    // Sign the transaction using ethers wallet
+
+    const signedTx = await wallet.signTransaction(unsignedTx);
+
+    const sendTx = await wallet.sendTransaction(signedTx);
+
+
+
+    // Always a Uint8Array
+
+    return Uint8Array.from(sendTx);
+
+  };
+
+
+
+  // 2.2 signMessage
+
+  const customSignMessage = async (message) => {
+
+    // Sign message using ethers wallet
+
+    const signature = await wallet.signMessage(message);
+
+
+
+    // Always a Uint8Array
+
+    return Uint8Array.from(signature);
+
+  };
+
+
+
+  // 2.3 signMessage
+
+  const customSignTypedData = async (domain, types, value) => {
+
+    // Sign typed data using ethers wallet
+
+    const signature = await wallet._signTypedData(domain, types, value);
+
+
+
+    // Always a Uint8Array
+
+    return Uint8Array.from(signature);
+
+  };
+
+
+
+  // * Construct the universal signer skeleton with custom signing functions
+
+  const universalSignerSkeleton = PushChain.utils.signer.construct(universalAccount, {
+
+    signAndSendTransaction: customSignAndSendTransaction,
+
+    signMessage: customSignMessage,
+
+    signTypedData: customSignTypedData
+
+  });
+
+  console.log('Created Universal Signer Skeleton', JSON.stringify(universalSignerSkeleton));
+
+
+
+
+
+  // ** Pass constructed universal signer skeleton to create universal signer **
+
+  const universalSigner = await PushChain.utils.signer.toUniversal(universalSignerSkeleton);
+
+  console.log('Created Universal Signer', JSON.stringify(universalSigner));
+
+}
+
+await main().catch(console.error);
+
+                                                                                                                               
+
+Open in Github
+Clear Console
+►
+Run Code
+$ Virtual Node Environment with limited capabilities.
+$ Hit "Run Code" to Execute.
+Next Steps
+​
+Initialize Push Chain Client with the Universal Signer
+Abstract away creation of the Universal Signer using UI Kit
+Edit this page
+Previous
+Advanced
+Next
+UI Kit
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+Custom Universal Signer
+Next Steps
+# Integrate Push Universal Wallet
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/integrate-push-universal-wallet/
+
+UI KitIntegrate Push Universal Wallet
+Integrate Push Universal Wallet
+Overview
+​
+
+Push Universal Wallet gives your app:
+
+Seamless cross-chain wallet integration (EVM, Solana, etc.)
+Provider/consumer hook API for global state
+Built-in UI components for connect buttons and modals
+Eliminates the need to manage complex blockchain connections, authentication states, and cross-chain interactions manually
+How It Works
+​
+
+The Push Universal Wallet operates on a simple provider-consumer pattern:
+
+Provider Setup: Wrap your application with PushUniversalWalletProvider to initialize wallet functionality
+Button Integration: Add PushUniversalAccountButton components where users should connect
+State Management: Use the usePushWalletContext hook to access wallet state and methods throughout your app
+
+The Push Universal Wallet provides a unified interface for connecting to multiple blockchains, automatically handling authentication and cross-chain interactions without complex blockchain-specific implementations.
+
+Installation
+​
+npm
+yarn
+npm install @pushchain/ui-kit
+
+NOTE
+
+If you are using Vite with Plug'n'Play (PnP) or encounter a buffer error, simply install buffer as a dependency.
+
+The UI-kit already includes the necessary polyfills, so no extra configuration is required.
+
+Quickstart
+​
+Quickstart
+With Hooks
+With Customizations
+With pushChainClient Interaction
+REACT PLAYGROUND
+// Import necessary components from @pushchain/ui-kit
+import {
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  PushUI,
+} from '@pushchain/ui-kit';
+
+function App() {
+  // Define Wallet Config
+  const walletConfig = {
+    network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET,
+  };
+
+  return (
+
+    <PushUniversalWalletProvider config={walletConfig}>
+
+      <PushUniversalAccountButton />
+
+    </PushUniversalWalletProvider>
+
+  );
+}
+
+LIVE APP PREVIEW
+Connect Account
+
+
+
+INFO
+
+You can quickly scaffold a new Push Chain dapp with UI-Kit already configured using our CLI.
+
+npx create-universal-dapp my-app
+
+Customization Parameters
+​
+
+Customize the parameters as per your need and the wallet functionality being used.
+
+PushUniversalWalletProvider​
+
+Below is a list of minimum parameters required to customize the Push Universal Wallet Provider. Check out PushUniversalWalletProvider for more information on how to use and customize the Push Universal Wallet Provider.
+
+TheseArgumentsare mandatory
+
+Arguments	Type	Default	Description
+config	PushUniversalWalletProviderConfig	-	Core configuration object for wallet connections.
+config.network	PushUI.CONSTANTS.PUSH_NETWORK.TESTNET	-	Push Chain network to conenct to. For example: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET
+PushUI.CONSTANTS.PUSH_NETWORK
+
+config.app	{ title, description, logoUrl }	-	(Optional) app metadata for login/preview in the modal.
+config.login	{ email, google, wallet, appPreview }	-	Toggle login methods.
+config.modal	{ loginLayout, connectedLayout, connectedInteraction, appPreview }	-	Customize the modal layout and interaction.
+themeMode	'light' | 'dark'	light	Force a particular theme.
+themeOverrides	Record<string,string> & { light, dark }	-	Override CSS vars globally or per theme.
+
+
+
+PushUniversalAccountButton​
+
+Check out PushUniversalAccountButton for more information on how to use and customize the Push Universal Account Button.
+
+Next Steps
+​
+Customize the provider in PushUniversalWalletProvider
+Style your connect button in PushUniversalAccountButton
+Master hooks with usePushWalletContext
+Edit this page
+Previous
+UI Kit
+Next
+Customizations
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Overview
+How It Works
+Installation
+Quickstart
+Customization Parameters
+PushUniversalWalletProvider
+PushUniversalAccountButton
+Next Steps
+# Push Universal Wallet Provider
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/customizations/push-universal-wallet-provider/
+
+UI KitCustomizationsPush Universal Wallet Provider
+Push Universal Wallet Provider
+
+PushUniversalWalletProvider is the top-level context provider component that initializes wallet functionality across your app, handling:
+
+Login Configuration: What logins and wallets you want to enable in your app (email, OAuth, wallets).
+Application Metadata: Allows you to display your application metadata such as logo, name, etc.
+Theme Overrides: Customize or override default styles.
+Installation
+​
+npm
+yarn
+# UI Kit SDK
+npm install @pushchain/ui-kit
+
+Usage
+​
+
+Wrap your application with PushUniversalWalletProvider to make wallet functionality available to all child components.
+
+REACT PLAYGROUND
+import {
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  PushUI
+} from '@pushchain/ui-kit';
+
+function App() {
+  return (
+
+    <PushUniversalWalletProvider
+
+      config={{ network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET }}
+
+      themeMode={PushUI.CONSTANTS.THEME.DARK}
+
+    >
+
+      <PushUniversalAccountButton />
+
+    </PushUniversalWalletProvider>
+
+  );
+}
+
+LIVE APP PREVIEW
+Connect Account
+Props
+​
+
+TheseArgumentsare mandatory
+
+Property	Type	Default	Description
+config	Object	**	Used to configure the wallet connection, logins, and modals. ** See config prop for more info.
+app	Object	**	Used to display your application metadata such as logo, name, etc. ** See app prop for more info.
+themeMode	PushUI.CONSTANTS.THEME	PushUI.CONSTANTS.THEME.LIGHT	Theme mode to apply, you can use LIGHT or DARK option.
+PushUI.CONSTANTS.THEME
+
+themeOverrides	Object	**	Used to override default styles. ** See themeOverrides prop for more info.
+config prop (required)​
+
+Customize the behavior of the wallet connection, logins, and modals by using the config prop.
+
+TheseArgumentsare mandatory
+
+Property	Type	Default	Description
+network	PushUI.CONSTANTS.PUSH_NETWORK	-	Push Chain network to connect to. For example: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET
+PushUI.CONSTANTS.PUSH_NETWORK
+
+login	Object	**	Login method configuration. ** See config.login Options.
+modal	Object	**	Global defaults for login and connected modal instances. ** See config.modal Options.
+uid	string	'default'	Unique identifier for this provider. instance
+rpcUrl	string	Public endpoints	Custom JSON-RPC endpoint for supported chains.
+chainConfig	Object	**	Custom settings to configure the SDK instance. ** See config.chainConfig Options.
+`config.login` Options
+`config.login.wallet` Options
+`config.modal` Options
+`config.chainConfig` Options
+Live Playground: Creating basic and advanced config
+app prop​
+
+Display your app metadata in login screens and preview panes by using the app prop. Note: You will also need to enable appPreview in the login and modal section of config props to show them in different sections of the UI.
+
+Property	Type	Description
+logoUrl	string	URL to application logo or icon
+title	string	Application name or title
+description	string	Brief description of the application
+Live Playground: Creating your app metadata
+themeOverrides prop​
+
+Override different theme settings by using the themeOverrides prop. Check out all the supported theme variables in Theme Variables.
+
+Type	Default	Description
+ThemeOverrides	{}	Override the theme settings
+Live Playground: Customizing your theme
+Next Steps
+​
+Customize the connect button with Push Universal Account Button
+Use wallet context hooks via usePushWalletContext
+Access the Push Chain Client with usePushChainClient
+Edit this page
+Previous
+Customizations
+Next
+Push Universal Account Button
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Installation
+Usage
+Props
+config prop (required)
+app prop
+themeOverrides prop
+Next Steps
+# Push Universal Account Button
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/customizations/push-universal-account-button/
+
+UI KitCustomizationsPush Universal Account Button
+Push Universal Account Button
+
+PushUniversalAccountButton is a versatile, state-aware button component for wallet connections in the Push Chain ecosystem. It handles the complete user journey from connection initiation through authentication to displaying the connected account state, with extensive customization options for each state.
+
+Installation
+​
+npm
+yarn
+# UI Kit SDK
+npm install @pushchain/ui-kit
+
+Usage
+​
+
+Place the button in your UI where users should be able to connect. The button must be used within a PushUniversalWalletProvider.
+
+Quickstart
+Advanced
+REACT PLAYGROUND
+import {
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  PushUI,
+} from '@pushchain/ui-kit';
+
+function App() {
+  return (
+    <PushUniversalWalletProvider
+      config={{
+        uid: 'basic',
+        network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET
+      }}
+    >
+
+      <PushUniversalAccountButton
+
+        uid='basic'
+
+        connectButtonText='Start Building 🔥'
+
+        modalAppOverride={{
+
+          title: 'Override App Title on Modal',
+
+        }}
+
+        loginAppOverride={{
+
+          title: 'Override App Title on Login',
+
+        }}
+
+        themeOverrides={{
+
+          '--pwauth-btn-connect-bg-color': ' #3459F0', // or override theme
+
+        }}
+
+      />
+
+    </PushUniversalWalletProvider>
+  );
+}
+
+LIVE APP PREVIEW
+Start Building 🔥
+Props
+​
+Property	Type	Default	Description
+connectButtonText	string	Connect Account	Text for the connect button.
+loadingComponent	React.ReactNode	Uses default loader	Custom loading indicator.
+uid	string	Uses default provider	Optional ID for targeting a specific wallet instance, must match config.uid of specific PushUniversalWalletProvider instance.
+ 
+See multiple wallet example for usage.
+themeOverrides	ThemeOverrides	{}	Button theme overrides. Check out all the supported theme variables in Theme Variables.
+loginAppOverride	Object	**	Used to override app preview in the login screen. ** See loginAppOverride prop for more info.
+modalAppOverride	Object	**	Used to override app preview in the modal presented. ** See modalAppOverride prop for more info.
+loginAppOverride props​
+
+Use this to override app preview that is provided on login screen for a particular button instance. This will override the app preview that is provided in the app prop of PushUniversalWalletProvider.
+
+Property	Type	Default	Description
+logoUrl	string	From Provider's -> app.logoUrl	Override app logo in login screen.
+title	string	From app.title	Override app title in login screen.
+description	string	From app.description	Override app description in login screen.
+modalAppOverride props​
+
+Use this to override app preview that is provided on wallet modal for a particular button instance. This will override the app preview that is provided in the app prop of PushUniversalWalletProvider.
+
+Property	Type	Default	Description
+logoUrl	string	From app.logoUrl	Override app logo in modal.
+title	string	From app.title	Override app title in modal.
+description	string	From app.description	Override app description in modal.
+Handling Connection Lifecycle
+​
+
+You can track and customize the wallet connection lifecycle with usePushWalletContext.
+
+Next Steps
+​
+Track the wallet connection lifecycle with usePushWalletContext
+Get initialized wallet instance with usePushChainClient
+Customize user experience with Theme Variables
+Edit this page
+Previous
+Push Universal Wallet Provider
+Next
+usePushWalletContext
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Installation
+Usage
+Props
+loginAppOverride props
+modalAppOverride props
+Handling Connection Lifecycle
+Next Steps
+# usePushWalletContext
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/customizations/use-push-wallet-context/
+
+UI KitCustomizationsusePushWalletContext
+usePushWalletContext
+
+The usePushWalletContext hook provides access to the current wallet state and methods to interact with the Push Wallet. This hook must be used within a component that's wrapped by a PushUniversalWalletProvider.
+
+Usage
+​
+REACT PLAYGROUND
+import { 
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  usePushWalletContext,
+  PushUI 
+} from '@pushchain/ui-kit';
+
+function App() {
+  // Create a component that uses the hook inside the provider context
+  const WalletContextComponent = () => {
+
+    const { 
+
+      connectionStatus, 
+
+      handleConnectToPushWallet, 
+
+      handleUserLogOutEvent 
+
+    } = usePushWalletContext(); // optional: uid parameter for targeting a specific wallet instance
+
+
+    return (
+      <div>
+        <h3 style={{ margin: '1rem 0' }}>Wallet Status: {connectionStatus}</h3>
+        {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.NOT_CONNECTED && (
+          <button
+            style={{
+              background: 'transparent',
+              padding: '12px 18px',
+              borderRadius: '10px',
+              border: '1px solid',
+            }}
+            onClick={() => handleConnectToPushWallet()}
+          >
+            Connect via Hook Call
+          </button>
+        )}
+        {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED && (
+          <button
+            style={{
+              background: 'transparent',
+              padding: '12px 18px',
+              borderRadius: '10px',
+              border: '1px solid',
+            }}
+            onClick={() => handleUserLogOutEvent()}
+          >
+            Disconnect via Hook Call
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <PushUniversalWalletProvider config={{ network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET }}>
+      <PushUniversalAccountButton />
+      <WalletContextComponent />
+    </PushUniversalWalletProvider>
+  );
+}
+
+LIVE APP PREVIEW
+Connect Account
+Wallet Status: notConnected
+Connect via Hook Call
+Parameters​
+Arguments	Type	Description
+uid	string	Optional ID for targeting a specific wallet instance, must match config.uid of specific PushUniversalWalletProvider instance.
+ 
+See multiple wallet example for usage.
+Returns​
+Property	Type	Default	Description
+connectionStatus	PushUI.CONSTANTS.CONNECTION.STATUS	PushUI.CONSTANTS.CONNECTION.STATUS.NOT_CONNECTED	It will be from one of the following:
+PushUI.CONSTANTS.CONNECTION.STATUS
+
+handleConnectToPushWallet	() => void	function	Call to open the wallet-connect modal (or trigger your chosen flow).
+handleUserLogOutEvent	() => void	function	Call to disconnect the wallet and clear the session.
+Next Steps
+​
+Learn how to use usePushChainClient in your app
+Dive into theme customizations with Theme Variables
+Check out how to implement usePushWalletContext in Examples
+Edit this page
+Previous
+Push Universal Account Button
+Next
+usePushChainClient
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Usage
+Parameters
+Returns
+Next Steps
+# usePushChainClient
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/customizations/use-push-chain-client/
+
+UI KitCustomizationsusePushChainClient
+usePushChainClient
+
+The usePushChainClient hook initializes and manages a Push Chain client instance for blockchain interactions. It integrates with your wallet connection and handles network configuration automatically.
+
+Like usePushWalletContext, This hook must also be used within a component that's wrapped by a PushUniversalWalletProvider.
+
+Usage
+​
+REACT PLAYGROUND
+import {
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  usePushChainClient,
+  PushUI,
+} from '@pushchain/ui-kit';
+
+function App() {
+  // Create a component that uses the hook inside the provider context
+  const ClientComponent = () => {
+
+    const { pushChainClient, isInitialized, error } = usePushChainClient(); // optional: pass uid parameter for targeting a specific wallet instance
+
+
+    return (
+      <div>
+        <h3>
+          Chain Client Status:{' '}
+          {isInitialized ? 'Initialized 🎉' : 'Not Initialized'}
+        </h3>
+        {pushChainClient && (
+          <>
+            <p>Executor: {pushChainClient.universal.account}</p>
+            <p>
+              Origin: {pushChainClient.universal.origin.address} | Chain:{' '}
+              {pushChainClient.universal.origin.chain}
+            </p>
+          </>
+        )}
+        {error && <p>Error: {error.message}</p>}
+      </div>
+    );
+  };
+
+  return (
+    <PushUniversalWalletProvider
+      config={{ network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET }}
+    >
+      <PushUniversalAccountButton />
+      <ClientComponent />
+    </PushUniversalWalletProvider>
+  );
+}
+
+LIVE APP PREVIEW
+Connect Account
+Chain Client Status: Not Initialized
+Parameters​
+Arguments	Type	Description
+uid	string	Optional ID for targeting a specific wallet instance, must match config.uid of specific PushUniversalWalletProvider instance.
+ 
+See multiple wallet example for usage.
+Returns​
+Property	Type	Default	Description
+pushChainClient	PushChainClient | null	-	Your initialized client (once ready).
+isInitialized	boolean	false	false while the client is booting up.
+error	Error | null	-	Failure information, if any.
+Next Steps
+​
+Learn how to use usePushChain in your app
+Explore utilizing usePushChainClient by sending transactions in Examples
+Check out end to end Tutorials to see step by step implementation of Apps
+Edit this page
+Previous
+usePushWalletContext
+Next
+usePushChain
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Usage
+Parameters
+Returns
+Next Steps
+# usePushChain
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/customizations/use-push-chain/
+
+UI KitCustomizationsusePushChain
+usePushChain
+
+The usePushChain hook provides direct access to the PushChain core SDK from the @pushchain/core package. This hook makes it easier to use Push Chain utilities, constants and initialization methods.
+
+It is particularly useful when you want to interact with core functionalities like account utilities, helper fucntions, signer construction, and the PushChain.initialize() method to create your own client.
+
+Usage
+​
+REACT PLAYGROUND
+import {
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  usePushChainClient,
+  usePushChain,
+} from '@pushchain/ui-kit';
+
+function App() {
+  // Create a component that uses the hook inside the provider context
+  const Component = () => {
+    const { PushChain } = usePushChain();
+
+    const { pushChainClient, isInitialized } = usePushChainClient();
+
+
+    return (
+        <>
+            {isInitialized && pushChainClient && (
+                <p>Chain Agnostic: {
+                    PushChain.utils.account.toChainAgnostic(
+                        pushChainClient.universal.origin.address,
+                        {
+                            chain: pushChainClient.universal.origin.chain
+                        }
+                    )}
+                </p>  
+            )}
+        </>
+    );
+  }
+
+  return (
+    <PushUniversalWalletProvider
+      config={{ network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET }}
+    >
+        <PushUniversalAccountButton />
+        <Component />
+    </PushUniversalWalletProvider>
+  );
+}
+
+LIVE APP PREVIEW
+Connect Account
+Returns​
+Property	Type	Description
+PushChain	PushChain	Your core SDK.
+Next Steps
+​
+Customize UI Kit look and feel with Theme Variables
+Explore more about PushChain core SDK in Build
+Check out end to end Tutorials to see step by step implementation of Apps
+Edit this page
+Previous
+usePushChainClient
+Next
+Theme Variables
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Usage
+Returns
+Next Steps
+# Theme Variables
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/customizations/theme-variables/
+
+UI KitCustomizationsTheme Variables
+Theme Variables
+
+The UI Kit SDK lets you customize its look by overriding CSS variables (aka theme tokens). You can apply global overrides (affecting both light & dark) or theme-specific overrides via light and dark sub-objects.
+
+Usage
+​
+Pass the themeOverrides prop to the PushUniversalWalletProvider component to override app wide theme variables.
+You can further extend this by passing the themeOverrides prop to the PushUniversalAccountButton for supported variables. These always begins with --pwauth-.
+App Level
+App Level (Light / Dark)
+Button Specific
+REACT PLAYGROUND
+import {
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  PushUI,
+} from '@pushchain/ui-kit';
+
+function App() {
+  return (
+    <PushUniversalWalletProvider
+      config={{
+        uid: 'applevel',
+        network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET
+      }}
+
+      themeOverrides={{
+
+        '--pw-core-bg-primary-color': '#FAF3E0', // global override
+
+        '--pw-core-bg-secondary-color': '#FFFDF9',
+
+      }}
+
+    >
+      {/* Your App Logic */}
+      <PushUniversalAccountButton uid='applevel' />
+    </PushUniversalWalletProvider>
+  );
+}
+
+LIVE APP PREVIEW
+Connect Account
+OVERRIDE ORDER
+
+Top‑level properties apply to both themes; then light and dark objects override those values when the corresponding theme is active.
+
+List of Supported Theme Variables
+​
+Global Overrides​
+
+Use these tokens for settings that should apply regardless of theme:
+
+Category	Variable	Default
+Typography & Layout	--pw-core-font-family	FK Grotesk Neu
+	--pw-core-text-size	26px
+Spacing & Border	--pw-core-list-spacing	12px
+	--pw-core-modal-border	2px
+	--pw-core-modal-border-radius	24px
+	--pw-core-modal-width	376px
+	--pw-core-modal-padding	24px
+	--pw-core-btn-border-radius	12px
+	--pwauth-btn-connect-border-radius	12px
+Colors​
+
+These tokens have different defaults in light vs. dark themes:
+
+Variable	Default (Light)	Default (Dark)
+--pw-core-brand-primary-color	
+
+#D548EC
+
+	
+
+#CF59E2
+
+
+--pw-core-text-primary-color	
+
+#17181B
+
+	
+
+#F5F6F8
+
+
+--pw-core-text-secondary-color	
+
+#313338
+
+	
+
+#C4CBD5
+
+
+--pw-core-text-tertiary-color	
+
+#8C93A0
+
+	
+
+#757D8D
+
+
+--pw-core-text-link-color	
+
+#C742DD
+
+	
+
+#CF59E2
+
+
+--pw-core-text-disabled-color	
+
+#B0B3B9
+
+	
+
+#757D8D
+
+
+--pw-core-bg-primary-color	
+
+#F5F6F8
+
+	
+
+#17181B
+
+
+--pw-core-bg-secondary-color	
+
+#FFFFFF
+
+	
+
+#202124
+
+
+--pw-core-bg-tertiary-color	
+
+#EAEBF2
+
+	
+
+#313338
+
+
+--pw-core-bg-disabled-color	
+
+#EAEBF2
+
+	
+
+#313338
+
+
+--pw-core-success-primary-color	
+
+#00A47F
+
+	
+
+#51DCBD
+
+
+--pw-core-error-primary-color	
+
+#D43B3B
+
+	
+
+#FFB1B1
+
+
+--pw-core-modal-border-color	
+
+#CF59E2
+
+	
+
+#D548EC
+
+
+--pw-core-btn-primary-bg-color	
+
+#D548EC
+
+	
+
+#D548EC
+
+
+--pw-core-btn-primary-text-color	
+
+#FFFFFF
+
+	
+
+#FFFFFF
+
+
+--pwauth-btn-connect-text-color	
+
+#FFFFFF
+
+	
+
+#FFFFFF
+
+
+--pwauth-btn-connect-bg-color	
+
+#D548EC
+
+	
+
+#D548EC
+
+
+--pwauth-btn-connected-text-color	
+
+#FFFFFF
+
+	
+
+#FFFFFF
+
+
+--pwauth-btn-connected-bg-color	
+
+#000000
+
+	
+
+#000000
+
+Next Steps
+​
+Try out Theme Overrides Example or Button Theme Overrides Example
+Check out various other examples in Examples section
+Dive into end to end tutorials to see step by step implementation of App
+Edit this page
+Previous
+usePushChain
+Next
+Examples
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Usage
+List of Supported Theme Variables
+Global Overrides
+Colors
+Next Steps
+# Single Wallet Example
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/examples/single-wallet-example/
+
+UI KitExamplesSingle Wallet Example
+Single Wallet Example
+
+This example demonstrates:
+
+Basic wallet integration with the Push Universal Wallet.
+Basic app metadata integration with the Push Universal Wallet.
+Live playground
+​
+REACT PLAYGROUND
+LIVE APP PREVIEW
+Connect Account
+Next Steps
+​
+Explore connecting multiple wallets with Multiple Wallets Example
+Themize UI Kit with Theme Overrides Example or Wallet Connect Button with Button Theme Overrides Example
+Check out step by step implementation of App in end to end Tutorials
+Edit this page
+Previous
+Examples
+Next
+Multiple Wallet Example
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Live playground
+Next Steps
+# Multiple Wallet Example
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/examples/multiple-wallet-example/
+
+UI KitExamplesMultiple Wallet Example
+Multiple Wallet Example
+
+This example demonstrates:
+
+How to connect multiple wallets to your app.
+Using multiple chains wallets simultaneously for same app / user.
+Live playground
+​
+REACT PLAYGROUND
+LIVE APP PREVIEW
+Connect Wallet 1
+Connect Wallet 2
+Next Steps
+​
+Up your app vibe with themizing UI Kit from Theme Overrides Example
+Ensure consistent styling of wallet connect button with Button Theme Overrides Example
+Check out step by step implementation of App in end to end Tutorials
+Edit this page
+Previous
+Single Wallet Example
+Next
+Theme Overrides Example
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Live playground
+Next Steps
+# Theme Overrides Example
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/examples/theme-overrides-example/
+
+UI KitExamplesTheme Overrides Example
+Theme Overrides Example
+
+List of examples that demostrates:
+
+How to customize the overall theme of Push UI Kit.
+How to customize the theme for light and dark modes.
+Live playground
+​
+Basic
+Light / Dark
+REACT PLAYGROUND
+LIVE APP PREVIEW
+Connect Account
+Next Steps
+​
+Explore how to themize Push Universal Account Button from Button Theme Overrides Example
+Check out the send transaction feature of pushChainClient in Send Transaction Example
+Check out step by step implementation of App in end to end Tutorials
+Edit this page
+Previous
+Multiple Wallet Example
+Next
+Button Theme Overrides Example
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Live playground
+Next Steps
+# Button Theme Overrides Example
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/examples/button-theme-overrides-example/
+
+UI KitExamplesButton Theme Overrides Example
+Button Theme Overrides Example
+
+List of examples that demostrates:
+
+How to customize the theme of Push Universal Account Button.
+How to customize the theme for light and dark modes.
+How to extend customization of Push Universal Account Button for all css styles.
+Live playground
+​
+Basic
+Light / Dark
+Extending CSS for Any Style
+REACT PLAYGROUND
+import {
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  usePushWalletContext,
+  PushUI,
+} from '@pushchain/ui-kit';
+
+function App() {
+  const walletConfig = {
+    uid: 'extend',
+    network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET,
+    login: {
+      email: true,
+      google: true,
+      wallet: {
+        enabled: true,
+      },
+      appPreview: true,
+    },
+    modal: {
+      loginLayout: PushUI.CONSTANTS.LOGIN.LAYOUT.SPLIT,
+      connectedLayout: PushUI.CONSTANTS.CONNECTED.LAYOUT.HOVER,
+      appPreview: true,
+    },
+  };
+
+  const appMetadata = {
+    logoUrl:
+      'https://plus.unsplash.com/premium_photo-1746731481770-08b2f71661d0?q=80&w=2671&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    title: 'Test App Title',
+    description: 'Test App Description',
+  };
+
+  function WalletUI() {
+    const { universalAccount } = usePushWalletContext('extend');
+
+    return (
+      <div>
+        <PushUniversalAccountButton
+          uid='extend'
+          themeOverrides={{
+            '--pwauth-btn-connect-border-radius': '32px',
+            '--pwauth-btn-connect-bg-color': '#6684FC',
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <PushUniversalWalletProvider
+      config={walletConfig}
+      app={appMetadata}
+      themeMode={PushUI.CONSTANTS.THEME.DARK}
+    >
+      <WalletUI />
+    </PushUniversalWalletProvider>
+  );
+}
+
+LIVE APP PREVIEW
+Connect Account
+Next Steps
+​
+Check out the send transaction feature of pushChainClient in Send Transaction Example
+Check out advance concepts of Push Chain in Deep Dives
+Check out step by step implementation of App in end to end Tutorials
+Edit this page
+Previous
+Theme Overrides Example
+Next
+Send Transaction Example
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Live playground
+Next Steps
+# Button Theme Overrides Example
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/examples/button-theme-overrides-example/
+
+UI KitExamplesButton Theme Overrides Example
+Button Theme Overrides Example
+
+List of examples that demostrates:
+
+How to customize the theme of Push Universal Account Button.
+How to customize the theme for light and dark modes.
+How to extend customization of Push Universal Account Button for all css styles.
+Live playground
+​
+Basic
+Light / Dark
+Extending CSS for Any Style
+REACT PLAYGROUND
+LIVE APP PREVIEW
+Connect Account
+Next Steps
+​
+Check out the send transaction feature of pushChainClient in Send Transaction Example
+Check out advance concepts of Push Chain in Deep Dives
+Check out step by step implementation of App in end to end Tutorials
+Edit this page
+Previous
+Theme Overrides Example
+Next
+Send Transaction Example
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Live playground
+Next Steps
+# Send Transaction Example
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/ui-kit/examples/send-transaction-example/
+
+UI KitExamplesSend Transaction Example
+Send Transaction Example
+
+This example demonstrates:
+
+Basic send transaction functionality using pushChainClient of usePushChainClient.
+Live playground
+​
+REACT PLAYGROUND
+// Import necessary components from @pushchain/ui-kit
+import {
+  PushUniversalWalletProvider,
+  PushUniversalAccountButton,
+  usePushWalletContext,
+  usePushChainClient,
+  PushUI,
+} from '@pushchain/ui-kit';
+import { useState } from 'react';
+import { PushChain } from '@pushchain/core';
+
+function App() {
+  // Define Wallet Config
+  const walletConfig = {
+    network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET,
+  };
+
+  function Component() {
+    const [txnHash, setTxnHash] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const { connectionStatus } = usePushWalletContext();
+    const { pushChainClient } = usePushChainClient();
+
+    const handleSendTransaction = async () => {
+      if (pushChainClient) {
+        setIsLoading(true);
+        try {
+          const res = await pushChainClient.universal.sendTransaction({
+            to: '0xFaE3594C68EDFc2A61b7527164BDAe80bC302108',
+            value: PushChain.utils.helpers.parseUnits('1', 18), // 1 PC in uPC
+          });
+          setTxnHash(res.hash);
+        } catch (err) {
+          console.log(err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    return (
+      <div>
+        <PushUniversalAccountButton />
+
+        {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED &&
+          <button
+            disabled={isLoading}
+            style={{
+                background: 'transparent',
+                border: '1px solid',
+                borderRadius: '10px',
+                padding: '12px 18px',
+                cursor: 'pointer',
+                margin: '8px 0',
+            }}
+            onClick={handleSendTransaction}
+          >
+            Send Transaction
+          </button>
+        }
+        {txnHash && (
+            <>
+                <p>Txn Hash: {txnHash}</p>
+                <a
+                    href={pushChainClient?.explorer.getTransactionUrl(txnHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    View in Explorer
+                </a>
+            </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <PushUniversalWalletProvider config={walletConfig}>
+      <Component />
+    </PushUniversalWalletProvider>
+  );
+}
+
+LIVE APP PREVIEW
+Connect Account
+Next Steps
+​
+Check out advance concepts of Push Chain in Deep Dives
+Check out step by step implementation of App in end to end Tutorials
+Follow or give a shoutout on X to our Intern at @PushChain!
+Edit this page
+Previous
+Button Theme Overrides Example
+Next
+Deep Dives
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Live playground
+Next Steps
+# JSON-RPC Functions
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/deep-dives/json-rpc-functions/
+
+Deep DivesJSON-RPC Functions
+JSON-RPC Functions
+
+Push Chain is an EVM-compatible blockchain, and thus supports the standard JSON-RPC functions available on all Ethereum-compatible networks. This document provides examples of how to call basic JSON-RPC functions on Push Chain. For comprehensive details, visit the official Ethereum JSON-RPC Documentation.
+
+Examples
+​
+
+Here are examples showcasing how to make JSON-RPC requests using CURL.
+
+Get Block by Number​
+
+Fetch block details for a specific block number:
+
+curl -X POST https://evm.rpc-testnet-donut-node1.push.org/ \
+     -H "Content-Type: application/json" \
+     -d '{
+       "jsonrpc":"2.0",
+       "method":"eth_getBlockByNumber",
+       "params":["0x10d4f", true],
+       "id":1
+     }'
+
+
+
+
+Get Current Block Number​
+
+Retrieve the current block number:
+
+curl -X POST https://evm.rpc-testnet-donut-node1.push.org/ \
+     -H "Content-Type: application/json" \
+     -d '{
+       "jsonrpc":"2.0",
+       "method":"eth_blockNumber",
+       "params":[],
+       "id":1
+     }'
+
+
+
+
+Get Transaction by txHash​
+
+Fetch transaction details using its hash:
+
+curl -X POST https://evm.rpc-testnet-donut-node1.push.org/ \
+     -H "Content-Type: application/json" \
+     -d '{
+       "jsonrpc":"2.0",
+       "method":"eth_getTransactionByHash",
+       "params":["0xb903239f8543d04b5dc1ba6579132b143087c68db1b2168786408fcbce568238"],
+       "id":1
+     }'
+
+
+
+
+Get Account Balance​
+
+Retrieve the balance of an address:
+
+curl -X POST https://evm.rpc-testnet-donut-node1.push.org/ \
+     -H "Content-Type: application/json" \
+     -d '{
+       "jsonrpc":"2.0",
+       "method":"eth_getBalance",
+       "params":["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "latest"],
+       "id":1
+     }'
+
+Further Information
+​
+
+For more JSON-RPC methods and their usage, refer to the Ethereum JSON-RPC API Reference.
+
+Edit this page
+Previous
+Deep Dives
+Next
+Push Node Manager
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Examples
+Get Block by Number
+Get Current Block Number
+Get Transaction by txHash
+Get Account Balance
+Further Information
+# Push Node Manager
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/deep-dives/push-node-manager/
+
+Deep DivesPush Node Manager
+Push Node Manager
+
+Push Chain validator management
+
+🚀 Quick Start
+​
+Step 1: Install & Start​
+curl -fsSL https://get.push.network/node/install.sh | bash
+
+
+This installs and starts your validator automatically.
+
+Note: After installation, restart your terminal or run source ~/.bashrc (or ~/.zshrc) to use the push-node-manager command from anywhere.
+
+Step 2: Check Sync Status​
+push-node-manager status
+
+
+Wait for: ✅ Catching Up: false (fully synced)
+
+Step 3: Become a Validator​
+push-node-manager register-validator
+
+
+Requirements:
+
+Node must be synced (catching_up: false)
+Need 2+ PC tokens from faucet
+Account must be funded first
+
+That's it! You're now running a Push Chain validator! 🎉
+
+📖 Commands
+​
+Essential Commands​
+push-node-manager start              # Setup + start node  
+push-node-manager stop               # Stop node
+push-node-manager status             # Show sync status & validator info
+push-node-manager register-validator # Become a validator
+push-node-manager logs               # View live logs
+
+Additional Commands​
+push-node-manager restart    # Restart node
+push-node-manager sync       # Real-time sync monitor
+push-node-manager validators # List all validators
+push-node-manager balance    # Check wallet balance
+push-node-manager reset      # Reset blockchain data
+push-node-manager help       # Show all commands
+
+Public Setup Commands (Optional)​
+push-node-manager setup-nginx <domain> # Setup NGINX + SSL for public RPC
+push-node-manager setup-logs           # Configure log rotation
+push-node-manager backup               # Create node backup
+
+📊 Network Info
+​
+Chain ID: push_42101-1
+Network: Push Chain Testnet
+Min Stake: 2 PC
+Faucet: https://faucet.push.org
+Explorer: https://donut.push.network
+🔧 File Locations
+​
+Binary: ./build/pchaind
+Config: ~/.pchain/config/
+Data: ~/.pchain/data/
+Keys: ~/.pchain/keyring-test/
+Logs: ~/.pchain/logs/pchaind.log
+🌍 Public Setup (Optional)
+​
+Making Your Node Publicly Accessible​
+
+By default, your validator runs locally. These optional commands help set up public HTTPS endpoints:
+
+Setup NGINX with SSL​
+push-node-manager setup-nginx yourdomain.com
+
+
+Creates:
+
+https://yourdomain.com - Cosmos RPC endpoint
+https://evm.yourdomain.com - EVM RPC endpoint
+Automatic SSL certificates via Let's Encrypt
+Rate limiting and security headers
+
+Requirements:
+
+Domain pointing to your server IP
+Ports 80/443 open
+Ubuntu/Debian system
+Setup Log Rotation​
+push-node-manager setup-logs
+
+
+Configures:
+
+Daily log rotation
+14-day retention
+Automatic compression
+System logrotate integration
+Create Backups​
+push-node-manager backup
+
+Timestamped backup in ~/push-node-backups/
+Includes all config, keys, and blockchain data
+Compressed archive with integrity verification
+Edit this page
+Previous
+JSON-RPC Functions
+Next
+Localnet
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+🚀 Quick Start
+Step 1: Install & Start
+Step 2: Check Sync Status
+Step 3: Become a Validator
+📖 Commands
+Essential Commands
+Additional Commands
+Public Setup Commands (Optional)
+📊 Network Info
+🔧 File Locations
+🌍 Public Setup (Optional)
+Making Your Node Publicly Accessible
+# Localnet
+
+Source: https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/chain/deep-dives/localnet/
+
+Deep DivesLocalnet
+Localnet
+
+Learn how to deploy localnet of Push Chain to understand or speed up the development of your app.
+
+Prerequisites
+​
+
+Ensure the following tools are installed:
+
+Go (v1.23+)
+Foundry
+Git
+Setup & Start Push Chain Localnet
+​
+1. Clone and install Push Chain​
+git clone https://github.com/pushchain/push-chain-node
+cd push-chain
+make install
+
+
+
+
+2. Start the local testnet​
+make sh-testnet
+
+
+This launches the local Push Chain node. You can now interact with it using the pchaind CLI.
+
+Deploy Protocol Contracts (UEA)
+​
+
+To enable universal execution from EVM/Solana chains, you need to deploy protocol contracts to your localnet.
+
+1. Clone and build smart account contracts​
+git clone https://github.com/pushchain/push-chain-core-contracts/
+cd push-smart-account-v1
+forge build
+
+
+
+
+2. Fund Your EVM Wallet on Localnet​
+
+Before deploying the contracts, your EVM wallet must have enough UPC tokens on the local Push Chain network.
+
+To send funds, you need the Bech32 format of your EVM wallet address (since Push Chain uses Cosmos SDK-style addresses for transfers).
+
+Step-by-step​
+Take your EVM address (in hex, 0x-prefixed format) — for example:
+0x778d3206374f8ac265728e18e3fe2ae6b93e4ce4
+
+Convert it to Bech32 format using:
+pchaind debug addr 778d3206374f8ac265728e18e3fe2ae6b93e4ce4
+
+
+🔁 Replace 778d...ce4 with your own EVM address (without the 0x prefix).
+
+You should get an output like this:
+Address (hex): 778D3206374F8AC265728E18E3FE2AE6B93E4CE4
+Bech32 Acc: push1jtdw9kjc2yptl6yjyad69q73v2gcl29xfmmq5a
+
+Use the Bech32 account address (e.g. push1jtdw9kjc2yptl6yjyad69q73v2gcl29xfmmq5a) to receive funds:
+pchaind tx bank send push1gjaw568e35hjc8udhat0xnsxxmkm2snrexxz20 push1jtdw9kjc2yptl6yjyad69q73v2gcl29xfmmq5a 100000000000000000000000upc --gas-prices 1000000000upc -y
+
+
+The push1gjaw568e35hjc8udhat0xnsxxmkm2snrexxz20 address is pre-funded at genesis with 5 billion UPC, so it’s safe to use as the sender.
+
+
+
+
+3. Deploy UEAFactory & Implementations​
+
+Once funded, run the deployment script:
+
+forge script script/deployFactory.s.sol --rpc-url http://localhost:8545 --broadcast --private-key <YOUR_LOCAL_PRIVATE_KEY>
+
+
+This sets up the UEAFactory and registers the EVM + SVM UEA implementations needed for universal execution.
+
+Add External Chain Configurations
+​
+
+Now configure Push Chain to interact with external chains.
+
+Solana Devnet​
+pchaind tx ue add-chain-config --chain-config "$(cat config/testnet-donut/solana_devnet_chain_config.json)" --from acc1 --gas-prices 100000000000upc -y
+
+
+
+
+Ethereum Sepolia​
+pchaind tx ue add-chain-config --chain-config "$(cat config/testnet-donut/eth_sepolia_chain_config.json)" --from acc1 --gas-prices 100000000000upc -y
+
+
+If you’ve deployed a custom FeeGateway contract, you can include its address in the chain config as well.
+
+That’s it! You have successfully set up the Push Chain localnet and are ready to bring your imagination into reality.
+
+Next steps
+​
+Interact and make your app universal via Core SDK
+Abstract wallet and gas fee for your Users by implementing UI Kit
+Edit this page
+Previous
+Push Node Manager
+Next
+Changelog
+Copy page
+Copy page
+Copy the page as Markdown for LLMs
+View as Markdown
+View this page as plain text
+Open in ChatGPT
+Ask questions about this page
+Open in Claude
+Ask questions about this page
+Prerequisites
+Setup & Start Push Chain Localnet
+1. Clone and install Push Chain
+2. Start the local testnet
+Deploy Protocol Contracts (UEA)
+1. Clone and build smart account contracts
+2. Fund Your EVM Wallet on Localnet
+3. Deploy UEAFactory & Implementations
+Add External Chain Configurations
+Solana Devnet
+Ethereum Sepolia
+Next steps

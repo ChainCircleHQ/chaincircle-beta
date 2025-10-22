@@ -1,0 +1,22 @@
+// Auto-generated from deployment
+export const CONTRACT_ADDRESSES = {
+  CUSD: "0x7D5Dbda57E186f7e905e5E77224Cd60054fF41f3",
+  CHAIN_CIRCLE_CORE: "0x59D44aea45bd92E2798b7998e8E090586670f161",
+  REPUTATION_MANAGER: "0xEaEa469279B89E7fF0BDd5903226483418AB37e4",
+  BADGE_NFT: "0x9171F3AE9Cb9EBBa0826ad31971647DceB52Bd50",
+  GOVERNANCE_MODULE: "0xA3c786088a6D3EB9216B5647a4149a7dF0149b49",
+  NAME_REGISTRY: "0x1c8fCc121D52EAa6d4705fCcE95e34E2CEDced5E",
+  MOCK_YIELD: "0x2312493eac47f20a3a1B8e7AB1627F1B1FDd3412"
+};
+
+export const NETWORK_CONFIG = {
+  chainId: 42101,
+  name: "Push Chain Donut Testnet",
+  rpcUrl: "https://evm.rpc-testnet-donut-node1.push.org/",
+  explorerUrl: "https://donut.push.network",
+  currency: {
+    name: "Push Token",
+    symbol: "PC",
+    decimals: 18
+  }
+};
