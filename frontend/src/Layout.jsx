@@ -101,8 +101,11 @@ export default function chain() {
 
       <div className="flex-1 overflow-auto h-full flex flex-col gap-10 px-7 lg:px-20 py-10">
         <div className="lg:ml-auto justify-between lg:justify-end lg:w-fit flex flex-row-reverse  items-center gap-4 ">
-          <div className="relative">
-            <FaRegBell size={isTabletOrMobile ? 24 : 35} cursor={"pointer"} />
+          <div
+            className="relative cursor-pointer hover:scale-110 transition-transform"
+            onClick={() => navigate('/chain/notification')}
+          >
+            <FaRegBell size={isTabletOrMobile ? 24 : 35} />
             <div className="absolute rounded-full w-3 h-3 lg:w-4 lg:h-4 bg-[#DB0000] top-2 right-2 "></div>
           </div>
           <div className="max-w-[200px]">

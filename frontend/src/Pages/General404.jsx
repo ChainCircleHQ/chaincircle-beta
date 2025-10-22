@@ -12,7 +12,7 @@ export default function General404() {
             <img
               src="/assets/header-logo.png"
               alt=""
-              className="w-[40%] h-[50px]"
+              className="h-[50px] object-contain"
             />
           </header>
           <ErrorContainer />

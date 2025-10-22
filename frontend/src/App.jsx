@@ -8,6 +8,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Dashboard from './Routes/Dashboard'
 import Circle from './Routes/Circle'
 import Payout from './Routes/Payout'
+import Notification from './Routes/Notification'
+import FAQ from './Pages/Landing/FAQ'
+import Terms from './Pages/Landing/Terms'
 import Dashboard404 from './Pages/Dashboard404'
 import General404 from './Pages/General404'
 import { PushUniversalWalletProvider, PushUI } from '@pushchain/ui-kit'
@@ -49,12 +52,15 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="/chain" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="profile" element={<Profile />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="circle" element={<Circle />} />
               <Route path="payout" element={<Payout />} />
+              <Route path="notification" element={<Notification />} />
               {/* Dashboard 404 - for when user is on dashboard and requests invalid page */}
               <Route path="*" element={<Dashboard404 />} />
             </Route>

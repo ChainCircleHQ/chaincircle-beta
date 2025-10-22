@@ -8,6 +8,7 @@ import { PiCaretDownBold } from "react-icons/pi";
 import { IoClose } from "react-icons/io5";
 import { useCreateCircle } from '../../hooks/useCircleActions';
 import { GOAL_TYPES } from '../../utils/constants';
+import { Link } from 'react-router';
 const isTabletOrMobile = window.innerWidth <= 1014;
 
 export default function CreateCircleModal({ onClose }) {
@@ -19,9 +20,10 @@ export default function CreateCircleModal({ onClose }) {
        left: 0,
        behavior: "smooth", // Smooth scrolling animation
      });
-   }, []); 
-  
+   }, []);
+
   const [step, setStep] = useState(1);
+  const [showTerms, setShowTerms] = useState(false);
   
   
 
@@ -88,6 +90,12 @@ export default function CreateCircleModal({ onClose }) {
       // Validate required fields
       if (!formData.circleName || !formData.goalType || !formData.contributionAmount || !formData.maxMembers) {
         alert('Please fill in all required fields');
+        return;
+      }
+
+      // Validate Terms acceptance
+      if (!formData.acceptTerms) {
+        alert('You must accept the Terms and Conditions to create a circle');
         return;
       }
 
@@ -191,9 +199,14 @@ export default function CreateCircleModal({ onClose }) {
           <Step2 formData={formData} updateFormData={updateFormData} />
         )}
         {step === 3 && (
-          <Step3 formData={formData} updateFormData={updateFormData} />
+          <Step3 formData={formData} updateFormData={updateFormData} onShowTerms={() => setShowTerms(true)} />
         )}
       </div>
+
+      {/* Terms and Conditions Modal */}
+      {showTerms && (
+        <TermsModal onClose={() => setShowTerms(false)} />
+      )}
 
       {/* Form Buttons */}
       <div className="w-[95%] py-8 flex items-center justify-between ">
@@ -377,7 +390,7 @@ const Step2 = ({ formData, updateFormData }) => {
   );
 }
 
-const Step3 = ({ formData, updateFormData }) => { 
+const Step3 = ({ formData, updateFormData, onShowTerms }) => { 
   // Theme colors mapping
   const themeColors = {
     'Chain yellow': '#FFA500',
@@ -391,17 +404,17 @@ const Step3 = ({ formData, updateFormData }) => {
   const getCircleIcon = () => {
     switch (formData.goalType) {
       case "Dream Home Squad":
-        return <RiHome4Fill size={isTabletOrMobile ? 24 : null} />;
+        return <RiHome4Fill size={isTabletOrMobile ? 24 : 48} />;
       case "Project G-Wagon":
-        return <FaCar size={isTabletOrMobile ? 24 : null} />;
+        return <FaCar size={isTabletOrMobile ? 24 : 48} />;
       case "Our incoming heir":
-        return <FaFaceSmileBeam size={isTabletOrMobile ? 24 : null} />;
+        return <FaFaceSmileBeam size={isTabletOrMobile ? 24 : 48} />;
       case "Detty December":
-        return <MdCelebration size={isTabletOrMobile ? 24 : null} />;
+        return <MdCelebration size={isTabletOrMobile ? 24 : 48} />;
       case "Next Elon Musks":
-        return <FaUserAstronaut size={isTabletOrMobile ? 24 : null} />;
+        return <FaUserAstronaut size={isTabletOrMobile ? 24 : 48} />;
       default:
-        return <FaCar size={isTabletOrMobile ? 24 : null} />;
+        return <FaCar size={isTabletOrMobile ? 24 : 48} />;
     }
   };
   
@@ -516,10 +529,243 @@ const Step3 = ({ formData, updateFormData }) => {
           className="text-[12px] lg:text-[16px] text-gray-300"
         >
           I accept Chaincircle's{" "}
-          <span className="text-[#D548EC] underline cursor-pointer">
+          <span
+            onClick={onShowTerms}
+            className="text-[#D548EC] underline cursor-pointer hover:text-[#B83CC3] transition-colors"
+          >
             Terms and Conditions
           </span>
         </label>
+      </div>
+    </div>
+  );
+}
+
+const TermsModal = ({ onClose }) => {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 font-dm">
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#111111] rounded-[20px] border border-[#F4AEFF] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 lg:p-8 border-b border-[#F4AEFF] bg-gradient-to-b from-[#111111] to-[#1a1a1a]">
+          <h2 className="text-2xl lg:text-4xl font-bold text-white">
+            Terms and Conditions
+          </h2>
+          <IoClose
+            onClick={onClose}
+            size={isTabletOrMobile ? 28 : 36}
+            className="cursor-pointer hover:scale-110 transition-all text-white"
+          />
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6 text-white">
+          <p className="text-[#AAAAAA] text-sm lg:text-base">
+            Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+
+          {/* Section 1 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              1. Acceptance of Terms
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+              By accessing and using ChainCircle ("the Platform"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms and Conditions, please do not use the Platform.
+            </p>
+          </section>
+
+          {/* Section 2 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              2. Description of Service
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
+              ChainCircle is a decentralized savings circle platform built on Push Chain that enables users to:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+              <li>Create and join savings circles with other users</li>
+              <li>Make periodic contributions using CUSD (Circle USD)</li>
+              <li>Receive payouts according to the circle's schedule</li>
+              <li>Earn reputation points and badges through participation</li>
+              <li>Participate in governance (for qualified users)</li>
+            </ul>
+          </section>
+
+          {/* Section 3 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              3. User Responsibilities
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
+              As a user of ChainCircle, you agree to:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+              <li>Provide accurate and truthful information</li>
+              <li>Maintain the security of your wallet and private keys</li>
+              <li>Make timely contributions to circles you join</li>
+              <li>Not engage in fraudulent or malicious activities</li>
+              <li>Comply with all applicable laws and regulations</li>
+              <li>Not create multiple accounts to manipulate the system</li>
+            </ul>
+          </section>
+
+          {/* Section 4 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              4. Financial Risks
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
+              <strong className="text-white">IMPORTANT:</strong> By using ChainCircle, you acknowledge and accept the following risks:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+              <li>Circle members may default on their payment obligations</li>
+              <li>Smart contract vulnerabilities may exist despite security audits</li>
+              <li>Cryptocurrency values may fluctuate significantly</li>
+              <li>Network congestion may affect transaction processing</li>
+              <li>Loss of funds is possible and may not be recoverable</li>
+              <li>ChainCircle does not guarantee returns or payouts</li>
+            </ul>
+          </section>
+
+          {/* Section 5 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              5. Circle Creation and Participation
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
+              When creating or joining a circle:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+              <li>You commit to making all scheduled contributions on time</li>
+              <li>Late payments may result in reputation penalties</li>
+              <li>Circle creators are responsible for accurate configuration</li>
+              <li>Once a circle starts, terms cannot be modified</li>
+              <li>Early withdrawal may not be possible without penalties</li>
+            </ul>
+          </section>
+
+          {/* Section 6 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              6. Reputation System
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+              ChainCircle uses a reputation system to track user behavior. Your reputation score is determined by payment history, circle completion, and other factors. Negative actions (late payments, defaults) will decrease your reputation and may limit your access to certain features.
+            </p>
+          </section>
+
+          {/* Section 7 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              7. Smart Contract Interactions
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+              All transactions on ChainCircle are executed through smart contracts on the Push Chain blockchain. Once a transaction is confirmed on the blockchain, it is irreversible. You are responsible for verifying all transaction details before confirmation.
+            </p>
+          </section>
+
+          {/* Section 8 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              8. Limitation of Liability
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+              ChainCircle and its developers shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages resulting from your use of the Platform, including but not limited to loss of funds, loss of profits, or loss of data.
+            </p>
+          </section>
+
+          {/* Section 9 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              9. Prohibited Activities
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
+              You may not:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+              <li>Use the Platform for money laundering or illegal activities</li>
+              <li>Attempt to hack, exploit, or manipulate smart contracts</li>
+              <li>Create circles with the intent to defraud other users</li>
+              <li>Use automated bots or scripts to gain unfair advantages</li>
+              <li>Impersonate other users or entities</li>
+            </ul>
+          </section>
+
+          {/* Section 10 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              10. Privacy and Data
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+              Your wallet address and on-chain activities are publicly visible on the blockchain. While ChainCircle does not collect personal information, blockchain transactions are transparent and permanent.
+            </p>
+          </section>
+
+          {/* Section 11 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              11. Modifications to Terms
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+              ChainCircle reserves the right to modify these Terms and Conditions at any time. Continued use of the Platform after changes constitutes acceptance of the modified terms. Material changes will be communicated through the Platform.
+            </p>
+          </section>
+
+          {/* Section 12 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              12. Termination
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+              ChainCircle may terminate or suspend your access to the Platform at any time for violation of these Terms and Conditions or for any other reason at our sole discretion, without prior notice.
+            </p>
+          </section>
+
+          {/* Section 13 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              13. Governing Law
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed">
+              These Terms and Conditions shall be governed by and construed in accordance with applicable laws. Any disputes arising from these terms shall be resolved through binding arbitration.
+            </p>
+          </section>
+
+          {/* Section 14 */}
+          <section>
+            <h3 className="text-xl lg:text-2xl font-bold mb-3 text-[#D548EC]">
+              14. Contact Information
+            </h3>
+            <p className="text-[#CCCCCC] text-sm lg:text-base leading-relaxed mb-3">
+              For questions or concerns about these Terms and Conditions, please contact us:
+            </p>
+            <ul className="list-none space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+              <li>Email: legal@chaincircle.io</li>
+              <li>Twitter: <a href="https://x.com/chaincircle_?s=21" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">@chaincircle_</a></li>
+              <li>GitHub: <a href="https://github.com/ChainCircleHQ" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">ChainCircleHQ</a></li>
+            </ul>
+          </section>
+
+          {/* Agreement */}
+          <section className="p-4 lg:p-6 border border-[#D548EC] rounded-lg bg-[#D548EC]/10">
+            <p className="text-white font-semibold text-base lg:text-lg mb-3">
+              By using ChainCircle, you acknowledge that:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#CCCCCC] text-sm lg:text-base ml-4">
+              <li>You have read and understood these Terms and Conditions</li>
+              <li>You accept all risks associated with using the Platform</li>
+              <li>You are solely responsible for your financial decisions</li>
+              <li>You will comply with all terms outlined above</li>
+            </ul>
+          </section>
+        </div>
+
+        {/* Footer with Close Button */}
+        <div className="p-6 lg:p-8 border-t border-[#F4AEFF] bg-gradient-to-t from-[#111111] to-[#1a1a1a]">
+          <PurpleBtn
+            text="Close"
+            action={onClose}
+          />
+        </div>
       </div>
     </div>
   );
