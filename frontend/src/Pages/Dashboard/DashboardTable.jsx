@@ -12,9 +12,14 @@ export default function DashboardTable() {
   const { userAddress } = useCircleContract();
 
   const handleActivityClick = (activity) => {
-    // Open the user's address on the explorer to view their transaction history
-    // This allows them to see all their transactions on the blockchain
-    const explorerUrl = `${NETWORK_CONFIG.explorerUrl}/address/${userAddress}`;
+    // If we have a transaction hash, link to the specific transaction
+    // Otherwise, fall back to the user's address page
+    let explorerUrl;
+    if (activity.txHash) {
+      explorerUrl = `${NETWORK_CONFIG.explorerUrl}/tx/${activity.txHash}`;
+    } else {
+      explorerUrl = `${NETWORK_CONFIG.explorerUrl}/address/${userAddress}`;
+    }
     window.open(explorerUrl, '_blank');
   };
 
@@ -47,7 +52,7 @@ export default function DashboardTable() {
               }`}
               key={item.id}
               onClick={() => handleActivityClick(item)}
-              title="Click to view your transactions on Push Chain explorer"
+              title={item.txHash ? "Click to view transaction details on Push Chain explorer" : "Click to view your transactions on Push Chain explorer"}
             >
               <div className="flex items-center gap-4 ">
                 <div className="h-20 w-20 rounded-full border border-[#333333] flex items-center justify-center ">
