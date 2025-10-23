@@ -719,16 +719,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - **Built for**: Push Chain Project G.U.D
-- **Powered by**: [Push Protocol](https://push.org)
+- **Powered by**: [Push Chain](https://push.org)
 - **Inspired by**: Traditional ROSCAs and community savings groups
 - **Thanks to**: OpenZeppelin, Hardhat team, React community
 
 ## Contact & Support
 
-- **GitHub**: [ChainCircle Repository](https://github.com/yourusername/chaincircle-beta)
-- **Issues**: [Report bugs](https://github.com/yourusername/chaincircle-beta/issues)
-- **Discussions**: [Community forum](https://github.com/yourusername/chaincircle-beta/discussions)
+- **GitHub**: [ChainCircle Repository](https://github.com/winsznx/chaincircle-beta)
+- **Issues**: [Report bugs](https://github.com/winsznx/chaincircle-beta/issues)
+- **Discussions**: [Community forum](https://github.com/winsznx/chaincircle-beta/discussions)
 - **Email**: support@chaincircle.org
+
 
 ---
 
