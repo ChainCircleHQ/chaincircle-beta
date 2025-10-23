@@ -52,7 +52,7 @@ export default function JoinByInviteCode({ onClose }) {
 
         <form onSubmit={handleSearch} className="space-y-6 lg:space-y-8">
           <div>
-            <label className="block text-sm lg:text-lg text-[#AAAAAA] mb-2 lg:mb-3">
+            <label className="block text-sm lg:text-xl text-[#AAAAAA] mb-2 lg:mb-3">
               Enter Invite Code
             </label>
             <input
@@ -63,9 +63,9 @@ export default function JoinByInviteCode({ onClose }) {
                 setSearchTriggered(false); // Reset search when typing
               }}
               placeholder="ab2532341da33ed9d093ed90f00f8183..."
-              className="w-full px-4 lg:px-6 py-3 lg:py-4 bg-[#222] border border-[#F4AEFF] rounded-lg outline-none text-sm lg:text-base font-mono"
+              className="w-full px-4 lg:px-6 py-3 lg:py-4 bg-[#222] border border-[#F4AEFF] rounded-lg outline-none text-sm lg:text-lg font-mono"
             />
-            <p className="text-xs lg:text-sm text-[#AAAAAA] mt-1 lg:mt-2">
+            <p className="text-xs lg:text-base text-[#AAAAAA] mt-1 lg:mt-2">
               Paste the invite code shared by the circle creator
             </p>
           </div>
@@ -73,7 +73,7 @@ export default function JoinByInviteCode({ onClose }) {
           <button
             type="submit"
             disabled={inviteCode.length < 20 || isLoading}
-            className="w-full px-6 lg:px-8 py-3 lg:py-4 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold text-base lg:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-6 lg:px-8 py-3 lg:py-4 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold text-base lg:text-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Searching...' : 'Search Circle'}
           </button>
@@ -91,23 +91,23 @@ export default function JoinByInviteCode({ onClose }) {
 
           return (
           <div className="mt-6 lg:mt-8 p-4 lg:p-6 border border-green-500 rounded-lg bg-green-500/10">
-            <p className="text-green-400 text-sm lg:text-lg mb-4 lg:mb-6">✓ Circle Found!</p>
+            <p className="text-green-400 text-sm lg:text-xl mb-4 lg:mb-6 font-semibold">✓ Circle Found!</p>
 
             <div className="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6">
               {IconComponent && (
-                <div className={`w-16 h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center ${colors.bg} ${colors.text}`}>
-                  <IconComponent size={isTabletOrMobile ? 24 : 32} />
+                <div className={`w-16 h-16 lg:w-24 lg:h-24 rounded-full flex items-center justify-center ${colors.bg} ${colors.text}`}>
+                  <IconComponent size={isTabletOrMobile ? 24 : 40} />
                 </div>
               )}
               <div className="flex-1">
-                <h3 className="font-bold text-lg lg:text-2xl">{circle.name}</h3>
-                <p className="text-sm lg:text-base text-[#AAAAAA]">
+                <h3 className="font-bold text-lg lg:text-3xl">{circle.name}</h3>
+                <p className="text-sm lg:text-lg text-[#AAAAAA]">
                   {circle.members || 0}/{circle.maxMembers} members
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 lg:gap-4 text-sm lg:text-base mb-4 lg:mb-6">
+            <div className="grid grid-cols-2 gap-3 lg:gap-4 text-sm lg:text-lg mb-4 lg:mb-6">
               <div>
                 <p className="text-[#AAAAAA]">Amount</p>
                 <p className="font-semibold">{formatCurrency(circle.amount)}</p>
@@ -131,7 +131,7 @@ export default function JoinByInviteCode({ onClose }) {
             {/* Warning for full or completed circles */}
             {!canJoin && (
               <div className="mb-4 p-3 lg:p-4 border border-yellow-500 rounded-lg bg-yellow-500/10">
-                <p className="text-yellow-400 text-sm lg:text-base">
+                <p className="text-yellow-400 text-sm lg:text-lg">
                   {isCreator
                     ? "⚠ You created this circle."
                     : isMember
@@ -148,7 +148,7 @@ export default function JoinByInviteCode({ onClose }) {
             <button
               onClick={handleJoin}
               disabled={joinCircle.isPending || !canJoin}
-              className="w-full px-6 lg:px-8 py-3 lg:py-4 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold text-base lg:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-6 lg:px-8 py-3 lg:py-4 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold text-base lg:text-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {joinCircle.isPending ? "Joining..." : (canJoin ? "Join Circle" : "Cannot Join")}
             </button>
@@ -159,7 +159,7 @@ export default function JoinByInviteCode({ onClose }) {
         {/* No Circle Found */}
         {searchTriggered && !isLoading && !circle && !error && (
           <div className="mt-6 lg:mt-8 p-4 lg:p-6 border border-red-500 rounded-lg bg-red-500/10">
-            <p className="text-red-400 text-sm lg:text-base">
+            <p className="text-red-400 text-sm lg:text-lg">
               ✗ No circle found with this invite code
             </p>
           </div>
@@ -168,7 +168,7 @@ export default function JoinByInviteCode({ onClose }) {
         {/* Error */}
         {error && (
           <div className="mt-6 lg:mt-8 p-4 lg:p-6 border border-red-500 rounded-lg bg-red-500/10">
-            <p className="text-red-400 text-sm lg:text-base">
+            <p className="text-red-400 text-sm lg:text-lg">
               ✗ Error searching for circle
             </p>
           </div>
