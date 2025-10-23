@@ -38,11 +38,19 @@ export default function Payout() {
     <div className="flex flex-col gap-10 relative ">
       <div className="flex items-center justify-between ">
         <h3 className="text-[21px] lg:text-[30px] font-bold ">Your Payouts</h3>
-        <div className="px-4 py-1 lg:py-3 border border-[#F4AEFF] rounded-[16px] ">
+        <div className="px-4 py-2 lg:py-3 border-2 border-[#F4AEFF] rounded-[16px] bg-[#1a1a1a] hover:border-[#D548EC] transition-colors">
           <select
-            className="pr-[13px] outline-none border-none bg-transparent text-[9px] lg:text-[21px] cursor-pointer"
+            className="pr-[30px] pl-1 outline-none border-none bg-transparent text-[12px] lg:text-[18px] cursor-pointer text-white min-w-[150px] lg:min-w-[200px] appearance-none"
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+            }}
+            style={{
+              backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e\")",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 5px center",
+              backgroundSize: "16px"
+            }}
           >
             <option value="only-upcoming" className="bg-[#111111] text-white">Only Upcoming</option>
             <option value="history-upcoming" className="bg-[#111111] text-white">History + Upcoming</option>
