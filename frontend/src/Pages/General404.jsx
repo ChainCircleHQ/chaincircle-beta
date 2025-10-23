@@ -15,7 +15,18 @@ export default function General404() {
               className="h-[50px] object-contain"
             />
           </header>
-          <ErrorContainer />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="h-[372px] w-[70%] relative flex items-end">
+              <img
+                src="/assets/err404.png"
+                alt=""
+                className="absolute top-0 left-0 w-full h-full object-contain -z-10 animate-swing"
+              />
+              <p className="text-center pt-[56px] bg-[#000] pb-10 w-full border-t border-t-[#fff]">
+                OOPS... PAGE NOT FOUND
+              </p>
+            </div>
+          </div>
           <Link
             to="/"
             className="px-6 w-fit mx-auto font-bold text-[16px] py-3 bg-[#C935E2] rounded-full"
@@ -24,9 +35,9 @@ export default function General404() {
           </Link>
         </div>
       ) : (
-        <div className="min-h-screen flex flex-col">
+        <div className="h-screen flex flex-col">
           {/* Fixed Header */}
-          <header className="fixed top-0 left-0 w-full z-50 bg-black flex items-center justify-between px-20 py-8 border-b border-b-[#F4AEFF]">
+          <header className="flex items-center justify-between px-20 py-8 border-b border-b-[#F4AEFF]">
             <div className="flex items-center gap-2">
               <img
                 src="/assets/logo.png"
@@ -44,28 +55,20 @@ export default function General404() {
           </header>
 
           {/* Error Content */}
-          <div className="flex-1 flex items-center justify-center pt-24">
-            <ErrorContainer />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="h-[372px] w-[70%] relative flex items-end">
+              <img
+                src="/assets/err404.png"
+                alt=""
+                className="absolute top-0 left-0 w-full h-full object-contain -z-10 animate-swing"
+              />
+              <p className="text-center pt-[56px] bg-[#000] pb-10 w-full border-t border-t-[#fff]">
+                OOPS... PAGE NOT FOUND
+              </p>
+            </div>
           </div>
         </div>
       )}
     </>
   );
 }
-
-const ErrorContainer = () => {
-  return (
-    <div className="flex items-center justify-center">
-      <div className="h-[372px] w-[70%] relative flex items-end">
-        <img
-          src="/assets/err404.png"
-          alt=""
-          className="absolute top-25 -z-10 animate-swing"
-        />
-        <p className="text-center pt-[56px] bg-[#000] pb-10 w-full border-t border-t-[#fff]">
-          OOPS... PAGE NOT FOUND
-        </p>
-      </div>
-    </div>
-  );
-};
