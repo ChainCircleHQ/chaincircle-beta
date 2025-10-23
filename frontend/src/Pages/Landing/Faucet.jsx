@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useCircleContract } from '../../hooks/useCircleContract'
 import { useCUSDBalance, useTimeUntilNextClaim, useClaimFaucet } from '../../hooks/useFaucet'
 import PurpleBtn from '../../Components/PurpleBtn'
-import { FaFaucet, FaCheckCircle, FaClock } from 'react-icons/fa'
+import { FaFaucet, FaCheckCircle, FaClock, FaCopy, FaExternalLinkAlt } from 'react-icons/fa'
 
 export default function Faucet() {
   const { userAddress, isConnected } = useCircleContract()
@@ -13,6 +13,16 @@ export default function Faucet() {
   const [claimSuccess, setClaimSuccess] = useState(false)
   const [error, setError] = useState('')
   const [countdown, setCountdown] = useState(5)
+  const [copied, setCopied] = useState(false)
+
+  // CUSD Contract Address
+  const CUSD_CONTRACT_ADDRESS = '0x7D5Dbda57E186f7e905e5E77224Cd60054fF41f3'
+
+  const handleCopyAddress = () => {
+    navigator.clipboard.writeText(CUSD_CONTRACT_ADDRESS)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   useEffect(() => {
     if (claimMutation.isSuccess && !claimSuccess) {
@@ -244,6 +254,104 @@ export default function Faucet() {
                     Use your CUSD to create or join savings circles on ChainCircle
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CUSD Contract Address Section */}
+        <div className="mt-12 bg-[#111111] border border-[#F4AEFF]/30 rounded-[24px] p-6 lg:p-8">
+          <h2 className="text-[20px] lg:text-[24px] font-bold mb-4">
+            CUSD Token Contract Address
+          </h2>
+          <p className="text-[12px] lg:text-[14px] text-gray-400 mb-4">
+            Add CUSD token to your wallet to view your balance:
+          </p>
+          <div className="flex items-center gap-3 bg-black/50 border border-gray-700 rounded-lg p-4">
+            <code className="flex-1 text-[12px] lg:text-[14px] text-[#D548EC] break-all font-mono">
+              {CUSD_CONTRACT_ADDRESS}
+            </code>
+            <button
+              onClick={handleCopyAddress}
+              className="flex items-center gap-2 px-4 py-2 bg-[#D548EC] hover:bg-[#B83CC3] rounded-lg transition-all flex-shrink-0"
+            >
+              <FaCopy size={16} />
+              <span className="text-[12px] lg:text-[14px] font-semibold">
+                {copied ? 'Copied!' : 'Copy'}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Helpful Guides Section */}
+        <div className="mt-12 bg-gradient-to-r from-[#D548EC]/10 to-[#F4AEFF]/10 rounded-[24px] p-6 lg:p-8 border border-[#D548EC]/20">
+          <h2 className="text-[20px] lg:text-[24px] font-bold mb-6">
+            Helpful Guides
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Wallet Setup Guides */}
+            <div className="bg-black/30 border border-gray-700 rounded-lg p-5">
+              <h3 className="text-[16px] lg:text-[18px] font-semibold mb-3 flex items-center gap-2">
+                <span>Wallet Setup</span>
+              </h3>
+              <div className="space-y-3">
+                <a
+                  href="https://support.metamask.io/configure/networks/how-to-view-testnets-in-metamask/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 bg-[#D548EC]/10 hover:bg-[#D548EC]/20 border border-[#D548EC]/30 rounded-lg transition-all group"
+                >
+                  <span className="text-[13px] lg:text-[15px] text-gray-300 group-hover:text-white">
+                    Configure MetaMask Testnets
+                  </span>
+                  <FaExternalLinkAlt className="text-[#D548EC]" size={14} />
+                </a>
+                <a
+                  href="https://medium.com/future-vision/how-to-switch-to-solana-devnet-in-phantom-wallet-c1515625d78e"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 bg-[#D548EC]/10 hover:bg-[#D548EC]/20 border border-[#D548EC]/30 rounded-lg transition-all group"
+                >
+                  <span className="text-[13px] lg:text-[15px] text-gray-300 group-hover:text-white">
+                    Switch to Solana Devnet (Phantom)
+                  </span>
+                  <FaExternalLinkAlt className="text-[#D548EC]" size={14} />
+                </a>
+              </div>
+            </div>
+
+            {/* Testnet Faucets */}
+            <div className="bg-black/30 border border-gray-700 rounded-lg p-5">
+              <h3 className="text-[16px] lg:text-[18px] font-semibold mb-3 flex items-center gap-2">
+                <span>Testnet Faucets</span>
+              </h3>
+              <p className="text-[12px] lg:text-[13px] text-gray-400 mb-3">
+                Get testnet tokens for gas fees:
+              </p>
+              <div className="space-y-3">
+                <a
+                  href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 bg-[#D548EC]/10 hover:bg-[#D548EC]/20 border border-[#D548EC]/30 rounded-lg transition-all group"
+                >
+                  <span className="text-[13px] lg:text-[15px] text-gray-300 group-hover:text-white">
+                    Ethereum Sepolia Faucet
+                  </span>
+                  <FaExternalLinkAlt className="text-[#D548EC]" size={14} />
+                </a>
+                <a
+                  href="https://faucet.solana.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 bg-[#D548EC]/10 hover:bg-[#D548EC]/20 border border-[#D548EC]/30 rounded-lg transition-all group"
+                >
+                  <span className="text-[13px] lg:text-[15px] text-gray-300 group-hover:text-white">
+                    Solana Devnet Faucet
+                  </span>
+                  <FaExternalLinkAlt className="text-[#D548EC]" size={14} />
+                </a>
               </div>
             </div>
           </div>
