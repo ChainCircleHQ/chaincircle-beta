@@ -209,7 +209,7 @@ export default function Terms() {
               For questions or concerns about these Terms and Conditions, please contact us:
             </p>
             <ul className="list-none space-y-2 text-[#CCCCCC] ml-4 mt-4">
-              <li>Email: legal@chaincircle.io</li>
+              <li>Email: support@chaincircle.org</li>
               <li>Twitter: <a href="https://x.com/chaincircle_?s=21" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">@chaincircle_</a></li>
               <li>GitHub: <a href="https://github.com/ChainCircleHQ" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">ChainCircleHQ</a></li>
             </ul>

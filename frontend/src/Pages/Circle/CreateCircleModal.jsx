@@ -768,7 +768,7 @@ const TermsModal = ({ onClose }) => {
               For questions or concerns about these Terms and Conditions, please contact us:
             </p>
             <ul className="list-none space-y-2 text-[#CCCCCC] text-base lg:text-lg ml-4">
-              <li>Email: legal@chaincircle.io</li>
+              <li>Email: support@chaincircle.org</li>
               <li>Twitter: <a href="https://x.com/chaincircle_?s=21" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">@chaincircle_</a></li>
               <li>GitHub: <a href="https://github.com/ChainCircleHQ" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">ChainCircleHQ</a></li>
             </ul>
