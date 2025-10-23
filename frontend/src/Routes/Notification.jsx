@@ -1,124 +1,195 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { FiSearch } from 'react-icons/fi'
 import { TbArrowUpRight } from 'react-icons/tb'
 import { BiDollarCircle } from 'react-icons/bi'
 import { MdTrendingDown } from 'react-icons/md'
+import { FaTrophy, FaMedal, FaUserPlus } from 'react-icons/fa'
+import { useNotifications } from '../hooks/useNotifications'
 
 export default function Notification() {
   const [activeTab, setActiveTab] = useState('Transactions')
   const [searchTerm, setSearchTerm] = useState('')
+  const { data: blockchainNotifications, isLoading } = useNotifications()
 
   // Notification tabs
   const tabs = ['Transactions', 'Reminders', 'Services']
 
-  // Sample notification data
+  // Helper function to format time ago
+  const formatTimeAgo = (timestamp) => {
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - timestamp;
+
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+    return `${Math.floor(diff / 604800)} weeks ago`;
+  };
+
+  // Helper function to format time until due
+  const formatTimeUntil = (seconds) => {
+    if (seconds < 3600) return `Due in ${Math.floor(seconds / 60)} minutes`;
+    if (seconds < 86400) return `Due in ${Math.floor(seconds / 3600)} hours`;
+    return `Due in ${Math.floor(seconds / 86400)} days`;
+  };
+
+  // Transform blockchain notifications into UI format
+  const transformedNotifications = useMemo(() => {
+    if (!blockchainNotifications) return { Transactions: [], Reminders: [], Services: [] };
+
+    const transactions = blockchainNotifications.transactions.map(notif => {
+      switch (notif.type) {
+        case 'contribution':
+          return {
+            id: notif.id,
+            icon: <TbArrowUpRight className="text-white" size={20} />,
+            iconBg: 'bg-green-600',
+            title: `You contributed to Circle #${notif.circleId}`,
+            time: formatTimeAgo(notif.timestamp),
+            amount: `${notif.amount} CUSD`,
+            type: 'save'
+          };
+
+        case 'payout':
+          return {
+            id: notif.id,
+            icon: <BiDollarCircle className="text-white" size={20} />,
+            iconBg: 'bg-blue-600',
+            title: `You received payout from Circle #${notif.circleId}`,
+            time: formatTimeAgo(notif.timestamp),
+            amount: `${notif.amount} CUSD`,
+            type: 'payout'
+          };
+
+        case 'interest':
+          return {
+            id: notif.id,
+            icon: <BiDollarCircle className="text-white" size={20} />,
+            iconBg: 'bg-blue-600',
+            title: `You earned interest from Circle #${notif.circleId}`,
+            time: formatTimeAgo(notif.timestamp),
+            amount: `${notif.amount} CUSD`,
+            type: 'interest'
+          };
+
+        case 'emergency':
+          return {
+            id: notif.id,
+            icon: <MdTrendingDown className="text-white" size={20} />,
+            iconBg: 'bg-red-600',
+            title: `Emergency withdrawal from Circle #${notif.circleId}`,
+            time: formatTimeAgo(notif.timestamp),
+            amount: `${notif.amount} CUSD`,
+            type: 'withdraw'
+          };
+
+        case 'joined':
+          return {
+            id: notif.id,
+            icon: <FaUserPlus className="text-white" size={20} />,
+            iconBg: 'bg-purple-600',
+            title: `You joined Circle #${notif.circleId}`,
+            time: formatTimeAgo(notif.timestamp),
+            amount: '',
+            type: 'joined'
+          };
+
+        case 'scoreChange':
+          return {
+            id: notif.id,
+            icon: <FaTrophy className="text-white" size={20} />,
+            iconBg: 'bg-yellow-600',
+            title: `Reputation score updated: ${notif.reason}`,
+            time: formatTimeAgo(notif.timestamp),
+            amount: `Score: ${notif.newScore}`,
+            type: 'reputation'
+          };
+
+        case 'tierChange':
+          return {
+            id: notif.id,
+            icon: <FaMedal className="text-white" size={20} />,
+            iconBg: 'bg-yellow-600',
+            title: `Tier upgraded to ${notif.newTier}`,
+            time: formatTimeAgo(notif.timestamp),
+            amount: '',
+            type: 'tier'
+          };
+
+        case 'badgeMinted':
+          return {
+            id: notif.id,
+            icon: <FaMedal className="text-white" size={20} />,
+            iconBg: 'bg-indigo-600',
+            title: `You earned a ${notif.badgeType} badge`,
+            time: formatTimeAgo(notif.timestamp),
+            amount: '',
+            type: 'badge'
+          };
+
+        case 'badgeUpgraded':
+          return {
+            id: notif.id,
+            icon: <FaMedal className="text-white" size={20} />,
+            iconBg: 'bg-indigo-600',
+            title: `${notif.badgeType} badge upgraded to Level ${notif.newLevel}`,
+            time: formatTimeAgo(notif.timestamp),
+            amount: '',
+            type: 'badge'
+          };
+
+        default:
+          return null;
+      }
+    }).filter(Boolean);
+
+    const reminders = blockchainNotifications.reminders.map(notif => {
+      if (notif.type === 'contributionDue') {
+        return {
+          id: notif.id,
+          icon: <BiDollarCircle className="text-white" size={20} />,
+          iconBg: 'bg-orange-600',
+          title: `Payment due for Circle #${notif.circleId}`,
+          time: formatTimeUntil(notif.timeUntilDue),
+          amount: `${notif.amount} CUSD`,
+          type: 'reminder'
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    return { Transactions: transactions, Reminders: reminders, Services: [] };
+  }, [blockchainNotifications]);
+
+  // Mock Services data (kept as is)
+  const mockServices = [
+    {
+      id: 1,
+      icon: <BiDollarCircle className="text-white" size={20} />,
+      iconBg: 'bg-purple-600',
+      title: 'System maintenance scheduled',
+      time: '2 hours ago',
+      amount: '',
+      type: 'service'
+    },
+    {
+      id: 2,
+      icon: <TbArrowUpRight className="text-white" size={20} />,
+      iconBg: 'bg-purple-600',
+      title: 'New feature available',
+      time: '1 day ago',
+      amount: '',
+      type: 'service'
+    }
+  ];
+
+  // Combine real and mock data
   const notifications = {
-    Transactions: [
-      {
-        id: 1,
-        icon: <TbArrowUpRight className="text-white" size={20} />,
-        iconBg: 'bg-green-600',
-        title: 'You saved to Dream Ho...',
-        time: '53 minutes ago',
-        amount: '$500',
-        type: 'save'
-      },
-      {
-        id: 2,
-        icon: <BiDollarCircle className="text-white" size={20} />,
-        iconBg: 'bg-blue-600',
-        title: 'You earned interest',
-        time: '17 hours ago',
-        amount: '$3.24',
-        type: 'interest'
-      },
-      {
-        id: 3,
-        icon: <TbArrowUpRight className="text-white" size={20} />,
-        iconBg: 'bg-green-600',
-        title: 'You saved to Dream Ho...',
-        time: '1 day ago',
-        amount: '$500',
-        type: 'save'
-      },
-      {
-        id: 4,
-        icon: <MdTrendingDown className="text-white" size={20} />,
-        iconBg: 'bg-red-600',
-        title: 'You withdrew money fr...',
-        time: '3 days ago',
-        amount: '$5000',
-        type: 'withdraw'
-      },
-      {
-        id: 5,
-        icon: <BiDollarCircle className="text-white" size={20} />,
-        iconBg: 'bg-blue-600',
-        title: 'You earned interest',
-        time: '7 days ago',
-        amount: '$3.24',
-        type: 'interest'
-      },
-      {
-        id: 6,
-        icon: <BiDollarCircle className="text-white" size={20} />,
-        iconBg: 'bg-blue-600',
-        title: 'You earned interest',
-        time: '11 days ago',
-        amount: '$3.24',
-        type: 'interest'
-      },
-      {
-        id: 7,
-        icon: <TbArrowUpRight className="text-white" size={20} />,
-        iconBg: 'bg-green-600',
-        title: 'You saved to Dream Ho...',
-        time: '18 days ago',
-        amount: '$500',
-        type: 'save'
-      }
-    ],
-    Reminders: [
-      {
-        id: 1,
-        icon: <BiDollarCircle className="text-white" size={20} />,
-        iconBg: 'bg-orange-600',
-        title: 'Payment due for Dream House Squad',
-        time: 'Due in 2 days',
-        amount: '$500',
-        type: 'reminder'
-      },
-      {
-        id: 2,
-        icon: <BiDollarCircle className="text-white" size={20} />,
-        iconBg: 'bg-orange-600',
-        title: 'Payment due for Project G-Wagon',
-        time: 'Due in 5 days',
-        amount: '$750',
-        type: 'reminder'
-      }
-    ],
-    Services: [
-      {
-        id: 1,
-        icon: <BiDollarCircle className="text-white" size={20} />,
-        iconBg: 'bg-purple-600',
-        title: 'System maintenance scheduled',
-        time: '2 hours ago',
-        amount: '',
-        type: 'service'
-      },
-      {
-        id: 2,
-        icon: <TbArrowUpRight className="text-white" size={20} />,
-        iconBg: 'bg-purple-600',
-        title: 'New feature available',
-        time: '1 day ago',
-        amount: '',
-        type: 'service'
-      }
-    ]
-  }
+    Transactions: transformedNotifications.Transactions,
+    Reminders: transformedNotifications.Reminders,
+    Services: mockServices
+  };
+
 
   // Filter notifications based on search term
   const filteredNotifications = notifications[activeTab]?.filter(notification =>
@@ -165,7 +236,16 @@ export default function Notification() {
 
       {/* Notifications List */}
       <div className="flex-1 overflow-y-auto">
-        {filteredNotifications.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 lg:py-20">
+            <div className="text-gray-400 text-center">
+              <div className="text-[48px] lg:text-[64px] mb-4">⏳</div>
+              <h3 className="text-[16px] lg:text-[20px] font-medium mb-2">
+                Loading notifications...
+              </h3>
+            </div>
+          </div>
+        ) : filteredNotifications.length > 0 ? (
           <div className="space-y-3 lg:space-y-4">
             {filteredNotifications.map((notification) => (
               <div

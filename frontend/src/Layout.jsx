@@ -15,6 +15,7 @@ export default function chain() {
   const { handleUserLogOutEvent } = usePushWalletContext();
 
   const isTabletOrMobile = window.innerWidth <= 1014;
+  const isOnNotificationPage = location.pathname === '/chain/notification';
   
   return (
     <div className="flex gap-[68px] h-screen text-[21px] font-dm ">
@@ -103,7 +104,13 @@ export default function chain() {
         <div className="lg:ml-auto justify-between lg:justify-end lg:w-fit flex flex-row-reverse  items-center gap-4 ">
           <div
             className="relative cursor-pointer hover:scale-110 transition-transform"
-            onClick={() => navigate('/chain/notification')}
+            onClick={() => {
+              if (isOnNotificationPage) {
+                navigate(-1); // Go back to previous page
+              } else {
+                navigate('/chain/notification');
+              }
+            }}
           >
             <FaRegBell size={isTabletOrMobile ? 24 : 35} />
             <div className="absolute rounded-full w-3 h-3 lg:w-4 lg:h-4 bg-[#DB0000] top-2 right-2 "></div>

@@ -57,7 +57,7 @@ export default function Dashboard() {
             />
             <p>
               {" "}
-              <span className="text-[12px]">{totalCircleCount}</span> circles
+              <span className="text-[12px]">{totalCircleCount}</span> {totalCircleCount === 1 ? 'circle' : 'circles'}
             </p>
           </div>
           <div className="flex-1 flex items-center justify-center rounded-[8px] gap-2 px-5 py-2 bg-[#853094] text-[12px] lg:text-[16px] font-dm ">
