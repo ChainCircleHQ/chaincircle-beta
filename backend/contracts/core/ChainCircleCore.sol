@@ -212,9 +212,9 @@ contract ChainCircleCore is Ownable, ReentrancyGuard {
 
     function _joinCircle(uint256 circleId, address user) internal {
         Circle storage circle = circles[circleId];
-        
+
         require(circle.createdAt > 0, "Circle does not exist");
-        require(circle.status == CircleStatus.Pending, "Circle not open");
+        require(circle.status == CircleStatus.Pending || circle.status == CircleStatus.Active, "Circle not open");
         require(circleMembers[circleId].length < circle.maxMembers, "Circle full");
         require(!members[circleId][user].active, "Already member");
 

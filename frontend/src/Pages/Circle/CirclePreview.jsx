@@ -19,15 +19,22 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
 
   const isCreator = circle?.creator?.toLowerCase() === userAddress?.toLowerCase();
 
+  // Check if user is already a member - check both ways to be safe
+  const isMember = circle?.memberAddresses?.some(
+    addr => addr?.toLowerCase() === userAddress?.toLowerCase()
+  ) || false;
+
+  // Simple logic: can join if NOT creator and NOT already a member
+  // Let the smart contract handle all other validations (full, completed, etc)
+  const canJoin = !isCreator && !isMember;
+
   const handleJoin = async () => {
     try {
       await joinCircle.mutateAsync(circleId);
-      alert('Successfully joined circle!');
       if (onClose) onClose();
       navigate('/chain/circle');
     } catch (error) {
       console.error('Failed to join circle:', error);
-      alert('Failed to join circle. Please try again.');
     }
   };
 
@@ -43,21 +50,18 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
       });
     } else {
       navigator.clipboard.writeText(shareUrl);
-      alert('Circle link copied to clipboard!');
     }
   };
 
   const copyInviteCode = () => {
     if (circle?.inviteCode) {
       navigator.clipboard.writeText(circle.inviteCode);
-      alert('Invite code copied to clipboard!');
     }
   };
 
   const copyCreatorAddress = () => {
     if (circle?.creator) {
       navigator.clipboard.writeText(circle.creator);
-      alert('Creator address copied to clipboard!');
     }
   };
 
@@ -65,7 +69,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   if (error) {
     console.error('Circle preview error details:', error);
     return (
-      <div className="fixed inset-0 z-90 bg-black bg-opacity-70 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
         <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] p-8 max-w-md">
           <div className="flex flex-col items-center gap-4">
             <p className="text-red-500 text-xl font-bold">Circle not found</p>
@@ -90,7 +94,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   // Show minimal loading state if no data yet
   if (!circle) {
     return (
-      <div className="fixed inset-0 z-90 bg-black bg-opacity-70 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
         <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] p-8">
           <p className="text-[#AAAAAA]">Loading circle details...</p>
         </div>
@@ -103,7 +107,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const isTabletOrMobile = window.innerWidth <= 1014;
 
   return (
-    <div className="fixed inset-0 z-90 bg-black bg-opacity-70 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
       <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 relative">
         {onClose && (
           <IoClose
@@ -226,15 +230,32 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
           </div>
 
           {/* Action Buttons */}
-          {!isCreator && (
+          {!isCreator && !isMember && (
             <div className="flex gap-4 mt-4">
-              <div className="flex-1" onClick={handleJoin}>
+              <div className="flex-1" onClick={canJoin ? handleJoin : undefined}>
                 <PurpleBtn
                   text={joinCircle.isPending ? "Joining..." : "Join Circle"}
                   font="bold"
-                  disabled={joinCircle.isPending || !circle.isActive}
+                  disabled={joinCircle.isPending || !canJoin}
                 />
               </div>
+              <button
+                onClick={handleShare}
+                className="px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
+              >
+                Share
+              </button>
+            </div>
+          )}
+
+          {!isCreator && isMember && (
+            <div className="flex gap-4 mt-4">
+              <button
+                onClick={onClose || (() => navigate('/chain/circle'))}
+                className="flex-1 px-6 py-3 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold"
+              >
+                View in My Circles
+              </button>
               <button
                 onClick={handleShare}
                 className="px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
@@ -261,8 +282,10 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
             </div>
           )}
 
-          {!circle.isActive && !isCreator && (
-            <p className="text-center text-red-500 text-sm lg:text-base">This circle is not accepting new members</p>
+          {!canJoin && !isCreator && (
+            <p className="text-center text-yellow-500 text-sm lg:text-base">
+              {isMember ? "You are already a member of this circle" : "Cannot join this circle"}
+            </p>
           )}
         </div>
       </div>

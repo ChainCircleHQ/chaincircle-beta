@@ -11,6 +11,8 @@ import Payout from './Routes/Payout'
 import Notification from './Routes/Notification'
 import FAQ from './Pages/Landing/FAQ'
 import Terms from './Pages/Landing/Terms'
+import About from './Pages/Landing/About'
+import Faucet from './Pages/Landing/Faucet'
 import Dashboard404 from './Pages/Dashboard404'
 import General404 from './Pages/General404'
 import { PushUniversalWalletProvider, PushUI } from '@pushchain/ui-kit'
@@ -54,6 +56,8 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/faucet" element={<Faucet />} />
             <Route path="/chain" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="profile" element={<Profile />} />

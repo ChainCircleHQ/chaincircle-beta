@@ -89,25 +89,25 @@ export default function CreateCircleModal({ onClose }) {
     try {
       // Validate required fields
       if (!formData.circleName || !formData.goalType || !formData.contributionAmount || !formData.maxMembers) {
-        alert('Please fill in all required fields');
+        console.error('Please fill in all required fields');
         return;
       }
 
       // Validate minimum contribution amount
       if (parseInt(formData.contributionAmount) < 100) {
-        alert('Minimum contribution amount is 100 CUSD');
+        console.error('Minimum contribution amount is 100 CUSD');
         return;
       }
 
       // Validate minimum duration
       if (parseInt(formData.duration) < 3) {
-        alert('Minimum duration is 3 months');
+        console.error('Minimum duration is 3 months');
         return;
       }
 
       // Validate Terms acceptance
       if (!formData.acceptTerms) {
-        alert('You must accept the Terms and Conditions to create a circle');
+        console.error('You must accept the Terms and Conditions to create a circle');
         return;
       }
 

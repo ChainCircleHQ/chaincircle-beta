@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCircleByInviteCode } from '../../hooks/useCircleData';
 import { useJoinCircle } from '../../hooks/useCircleActions';
+import { useCircleContract } from '../../hooks/useCircleContract';
 import { getGoalIcon, getGoalColors } from '../../utils/circleHelpers';
 import formatCurrency from '../../utils/formatCurrency';
 import PurpleBtn from '../../Components/PurpleBtn';
@@ -11,6 +12,7 @@ export default function JoinByInviteCode({ onClose }) {
   const [searchTriggered, setSearchTriggered] = useState(false);
   const { data: circle, isLoading, error } = useCircleByInviteCode(searchTriggered ? inviteCode : null);
   const joinCircle = useJoinCircle();
+  const { userAddress } = useCircleContract();
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -27,11 +29,9 @@ export default function JoinByInviteCode({ onClose }) {
 
     try {
       await joinCircle.mutateAsync(circle.id);
-      alert(`Successfully joined circle: ${circle.name}!`);
       onClose();
     } catch (error) {
       console.error('Failed to join circle:', error);
-      alert(`Failed to join circle: ${error.message || 'Please try again.'}`);
     }
   };
 
@@ -81,8 +81,13 @@ export default function JoinByInviteCode({ onClose }) {
 
         {/* Circle Found */}
         {circle && (() => {
+          const isCreator = circle.creator?.toLowerCase() === userAddress?.toLowerCase();
+          const isMember = circle.memberAddresses?.some(
+            addr => addr?.toLowerCase() === userAddress?.toLowerCase()
+          ) || false;
           const isFull = circle.members >= circle.maxMembers;
-          const canJoin = circle.isActive && !isFull;
+          const isCompleted = circle.status === 2;
+          const canJoin = !isCreator && !isMember && !isFull && !isCompleted;
 
           return (
           <div className="mt-6 lg:mt-8 p-4 lg:p-6 border border-green-500 rounded-lg bg-green-500/10">
@@ -123,13 +128,19 @@ export default function JoinByInviteCode({ onClose }) {
               </div>
             </div>
 
-            {/* Warning for full or inactive circles */}
+            {/* Warning for full or completed circles */}
             {!canJoin && (
               <div className="mb-4 p-3 lg:p-4 border border-yellow-500 rounded-lg bg-yellow-500/10">
                 <p className="text-yellow-400 text-sm lg:text-base">
-                  {isFull
+                  {isCreator
+                    ? "⚠ You created this circle."
+                    : isMember
+                    ? "⚠ You are already a member of this circle."
+                    : isFull
                     ? "⚠ This circle is full and cannot accept new members."
-                    : "⚠ This circle is not active and cannot be joined at this time."}
+                    : isCompleted
+                    ? "⚠ This circle has been completed."
+                    : "⚠ Cannot join this circle."}
                 </p>
               </div>
             )}

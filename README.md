@@ -728,7 +728,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **GitHub**: [ChainCircle Repository](https://github.com/yourusername/chaincircle-beta)
 - **Issues**: [Report bugs](https://github.com/yourusername/chaincircle-beta/issues)
 - **Discussions**: [Community forum](https://github.com/yourusername/chaincircle-beta/discussions)
-- **Email**: support@chaincircle.xyz
+- **Email**: support@chaincircle.org
 
 ---
 
