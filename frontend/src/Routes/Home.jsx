@@ -541,7 +541,10 @@ export default function Home() {
           </h1>
 
           <div className="flex flex-col gap-4 font-dm text-[12px] lg:text-[24px] text-[#707070]">
-            <Link className="hover:text-white transition ease-in-out hover:underline hover:scale-110 ">
+            <Link
+              className="hover:text-white transition ease-in-out hover:underline hover:scale-110 "
+              to={"/about"}
+            >
               ABOUT
             </Link>
             <Link
@@ -549,6 +552,12 @@ export default function Home() {
               to={"/faq"}
             >
               FAQ
+            </Link>
+            <Link
+              className="hover:text-white transition ease-in-out hover:underline hover:scale-110 "
+              to={"/faucet"}
+            >
+              FAUCET
             </Link>
             <Link
               className="hover:text-white transition ease-in-out hover:underline hover:scale-110 "
