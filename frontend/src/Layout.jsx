@@ -141,7 +141,7 @@ export default function chain() {
           )}
 
           {/* Right Side - Notifications & Account */}
-          <div className={`${!isTabletOrMobile && !sidebarVisible ? 'ml-auto' : 'lg:ml-auto'} justify-between lg:justify-end lg:w-fit flex flex-row-reverse items-center gap-4`}>
+          <div className={`${!isTabletOrMobile && !sidebarVisible ? 'ml-auto' : 'ml-auto lg:ml-auto'} justify-between lg:justify-end lg:w-fit flex flex-row-reverse items-center gap-4`}>
             <div
               className="relative cursor-pointer hover:scale-110 transition-transform"
               onClick={() => {
