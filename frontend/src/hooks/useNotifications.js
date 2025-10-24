@@ -27,6 +27,20 @@ export function useNotifications() {
       };
 
       try {
+        // Helper function to safely process events
+        const safelyProcessEvent = async (event, type, processArgs) => {
+          try {
+            const block = await provider.getBlock(event.blockNumber);
+            return {
+              ...processArgs(event),
+              timestamp: block.timestamp,
+              txHash: event.transactionHash
+            };
+          } catch (e) {
+            return null; // Skip failed events
+          }
+        };
+
         // Fetch CircleCore events
         const contributionFilter = circleContract.filters.ContributionMade(null, userAddress);
         const contributionEvents = await circleContract.queryFilter(contributionFilter, fromBlock, currentBlock);
@@ -62,18 +76,23 @@ export function useNotifications() {
 
         // Process Contribution events
         for (const event of contributionEvents) {
-          const block = await provider.getBlock(event.blockNumber);
-          const circleId = event.args.circleId.toString();
-          const amount = ethers.formatUnits(event.args.amount, 6);
+          try {
+            const block = await provider.getBlock(event.blockNumber);
+            const circleId = event.args.circleId.toString();
+            const amount = ethers.formatUnits(event.args.amount, 6);
 
-          notifications.transactions.push({
-            id: `contribution-${event.transactionHash}-${event.logIndex}`,
-            type: 'contribution',
-            circleId,
-            amount,
-            timestamp: block.timestamp,
-            txHash: event.transactionHash
-          });
+            notifications.transactions.push({
+              id: `contribution-${event.transactionHash}-${event.logIndex}`,
+              type: 'contribution',
+              circleId,
+              amount,
+              timestamp: block.timestamp,
+              txHash: event.transactionHash
+            });
+          } catch (e) {
+            // Skip this event if we can't process it
+            continue;
+          }
         }
 
         // Process Payout events
@@ -239,11 +258,14 @@ export function useNotifications() {
 
         return notifications;
       } catch (error) {
+        console.warn('Error fetching notifications:', error);
         return { transactions: [], reminders: [] };
       }
     },
     enabled: isConnected && !!userAddress,
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refetch every minute
+    retry: 2, // Retry twice on failure
+    retryDelay: 1000, // Wait 1 second between retries
   });
 }

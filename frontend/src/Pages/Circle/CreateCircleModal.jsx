@@ -309,16 +309,9 @@ const Step2 = ({ formData, updateFormData }) => {
             onChange={(e) => updateFormData("contributionAmount", e.target.value)}
             className="flex-1 text-[12px] lg:text-[21px] border outline-none border-[#F4AEFF] rounded-[8px] p-3 bg-transparent text-white placeholder-gray-500"
           />
-          <select
-            value={formData.currency}
-            onChange={(e) => updateFormData("currency", e.target.value)}
-            className="text-[12px] lg:text-[21px] border outline-none border-[#F4AEFF] rounded-[8px] p-3 bg-black text-white min-w-[80px]"
-          >
-            <option value="CUSD">CUSD</option>
-            <option value="USD">USD</option>
-            <option value="ETH">ETH</option>
-            <option value="BNB">BNB</option>
-          </select>
+          <div className="text-[12px] lg:text-[21px] border border-[#F4AEFF] rounded-[8px] p-3 bg-black text-white min-w-[80px] flex items-center justify-center">
+            CUSD
+          </div>
         </div>
       </div>
 

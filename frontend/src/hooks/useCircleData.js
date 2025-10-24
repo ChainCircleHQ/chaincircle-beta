@@ -202,80 +202,94 @@ export function useRecentActivities(limit = 10) {
   return useQuery({
     queryKey: ['recentActivities', userAddress, limit],
     queryFn: async () => {
-      const contract = await getContract('core');
-      const activities = await contract.getRecentActivity(userAddress, limit);
+      try {
+        const contract = await getContract('core');
+        const activities = await contract.getRecentActivity(userAddress, limit);
 
-      // Fetch transaction hashes from ActivityLogged events
-      // Query events for the user's activities
-      const provider = contract.runner.provider;
+        // Fetch transaction hashes from ActivityLogged events (optional, non-blocking)
+        let txHashMap = {};
+        try {
+          const provider = contract.runner.provider;
+          const currentBlock = await provider.getBlockNumber();
+          const fromBlock = Math.max(0, currentBlock - 10000);
 
-      // Get events for the last 10000 blocks (adjust as needed)
-      const currentBlock = await provider.getBlockNumber();
-      const fromBlock = Math.max(0, currentBlock - 10000);
+          const filter = contract.filters.ActivityLogged(userAddress);
+          const events = await contract.queryFilter(filter, fromBlock, currentBlock);
 
-      // Create filter for ActivityLogged events for this user
-      const filter = contract.filters.ActivityLogged(userAddress);
-      const events = await contract.queryFilter(filter, fromBlock, currentBlock);
-
-      // Create a map of timestamp -> transaction hash
-      const txHashMap = {};
-      for (const event of events) {
-        const block = await event.getBlock();
-        txHashMap[block.timestamp] = event.transactionHash;
-      }
-
-      // Fetch circle names and format activities with descriptive titles
-      const activitiesWithDetails = await Promise.all(
-        activities.map(async (activity) => {
-          const timestamp = Number(activity.timestamp);
-          let circleName = '';
-
-          // Fetch circle name if circleId exists
-          try {
-            if (activity.circleId && activity.circleId.toString() !== '0') {
-              const circleDetails = await contract.getCircleDetails(activity.circleId);
-              circleName = circleDetails.name;
+          for (const event of events) {
+            try {
+              const block = await event.getBlock();
+              txHashMap[block.timestamp] = event.transactionHash;
+            } catch (e) {
+              // Skip if we can't get block info for this event
+              continue;
             }
-          } catch (e) {
-            // Circle might not exist anymore
-            circleName = 'a circle';
           }
+        } catch (eventError) {
+          console.warn('Could not fetch transaction hashes, continuing without them:', eventError);
+          // Continue without transaction hashes - not critical
+        }
 
-          // Format title based on activity type and circle name
-          let title;
-          const activityType = activity.activityType;
-          if (activityType === 'CONTRIBUTE') {
-            title = `You contributed to ${circleName}`;
-          } else if (activityType === 'WITHDRAW') {
-            title = `You withdrew from ${circleName}`;
-          } else if (activityType === 'INTEREST') {
-            title = 'You earned interest';
-          } else if (activityType === 'JOINED') {
-            title = `You joined ${circleName}`;
-          } else if (activityType === 'COMPLETED') {
-            title = `${circleName} completed`;
-          } else {
-            title = formatActivityType(activityType);
-          }
+        // Fetch circle names and format activities with descriptive titles
+        const activitiesWithDetails = await Promise.all(
+          activities.map(async (activity) => {
+            const timestamp = Number(activity.timestamp);
+            let circleName = '';
 
-          return {
-            id: `${activity.circleId}-${timestamp}`,
-            type: getActivityIconType(activityType),
-            title: title,
-            timeAgo: formatDate(timestamp),
-            amount: formatCurrency(ethers.formatUnits(activity.amount, 6)),
-            circleId: activity.circleId.toString(),
-            circleName: circleName,
-            timestamp: timestamp,
-            txHash: txHashMap[timestamp] || null
-          };
-        })
-      );
+            // Fetch circle name if circleId exists
+            try {
+              if (activity.circleId && activity.circleId.toString() !== '0') {
+                const circleDetails = await contract.getCircleDetails(activity.circleId);
+                circleName = circleDetails.name;
+              }
+            } catch (e) {
+              // Circle might not exist anymore
+              circleName = 'a circle';
+            }
 
-      return activitiesWithDetails;
+            // Format title based on activity type and circle name
+            let title;
+            const activityType = activity.activityType;
+            if (activityType === 'CONTRIBUTE') {
+              title = `You contributed to ${circleName}`;
+            } else if (activityType === 'WITHDRAW') {
+              title = `You withdrew from ${circleName}`;
+            } else if (activityType === 'INTEREST') {
+              title = 'You earned interest';
+            } else if (activityType === 'JOINED') {
+              title = `You joined ${circleName}`;
+            } else if (activityType === 'COMPLETED') {
+              title = `${circleName} completed`;
+            } else if (activityType === 'CREATE') {
+              title = `You created ${circleName}`;
+            } else {
+              title = formatActivityType(activityType);
+            }
+
+            return {
+              id: `${activity.circleId}-${timestamp}`,
+              type: getActivityIconType(activityType),
+              title: title,
+              timeAgo: formatDate(timestamp),
+              amount: formatCurrency(ethers.formatUnits(activity.amount, 6)),
+              circleId: activity.circleId.toString(),
+              circleName: circleName,
+              timestamp: timestamp,
+              txHash: txHashMap[timestamp] || null
+            };
+          })
+        );
+
+        return activitiesWithDetails;
+      } catch (error) {
+        console.error('Error fetching recent activities:', error);
+        // Return empty array instead of throwing to prevent UI errors
+        return [];
+      }
     },
     enabled: isConnected && !!userAddress,
     staleTime: 15000,
+    retry: 2, // Retry twice on failure
   });
 }
 
