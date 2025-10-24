@@ -8,29 +8,50 @@ import { formatDate } from "../utils/formatDate";
 const isTabletOrMobile = window.innerWidth <= 1014;
 
 // Tier badge mapping
-const getTierBadge = (tier) => {
-  const tierLower = tier?.toLowerCase() || 'bronze';
+const getTierBadge = (tier, totalCircles) => {
+  const tierLower = tier?.toLowerCase() || 'none';
 
   if (tierLower.includes('gold')) {
     return {
       image: '/assets/Gold-Badge.png',
       bg: 'bg-[rgba(253, 170, 27, 0.77)]',
       border: 'border-[#FDA318]',
-      text: 'text-[#FFC24C]'
+      text: 'text-[#FFC24C]',
+      name: 'Gold Tier'
     };
   } else if (tierLower.includes('silver')) {
     return {
       image: '/assets/Silver-Badge.png',
       bg: 'bg-[rgba(192, 192, 192, 0.77)]',
       border: 'border-[#C0C0C0]',
-      text: 'text-[#E8E8E8]'
+      text: 'text-[#E8E8E8]',
+      name: 'Silver Tier'
     };
-  } else {
+  } else if (tierLower.includes('bronze')) {
     return {
       image: '/assets/Bronze-Badge.png',
       bg: 'bg-[rgba(205, 127, 50, 0.77)]',
       border: 'border-[#CD7F32]',
-      text: 'text-[#E5A76F]'
+      text: 'text-[#E5A76F]',
+      name: 'Bronze Tier'
+    };
+  } else if (totalCircles >= 1) {
+    // Welcome badge for first-time users who created at least one circle
+    return {
+      image: '/assets/icons8-welcome-96.png',
+      bg: 'bg-[rgba(212, 72, 236, 0.77)]',
+      border: 'border-[#D548EC]',
+      text: 'text-[#F4AEFF]',
+      name: 'Welcome Badge'
+    };
+  } else {
+    // No badge for users with no circles
+    return {
+      image: '/assets/Badge.png',
+      bg: 'bg-[rgba(128, 128, 128, 0.77)]',
+      border: 'border-[#808080]',
+      text: 'text-[#AAAAAA]',
+      name: 'No Badge'
     };
   }
 };
@@ -39,7 +60,8 @@ export default function Profile() {
   const { data: stats } = useUserStats();
 
   const reputation = stats?.reputation || {};
-  const tierInfo = getTierBadge(reputation.tier);
+  const totalCircles = stats?.totalCircles || 0;
+  const tierInfo = getTierBadge(reputation.tier, totalCircles);
 
   // Use the same totalSaved as dashboard (from core contract, not reputation contract)
   const totalSaved = stats?.totalSaved ? parseFloat(stats.totalSaved) : 0;
@@ -51,11 +73,18 @@ export default function Profile() {
         style={{ backgroundImage: "url('/assets/dashboard-bg-card.png')" }}
       >
         <div className="flex items-center  gap-4 ">
-          <img
-            src={tierInfo.image}
-            alt="profile"
-            className="w-[60px] h-[60px] lg:w-[120px] lg:h-[120px] animate-pulse "
-          />
+          <div className="relative">
+            <img
+              src={tierInfo.image}
+              alt="profile"
+              className={`w-[60px] h-[60px] lg:w-[120px] lg:h-[120px] ${tierInfo.isWelcome ? 'animate-bounce' : 'animate-pulse'}`}
+            />
+            {tierInfo.isWelcome && (
+              <div className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2">
+                <span className="text-[20px] lg:text-[30px] animate-pulse">🎉</span>
+              </div>
+            )}
+          </div>
           <div className="flex flex-col gap-1">
             <h1 className="font-bold text-[20px] lg:text-[30px] ">
               <CountUp target={reputation.score || 0} duration={2000} />
@@ -64,7 +93,7 @@ export default function Profile() {
             <div
               className={`px-2.5 py-2 rounded-full font-dm text-[12px] lg:text-[21px] text-center border ${tierInfo.bg} ${tierInfo.border} ${tierInfo.text}`}
             >
-              {reputation.tier || 'Bronze Tier'}
+              {tierInfo.name}
             </div>
           </div>
         </div>

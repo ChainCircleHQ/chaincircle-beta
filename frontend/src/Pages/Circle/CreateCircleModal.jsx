@@ -84,32 +84,36 @@ export default function CreateCircleModal({ onClose }) {
 
   const createCircle = useCreateCircle();
   const [txStatus, setTxStatus] = React.useState('');
+  const [validationError, setValidationError] = React.useState('');
 
   const handleSubmit = async () => {
     try {
       // Validate required fields
       if (!formData.circleName || !formData.goalType || !formData.contributionAmount || !formData.maxMembers) {
-        console.error('Please fill in all required fields');
+        setValidationError('Please fill in all required fields');
         return;
       }
 
       // Validate minimum contribution amount
       if (parseInt(formData.contributionAmount) < 100) {
-        console.error('Minimum contribution amount is 100 CUSD');
+        setValidationError('Minimum contribution amount is 100 CUSD');
         return;
       }
 
       // Validate minimum duration
       if (parseInt(formData.duration) < 3) {
-        console.error('Minimum duration is 3 months');
+        setValidationError('Minimum duration is 3 months');
         return;
       }
 
       // Validate Terms acceptance
       if (!formData.acceptTerms) {
-        console.error('You must accept the Terms and Conditions to create a circle');
+        setValidationError('You must accept the Terms and Conditions to create a circle');
         return;
       }
+
+      // Clear validation error if all checks pass
+      setValidationError('');
 
       // Map goalType string to number
       const goalTypeMap = {
@@ -140,18 +144,18 @@ export default function CreateCircleModal({ onClose }) {
       });
 
       setTxStatus('');
+      setValidationError('');
       // Don't show alert - Push Chain already shows transaction status
       onClose();
     } catch (error) {
-      console.error('Failed to create circle:', error);
       setTxStatus('');
 
       // Only show error if it's not a user rejection (Push Chain handles that)
       if (!error.message.includes('user rejected') && !error.message.includes('User rejected')) {
         if (error.message.includes('insufficient funds')) {
-          console.error('Insufficient CUSD balance');
+          setValidationError('Insufficient CUSD balance. Please claim from the faucet first.');
         } else {
-          console.error('Error creating circle:', error);
+          setValidationError('Error creating circle. Please try again.');
         }
       }
     }
@@ -220,6 +224,15 @@ export default function CreateCircleModal({ onClose }) {
         <TermsModal onClose={() => setShowTerms(false)} />
       )}
 
+      {/* Validation Error Message */}
+      {validationError && (
+        <div className="w-[95%] max-w-[800px] mt-4">
+          <div className="bg-red-500/10 border border-red-500 rounded-lg p-4 text-center">
+            <p className="text-red-400 text-[14px] lg:text-[16px]">{validationError}</p>
+          </div>
+        </div>
+      )}
+
       {/* Form Buttons */}
       <div className="w-[95%] max-w-[800px] py-8 flex items-center justify-between">
         <TransBtn
@@ -286,22 +299,15 @@ const Step2 = ({ formData, updateFormData }) => {
       {/* Contribution Amount */}
       <div className="flex flex-col gap-2">
         <label className="text-[12px] lg:text-[18px]">
-          Contribution Amount (Min: 100 CUSD):
+          Contribution Amount:
         </label>
         <div className="flex gap-2">
           <input
             type="number"
-            placeholder="Enter an Amount (min 100)"
-            min="100"
+            placeholder="Min 100 CUSD"
             value={formData.contributionAmount}
-            onChange={(e) => {
-              const value = e.target.value;
-              // Allow empty string for clearing, otherwise enforce minimum
-              if (value === '' || parseInt(value) >= 100) {
-                updateFormData("contributionAmount", value);
-              }
-            }}
-            className="flex-1 text-[12px] lg:text-[21px] border outline-none border-[#F4AEFF] rounded-[8px] p-3 bg-transparent text-gray-400 placeholder-gray-500"
+            onChange={(e) => updateFormData("contributionAmount", e.target.value)}
+            className="flex-1 text-[12px] lg:text-[21px] border outline-none border-[#F4AEFF] rounded-[8px] p-3 bg-transparent text-white placeholder-gray-500"
           />
           <select
             value={formData.currency}
@@ -318,7 +324,7 @@ const Step2 = ({ formData, updateFormData }) => {
 
       {/* Duration */}
       <div className="flex flex-col gap-2">
-        <label className="text-[12px] lg:text-[18px]">Duration (months) - Min: 3</label>
+        <label className="text-[12px] lg:text-[18px]">Duration (months)</label>
         <div className="flex items-center gap-4">
           <div className="flex-1 flex p-[3px] items-center gap-[3px] bg-[#d648ec5e] h-[25px]">
             {[...Array(12)].map((_, idx) => {
@@ -326,12 +332,10 @@ const Step2 = ({ formData, updateFormData }) => {
               return (
                 <div
                   key={idx}
-                  className={`flex-1 text-[12px] flex items-center justify-center h-full ${
-                    monthValue >= 3 ? "hover:bg-[#D548EC] hover:text-white cursor-pointer" : "cursor-not-allowed opacity-40"
-                  } ${
+                  className={`flex-1 text-[12px] flex items-center justify-center h-full hover:bg-[#D548EC] hover:text-white cursor-pointer ${
                     monthValue <= formData.duration ? "bg-[#D548EC] text-white" : "bg-transparent text-transparent"
                   }`}
-                  onClick={() => monthValue >= 3 && updateFormData("duration", monthValue)}
+                  onClick={() => updateFormData("duration", monthValue)}
                 >{monthValue}</div>
               );
             })}
@@ -340,13 +344,9 @@ const Step2 = ({ formData, updateFormData }) => {
             <input
               className="text-white text-[14px] outline-none bg-transparent w-full text-center"
               type="number"
-              min="3"
-              max="12"
+              placeholder="Min 3"
               value={formData.duration}
-              onChange={(e) => {
-                const value = parseInt(e.target.value) || 3;
-                updateFormData("duration", Math.max(3, Math.min(12, value)));
-              }}
+              onChange={(e) => updateFormData("duration", e.target.value)}
             />
           </div>
         </div>
