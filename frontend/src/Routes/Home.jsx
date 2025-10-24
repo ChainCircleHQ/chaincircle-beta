@@ -1,15 +1,36 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import PurpleBtn from '../Components/PurpleBtn';
 import TransBtn from '../Components/TransBtn';
 import { Link, useNavigate } from 'react-router';
 import { usePushWalletContext, PushUI, PushUniversalAccountButton } from '@pushchain/ui-kit';
 import { useGlobalStats } from '../hooks/useCircleData';
+import { IoClose } from 'react-icons/io5';
+import { FaCoins, FaGasPump, FaBook } from 'react-icons/fa';
 
 export default function Home() {
   const stepsRef = useRef(null);
   const navigate = useNavigate();
   const { connectionStatus, handleConnectToPushWallet } = usePushWalletContext();
   const { data: globalStats } = useGlobalStats();
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+
+  // Check if user is new (show popup twice)
+  useEffect(() => {
+    const welcomeCount = parseInt(localStorage.getItem('welcomePopupCount') || '0');
+    if (welcomeCount < 2) {
+      // Show popup after a short delay for better UX
+      const timer = setTimeout(() => {
+        setShowWelcomePopup(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleCloseWelcome = () => {
+    setShowWelcomePopup(false);
+    const currentCount = parseInt(localStorage.getItem('welcomePopupCount') || '0');
+    localStorage.setItem('welcomePopupCount', (currentCount + 1).toString());
+  };
 
   useEffect(() => {
     // Specific observer for steps section
@@ -67,6 +88,112 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-4 max-w-dvw">
+      {/* Welcome Popup Modal */}
+      {showWelcomePopup && (
+        <div className="fixed font-dm z-[1000] inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4 lg:p-8">
+          <div className="relative w-full max-w-[600px] bg-[#111111] rounded-[24px] border border-[#F4AEFF] overflow-hidden">
+            {/* Close Button */}
+            <button
+              onClick={handleCloseWelcome}
+              className="absolute top-3 right-3 lg:top-4 lg:right-4 z-10 p-1.5 lg:p-2 rounded-full hover:bg-[#D548EC]/20 transition-all"
+            >
+              <IoClose size={isTabletOrMobile ? 24 : 28} className="text-white" />
+            </button>
+
+            {/* Header */}
+            <div className="px-6 py-6 lg:px-8 lg:py-8 border-b border-b-[#F4AEFF]">
+              <h2 className="font-bold text-[24px] lg:text-[32px] text-center">
+                Welcome to Chaincircle!
+              </h2>
+              <p className="text-[#aaa] text-center mt-2 text-[12px] lg:text-[16px]">
+                Your Universal Savings Platform
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-6 lg:px-8 lg:py-8">
+              <p className="text-[#aaa] text-[14px] lg:text-[18px] text-center mb-6">
+                Before you start saving, here's what you'll need:
+              </p>
+
+              {/* Requirements */}
+              <div className="flex flex-col gap-4">
+                {/* CUSD Requirement */}
+                <div className="flex items-start gap-3 lg:gap-4 p-4 lg:p-5 bg-[#d648ec1a] border border-[#F4AEFF] rounded-[16px]">
+                  <div className="flex-shrink-0 w-8 h-8 lg:w-10 lg:h-10 bg-[#D548EC] rounded-full flex items-center justify-center">
+                    <FaCoins className="text-white" size={isTabletOrMobile ? 16 : 20} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-bold text-[14px] lg:text-[18px] mb-1">
+                      CUSD Tokens
+                    </h3>
+                    <p className="text-[#aaa] text-[12px] lg:text-[16px]">
+                      You'll need CUSD to save in circles. Get free testnet CUSD from our faucet.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Gas Fee Requirement */}
+                <div className="flex items-start gap-3 lg:gap-4 p-4 lg:p-5 bg-[#d648ec1a] border border-[#F4AEFF] rounded-[16px]">
+                  <div className="flex-shrink-0 w-8 h-8 lg:w-10 lg:h-10 bg-[#F4AEFF] rounded-full flex items-center justify-center">
+                    <FaGasPump className="text-black" size={isTabletOrMobile ? 16 : 20} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-bold text-[14px] lg:text-[18px] mb-1">
+                      Gas Fees
+                    </h3>
+                    <p className="text-[#aaa] text-[12px] lg:text-[16px]">
+                      You'll need native tokens from your chain (ETH, SOL, etc.) for transaction fees.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Guide */}
+                <div className="flex items-start gap-3 lg:gap-4 p-4 lg:p-5 bg-[#d648ec1a] border border-[#F4AEFF] rounded-[16px]">
+                  <div className="flex-shrink-0 w-8 h-8 lg:w-10 lg:h-10 bg-[#D548EC] rounded-full flex items-center justify-center">
+                    <FaBook className="text-white" size={isTabletOrMobile ? 16 : 20} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-bold text-[14px] lg:text-[18px] mb-1">
+                      Need Help?
+                    </h3>
+                    <p className="text-[#aaa] text-[12px] lg:text-[16px]">
+                      Visit our Faucet page for guides on wallet setup and claiming testnet tokens.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Call to Actions */}
+              <div className="flex flex-col lg:flex-row gap-3 pt-6">
+                <div
+                  onClick={() => {
+                    handleCloseWelcome();
+                    navigate('/faucet');
+                  }}
+                  className="flex-1"
+                >
+                  <PurpleBtn text="Visit Faucet Page" />
+                </div>
+                <div
+                  onClick={() => {
+                    handleCloseWelcome();
+                    handleSignUpClick();
+                  }}
+                  className="flex-1"
+                >
+                  <TransBtn text="Sign Up for Free" />
+                </div>
+              </div>
+
+              <p className="text-[#888] text-[10px] lg:text-[12px] text-center pt-4">
+                You'll see this message twice. You can always find guides on the Faucet page.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="fixed top-0 left-0 w-full z-500 bg-[#70707026] backdrop-blur-md flex items-center justify-between px-10 lg:px-20 py-8 border-b border-b-[#F4AEFF]">
   <div className="flex items-center gap-2">
     <img
