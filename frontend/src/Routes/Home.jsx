@@ -683,6 +683,8 @@ export default function Home() {
             <Link
               className="hover:text-white transition ease-in-out hover:underline hover:scale-110 "
               to={"/faucet"}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               FAUCET
             </Link>
