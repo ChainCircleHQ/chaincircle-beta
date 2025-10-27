@@ -469,7 +469,7 @@ npx hardhat compile
 
 ## Resources
 
-- [Push Chain Documentation](https://docs.push.org)
+- [Push Chain Documentation](https://push.org/docs)
 - [Hardhat Documentation](https://hardhat.org/docs)
 - [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts)
 - [Ethers.js Documentation](https://docs.ethers.org)

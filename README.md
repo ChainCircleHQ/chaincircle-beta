@@ -696,7 +696,7 @@ npx hardhat compile
 
 ### Official Documentation
 
-- [Push Chain Documentation](https://docs.push.org)
+- [Push Chain Documentation](https://push.org/docs)
 - [Push Chain UI Kit](https://www.npmjs.com/package/@pushchain/ui-kit)
 - [Hardhat Documentation](https://hardhat.org/docs)
 - [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts)

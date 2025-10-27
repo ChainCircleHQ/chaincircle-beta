@@ -250,7 +250,7 @@ deployments/pushDonut/addresses.js
 ## Support
 
 - **Documentation:** See README.md and frontend audit document
-- **Push Chain Docs:** https://docs.push.org
+- **Push Chain Docs:** https://push.org/docs
 - **Block Explorer:** https://donut.push.network
 - **Issues:** GitHub Issues
 

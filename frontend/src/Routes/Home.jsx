@@ -690,7 +690,7 @@ export default function Home() {
             </Link>
             <Link
               className="hover:text-white transition ease-in-out hover:underline hover:scale-110 "
-              to={"https://pushchain.github.io/push-chain-website/pr-preview/pr-1067/docs/"}
+              to={"https://push.org/docs/"}
               target="_blank"
               rel="noopener noreferrer"
             >

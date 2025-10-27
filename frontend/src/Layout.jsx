@@ -110,7 +110,7 @@ export default function chain() {
         </div>
       )}
 
-      <div className="flex-1 overflow-auto h-full flex flex-col gap-10 px-7 lg:px-20 py-10">
+      <div className="flex-1 overflow-auto h-full flex flex-col gap-10 px-7 lg:px-20 py-10 pb-32 lg:pb-10">
         <div className="flex items-center justify-between w-full">
           {/* Show ChainCircle logo with toggle when sidebar is hidden */}
           {!isTabletOrMobile && !sidebarVisible && (
@@ -153,7 +153,7 @@ export default function chain() {
             </div>
           </div>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 pb-4 lg:pb-0">
           <Outlet />
         </div>
 
