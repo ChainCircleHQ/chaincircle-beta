@@ -1,19 +1,26 @@
 import React, { useEffect } from 'react';
-import { Navigate } from 'react-router';
+import { Navigate, useNavigate } from 'react-router';
 import { usePushWalletContext, PushUI } from '@pushchain/ui-kit';
 
 export default function ProtectedRoute({ children }) {
-  const { connectionStatus } = usePushWalletContext();
+  const { connectionStatus, handleUserLogOutEvent } = usePushWalletContext();
+  const navigate = useNavigate();
 
-  // Track connection status in localStorage for persistence
+  // Track and handle connection status
   useEffect(() => {
+    const wasConnected = localStorage.getItem('wasConnected') === 'true';
+
     if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED) {
       localStorage.setItem('wasConnected', 'true');
-    } else if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.NOT_CONNECTED) {
-      // Only clear on explicit disconnect (logout)
+    } else if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.NOT_CONNECTED && wasConnected) {
+      // Wallet was disconnected after being connected, log out user
+      if (handleUserLogOutEvent) {
+        handleUserLogOutEvent();
+      }
       localStorage.removeItem('wasConnected');
+      navigate('/', { replace: true });
     }
-  }, [connectionStatus]);
+  }, [connectionStatus, handleUserLogOutEvent, navigate]);
 
   // Check if user was ever connected (from localStorage)
   const wasConnected = localStorage.getItem('wasConnected') === 'true';
