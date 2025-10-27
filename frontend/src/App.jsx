@@ -39,7 +39,7 @@ function App() {
   };
 
   const appMetadata = {
-  logoUrl: '/assets/logo.png', // This controls the wallet modal logo (LHS)
+  logoUrl: 'https://ipfs.io/ipfs/bafkreieh7eiefgyfhjkgmon74kfpun4ivvxgrnrbiymmtbzx3aaqxwujbi', // This controls the wallet modal logo (LHS)
   title: 'ChainCircle',
   description: 'Chaincircle is a Decentralized savings platform for EVERY user on ANY blockchain WITHOUT bridging',
 };
