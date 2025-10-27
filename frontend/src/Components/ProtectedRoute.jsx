@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router';
-import { usePushWalletContext, PushUI } from '@pushchain/ui-kit';
+import { usePushWalletContext, usePushChainClient, PushUI } from '@pushchain/ui-kit';
 
 export default function ProtectedRoute({ children }) {
   const { connectionStatus, handleUserLogOutEvent } = usePushWalletContext();
+  const { isInitialized } = usePushChainClient();
   const navigate = useNavigate();
 
   // Track and handle connection status
@@ -12,19 +13,26 @@ export default function ProtectedRoute({ children }) {
 
     if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED) {
       localStorage.setItem('wasConnected', 'true');
-    } else if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.NOT_CONNECTED && wasConnected) {
+    } else if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.NOT_CONNECTED && wasConnected && isInitialized) {
       // Wallet was disconnected after being connected, log out user
+      // Only trigger this after initialization to avoid false disconnects on page load
       if (handleUserLogOutEvent) {
         handleUserLogOutEvent();
       }
       localStorage.removeItem('wasConnected');
       navigate('/', { replace: true });
     }
-  }, [connectionStatus, handleUserLogOutEvent, navigate]);
+  }, [connectionStatus, handleUserLogOutEvent, navigate, isInitialized]);
 
   // Check if user was ever connected (from localStorage)
   const wasConnected = localStorage.getItem('wasConnected') === 'true';
   const isCurrentlyConnected = connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED;
+
+  // Wait for provider to initialize before checking connection status
+  // This prevents redirecting while the wallet is reconnecting on page refresh
+  if (!isInitialized) {
+    return null;
+  }
 
   // Only redirect if user was never connected AND is not currently connected
   // This allows users to stay on 404 pages while logged in
