@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
 import { useCircleDetails } from '../../hooks/useCircleData';
 import { useJoinCircle } from '../../hooks/useCircleActions';
@@ -7,8 +7,9 @@ import { getGoalIcon, getGoalColors, formatFrequency, calculateProgress } from '
 import formatCurrency from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
 import PurpleBtn from '../../Components/PurpleBtn';
-import { IoClose } from "react-icons/io5";
+import { IoClose, IoShareSocial, IoDownload } from "react-icons/io5";
 import { FaCopy } from "react-icons/fa";
+import * as htmlToImage from 'html-to-image';
 
 export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const { data: circle, isLoading, error } = useCircleDetails(circleId);
   const { userAddress } = useCircleContract();
   const joinCircle = useJoinCircle();
+  const previewRef = useRef(null);
 
   const isCreator = circle?.creator?.toLowerCase() === userAddress?.toLowerCase();
 
@@ -34,7 +36,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
       if (onClose) onClose();
       navigate('/chain/circle');
     } catch (error) {
-      console.error('Failed to join circle:', error);
+      alert('Failed to join circle. Please try again.');
     }
   };
 
@@ -65,9 +67,31 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
     }
   };
 
+  const exportAsImage = async () => {
+    if (!previewRef.current || !circle) return;
+
+    try {
+      const element = previewRef.current;
+
+      const dataUrl = await htmlToImage.toPng(element, {
+        quality: 1,
+        pixelRatio: 3,
+        backgroundColor: '#111111',
+        cacheBust: true,
+      });
+
+      const link = document.createElement('a');
+      link.download = `${circle.name.replace(/\s+/g, '-')}-circle.png`;
+      link.href = dataUrl;
+      link.click();
+
+    } catch (error) {
+      alert(`Failed to export image: ${error.message || 'Unknown error'}. Please try again.`);
+    }
+  };
+
   // Show error only if there's an actual error, not just loading
   if (error) {
-    console.error('Circle preview error details:', error);
     return (
       <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
         <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] p-8 max-w-md">
@@ -108,16 +132,17 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
 
   return (
     <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
-      <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 relative">
+      <div className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {onClose && (
           <IoClose
             onClick={onClose}
-            className="absolute top-4 right-4 cursor-pointer hover:scale-110 transition-all"
+            className="absolute -top-2 -right-2 cursor-pointer hover:scale-110 transition-all z-10 bg-[#D548EC] rounded-full p-2"
             size={24}
           />
         )}
 
-        <div className="flex flex-col gap-6">
+        <div ref={previewRef} className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] p-8">
+          <div className="flex flex-col gap-6">
           {/* Circle Icon and Name */}
           <div className="flex items-center gap-4 lg:gap-6">
             <div className={`w-[80px] h-[80px] lg:w-[120px] lg:h-[120px] rounded-full flex items-center justify-center ${colors.bg} ${colors.text}`}>
@@ -231,7 +256,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
 
           {/* Action Buttons */}
           {!isCreator && !isMember && (
-            <div className="flex gap-4 mt-4">
+            <div className="flex flex-col gap-3 mt-4">
               <div className="flex-1" onClick={canJoin ? handleJoin : undefined}>
                 <PurpleBtn
                   text={joinCircle.isPending ? "Joining..." : "Join Circle"}
@@ -239,43 +264,73 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
                   disabled={joinCircle.isPending || !canJoin}
                 />
               </div>
-              <button
-                onClick={handleShare}
-                className="px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
-              >
-                Share
-              </button>
+              <div className="flex gap-3 items-center justify-between">
+                <button
+                  onClick={handleShare}
+                  className="flex-1 px-4 py-2 lg:px-6 lg:py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all flex items-center justify-center gap-2"
+                >
+                  <IoShareSocial size={20} />
+                  <span className="text-sm lg:text-base font-semibold">Share</span>
+                </button>
+                <button
+                  onClick={exportAsImage}
+                  className="p-3 lg:p-4 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
+                  title="Download as image"
+                >
+                  <IoDownload size={20} />
+                </button>
+              </div>
             </div>
           )}
 
           {!isCreator && isMember && (
-            <div className="flex gap-4 mt-4">
+            <div className="flex flex-col gap-3 mt-4">
               <button
                 onClick={onClose || (() => navigate('/chain/circle'))}
-                className="flex-1 px-6 py-3 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold"
+                className="w-full px-6 py-3 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold"
               >
                 View in My Circles
               </button>
-              <button
-                onClick={handleShare}
-                className="px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
-              >
-                Share
-              </button>
+              <div className="flex gap-3 items-center justify-between">
+                <button
+                  onClick={handleShare}
+                  className="flex-1 px-4 py-2 lg:px-6 lg:py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all flex items-center justify-center gap-2"
+                >
+                  <IoShareSocial size={20} />
+                  <span className="text-sm lg:text-base font-semibold">Share</span>
+                </button>
+                <button
+                  onClick={exportAsImage}
+                  className="p-3 lg:p-4 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
+                  title="Download as image"
+                >
+                  <IoDownload size={20} />
+                </button>
+              </div>
             </div>
           )}
 
           {isCreator && (
-            <div className="flex gap-4 mt-4">
-              <button
-                onClick={handleShare}
-                className="flex-1 px-6 py-3 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold"
-              >
-                Share Circle
-              </button>
+            <div className="flex flex-col gap-3 mt-4">
+              <div className="flex gap-3 items-center justify-between">
+                <button
+                  onClick={handleShare}
+                  className="flex-1 px-4 py-2 lg:px-6 lg:py-3 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold flex items-center justify-center gap-2"
+                >
+                  <IoShareSocial size={20} />
+                  <span className="text-sm lg:text-base">Share</span>
+                </button>
+                <button
+                  onClick={exportAsImage}
+                  className="p-3 lg:p-4 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all"
+                  title="Download as image"
+                >
+                  <IoDownload size={20} />
+                </button>
+              </div>
               <button
                 onClick={onClose}
-                className="px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
+                className="w-full px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
               >
                 Close
               </button>
@@ -287,6 +342,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
               {isMember ? "You are already a member of this circle" : "Cannot join this circle"}
             </p>
           )}
+          </div>
         </div>
       </div>
     </div>

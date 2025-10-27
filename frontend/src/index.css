@@ -21,6 +21,18 @@ body{
   color: #fff;
 }
 
+/* Prevent mobile zoom on input focus - ensure minimum 16px font size */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
+/* Responsive font sizes for larger screens */
+@media (min-width: 1024px) {
+  input, textarea, select {
+    font-size: inherit !important;
+  }
+}
+
 .font-dm{
   font-family: "DM Sans", sans-serif;
 }
