@@ -4,7 +4,7 @@ import TransBtn from '../Components/TransBtn';
 import { Link, useNavigate } from 'react-router';
 import { usePushWalletContext, PushUI, PushUniversalAccountButton } from '@pushchain/ui-kit';
 import { useGlobalStats } from '../hooks/useCircleData';
-import { IoClose } from 'react-icons/io5';
+import { IoClose, IoArrowUp } from 'react-icons/io5';
 import { FaCoins, FaGasPump, FaBook } from 'react-icons/fa';
 
 export default function Home() {
@@ -726,6 +726,22 @@ export default function Home() {
 
         <div className="absolute animate-bounce bottom-20 rounded-[35px] border border-white/20 left-1/2 -translate-x-1/2 lg:h-[130px] lg:w-[900px] w-full h-[80px] bg-white/10 backdrop-blur shadow-lg"></div>
       </section>
+
+      {/* Back to Top Button */}
+      <div className="flex items-center justify-center pb-10 lg:pb-20">
+        <button
+          onClick={() => {
+            window.scrollTo({
+              top: 0,
+              behavior: 'smooth'
+            });
+          }}
+          className="flex items-center gap-3 px-6 lg:px-8 py-3 lg:py-4 bg-[#000] hover:bg-[#111] rounded-full transition-all hover:scale-105 border border-[#F4AEFF]"
+        >
+          <span className="text-white font-semibold text-[14px] lg:text-[18px] uppercase">Back to top</span>
+          <IoArrowUp size={isTabletOrMobile ? 20 : 24} className="text-[#D548EC]" />
+        </button>
+      </div>
     </div>
   );
 }
