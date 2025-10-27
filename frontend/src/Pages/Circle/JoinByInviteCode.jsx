@@ -5,7 +5,7 @@ import { useCircleContract } from '../../hooks/useCircleContract';
 import { getGoalIcon, getGoalColors } from '../../utils/circleHelpers';
 import formatCurrency from '../../utils/formatCurrency';
 import PurpleBtn from '../../Components/PurpleBtn';
-import { IoClose } from "react-icons/io5";
+import { IoClose, IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 
 export default function JoinByInviteCode({ onClose }) {
   const [inviteCode, setInviteCode] = useState('');
@@ -91,7 +91,10 @@ export default function JoinByInviteCode({ onClose }) {
 
           return (
           <div className="mt-6 lg:mt-8 p-4 lg:p-6 border border-green-500 rounded-lg bg-green-500/10">
-            <p className="text-green-400 text-sm lg:text-xl mb-4 lg:mb-6 font-semibold">✓ Circle Found!</p>
+            <div className="flex items-center gap-2 mb-4 lg:mb-6">
+              <IoCheckmarkCircle className="text-green-400" size={isTabletOrMobile ? 20 : 24} />
+              <p className="text-green-400 text-sm lg:text-xl font-semibold">Circle Found!</p>
+            </div>
 
             <div className="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6">
               {IconComponent && (
@@ -159,18 +162,24 @@ export default function JoinByInviteCode({ onClose }) {
         {/* No Circle Found */}
         {searchTriggered && !isLoading && !circle && !error && (
           <div className="mt-6 lg:mt-8 p-4 lg:p-6 border border-red-500 rounded-lg bg-red-500/10">
-            <p className="text-red-400 text-sm lg:text-lg">
-              ✗ No circle found with this invite code
-            </p>
+            <div className="flex items-center gap-2">
+              <IoCloseCircle className="text-red-400" size={isTabletOrMobile ? 20 : 24} />
+              <p className="text-red-400 text-sm lg:text-lg">
+                No circle found with this invite code
+              </p>
+            </div>
           </div>
         )}
 
         {/* Error */}
         {error && (
           <div className="mt-6 lg:mt-8 p-4 lg:p-6 border border-red-500 rounded-lg bg-red-500/10">
-            <p className="text-red-400 text-sm lg:text-lg">
-              ✗ Error searching for circle
-            </p>
+            <div className="flex items-center gap-2">
+              <IoCloseCircle className="text-red-400" size={isTabletOrMobile ? 20 : 24} />
+              <p className="text-red-400 text-sm lg:text-lg">
+                Error searching for circle
+              </p>
+            </div>
           </div>
         )}
       </div>
