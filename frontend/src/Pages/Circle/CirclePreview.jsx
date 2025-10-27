@@ -55,15 +55,25 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
     }
   };
 
-  const copyInviteCode = () => {
+  const copyInviteCode = async () => {
     if (circle?.inviteCode) {
-      navigator.clipboard.writeText(circle.inviteCode);
+      try {
+        await navigator.clipboard.writeText(circle.inviteCode);
+        alert('Invite code copied!');
+      } catch (error) {
+        alert('Failed to copy invite code');
+      }
     }
   };
 
-  const copyCreatorAddress = () => {
+  const copyCreatorAddress = async () => {
     if (circle?.creator) {
-      navigator.clipboard.writeText(circle.creator);
+      try {
+        await navigator.clipboard.writeText(circle.creator);
+        alert('Creator address copied!');
+      } catch (error) {
+        alert('Failed to copy creator address');
+      }
     }
   };
 
@@ -226,11 +236,15 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
                   {circle.creator}
                 </p>
                 <button
-                  onClick={copyCreatorAddress}
-                  className="p-2 hover:bg-[#333] rounded transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyCreatorAddress();
+                  }}
+                  className="p-3 hover:bg-[#333] rounded transition-all cursor-pointer flex-shrink-0 active:scale-95"
                   title="Copy creator address"
+                  type="button"
                 >
-                  <FaCopy size={isTabletOrMobile ? 16 : 20} />
+                  <FaCopy size={isTabletOrMobile ? 18 : 20} />
                 </button>
               </div>
             </div>
@@ -243,11 +257,15 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
                     {circle.inviteCode}
                   </p>
                   <button
-                    onClick={copyInviteCode}
-                    className="p-2 hover:bg-[#333] rounded transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyInviteCode();
+                    }}
+                    className="p-3 hover:bg-[#333] rounded transition-all cursor-pointer flex-shrink-0 active:scale-95"
                     title="Copy invite code"
+                    type="button"
                   >
-                    <FaCopy size={isTabletOrMobile ? 16 : 20} />
+                    <FaCopy size={isTabletOrMobile ? 18 : 20} />
                   </button>
                 </div>
               </div>
