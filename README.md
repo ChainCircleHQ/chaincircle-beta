@@ -147,10 +147,11 @@ User Action → Frontend → Push Wallet → Smart Contract → Event Emission
 | **Vite** | 7.1.7 | Build tool & dev server |
 | **React Router** | 7.9.3 | Client-side routing |
 | **TailwindCSS** | 4.1.14 | Utility-first CSS |
-| **@pushchain/ui-kit** | 2.0.11 | Universal wallet integration |
+| **@pushchain/ui-kit** | 2.0.11 | Push Chain wallet integration & UI components |
 | **@tanstack/react-query** | 5.90.2 | Server state management |
-| **ethers.js** | 6.13.4 | Blockchain interaction |
+| **ethers.js** | 6.15.0 | Blockchain interaction |
 | **react-icons** | 5.5.0 | Icon library |
+| **lucide-react** | Latest | Modern icon library (chadcn/ui style) |
 | **react-smooth** | 4.0.4 | Smooth animations |
 
 ### Backend (Smart Contracts)
