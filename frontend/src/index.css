@@ -338,10 +338,13 @@ html.light .light\:border-gray-300 {
   border-color: #d1d5db;
 }
 
-/* Light mode header backdrop */
+/* Light mode header backdrop with enhanced glass effect */
 html.light header {
-  background-color: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
   border-bottom-color: #D548EC !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Light mode text colors */
@@ -447,9 +450,21 @@ html.light button.bg-\[\\#000\]:hover {
 
 /* Light mode for blur effects - make them lighter */
 html.light img[src*="blur.png"],
-html.light img[src*="Blur-oval.png"] {
-  opacity: 0.3;
+html.light img[src*="Blur-oval.png"],
+html.light img[src*="Bg-Grid.png"],
+html.light img[src*="wiw-bg.png"] {
+  opacity: 0.15;
   filter: invert(1) hue-rotate(180deg);
+  mix-blend-mode: multiply;
+}
+
+/* Light mode for feature highlights background video on mobile */
+@media (max-width: 1014px) {
+  html.light video[src*="bafybeibwhczyidexmveesm7wxpxyeyqjljfffdbhyj3nh4vd37altilra4"] {
+    opacity: 0.2;
+    filter: brightness(1.5);
+    mix-blend-mode: multiply;
+  }
 }
 
 /* Light mode for dashboard sidebar and navigation - more specific */
@@ -472,16 +487,42 @@ html.light .bg-\[\\#d648ec43\] {
   border: 1px solid #D548EC;
 }
 
-/* Light mode for dashboard header card */
-html.light .bg-\[\\#853094\] {
+/* Light mode for dashboard header card - more specific targeting */
+html.light header .bg-\[\\#853094\],
+html.light div[class*="bg-[#853094]"] {
   background-color: #e0b3e8 !important;
   color: #000000 !important;
 }
 
 /* Light mode text on dashboard cards */
-html.light .bg-\[\\#853094\] p,
-html.light .bg-\[\\#853094\] span {
+html.light header .bg-\[\\#853094\] p,
+html.light header .bg-\[\\#853094\] span,
+html.light div[class*="bg-[#853094]"] p,
+html.light div[class*="bg-[#853094]"] span {
   color: #000000 !important;
+}
+
+/* Light mode for dashboard main content area background */
+html.light .flex-1.overflow-auto {
+  background-color: #ffffff !important;
+}
+
+/* Light mode for dashboard page container */
+html.light .h-full.overflow-auto.flex.flex-col {
+  background-color: #ffffff !important;
+}
+
+/* Light mode for dashboard header with background image */
+html.light header[style*="dashboard-bg-card"] {
+  filter: brightness(1.1) saturate(0.9);
+  border: 1px solid #e5e7eb;
+}
+
+/* Ensure dashboard header text is visible in light mode */
+html.light header[style*="dashboard-bg-card"] h3,
+html.light header[style*="dashboard-bg-card"] p {
+  color: #000000 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 /* Light mode for create circle button */
@@ -508,9 +549,15 @@ html.light section {
   background-color: transparent;
 }
 
-/* Light mode social proof background */
+/* Light mode social proof and general section backgrounds */
 html.light section {
   color: #000000;
+  background-color: transparent;
+}
+
+/* Ensure sections don't have dark overlays in light mode */
+html.light section > div[class*="absolute"] {
+  opacity: 0.15 !important;
 }
 
 /* Ensure back to top button is visible in light mode */
@@ -629,10 +676,53 @@ html.light svg {
   color: inherit;
 }
 
-/* Light mode for Feature Highlights section - keep video the same */
-html.light video[src*="bafybeibwhczyidexmveesm7wxpxyeyqjljfffdbhyj3nh4vd37altilra4"] {
-  opacity: 1;
-  filter: none;
+/* Light mode for Feature Highlights section - keep video the same on desktop */
+@media (min-width: 1015px) {
+  html.light video[src*="bafybeibwhczyidexmveesm7wxpxyeyqjljfffdbhyj3nh4vd37altilra4"] {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+/* Light mode for How It Works and Feature Highlights icons */
+html.light img[src*="Circle-Icon.png"],
+html.light img[src*="Wallet-Icon.png"],
+html.light img[src*="Interest-Icon.png"],
+html.light img[src*="padlock.png"],
+html.light img[src*="Earn-Icon.png"],
+html.light img[src*="Reputation-Icon.png"],
+html.light img[src*="Accountability-Icon.png"] {
+  filter: brightness(0.8) saturate(1.2);
+}
+
+/* Light mode for FAQ category buttons - more specific */
+html.light section#faq button {
+  background-color: #ffffff !important;
+  border-color: #D548EC !important;
+  color: #4b5563 !important;
+}
+
+html.light section#faq button:hover {
+  background-color: rgba(214, 72, 236, 0.1) !important;
+  color: #000000 !important;
+}
+
+html.light section#faq button.bg-\[\\#D548EC\],
+html.light section#faq button[class*="bg-[#D548EC]"] {
+  background-color: #D548EC !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(213, 72, 236, 0.3) !important;
+}
+
+/* Light mode for FAQ question cards */
+html.light section#faq .border-\[\\#F4AEFF\]\/30 {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
+html.light section#faq .bg-\[\\#111111\]\/50 {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
 }
 
 /* Light mode for feature highlight cards */
@@ -779,6 +869,20 @@ html.dark .dark\:border-\[\\#F4AEFF\] {
 /* Ensure social proof text is always visible */
 html.light .font-dm {
   color: #000000;
+}
+
+/* Light mode for social proof section specifically */
+html.light section h1 {
+  color: #000000 !important;
+}
+
+html.light .carousel-item * {
+  color: #000000 !important;
+}
+
+/* Override for primary text in carousel */
+html.light .carousel-item .text-primary {
+  color: #D548EC !important;
 }
 
 /* Fix for animated bounce element */

@@ -469,13 +469,12 @@ export default function Home() {
             </p>
           </div>
           <div className="flex items-center justify-center lg:justify-start gap-4">
-            <div onClick={handleStartSavingClick}>
-              <PurpleBtn
-                text={"Start Saving"}
-                font={"bold"}
-                icon={"rightArrow"}
-              />
-            </div>
+            <PurpleBtn
+              text={"Start Saving"}
+              font={"bold"}
+              icon={"rightArrow"}
+              action={handleStartSavingClick}
+            />
             <TransBtn
               text={"How it Works"}
               icon={"hamburger"}
