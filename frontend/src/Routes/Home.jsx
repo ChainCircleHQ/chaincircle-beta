@@ -310,7 +310,12 @@ export default function Home() {
 };
   const handleStartSavingClick = () => {
     if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED) {
-      navigate('/chain/dashboard', { replace: true });
+      // Ensure wasConnected is set before navigation to prevent redirect
+      localStorage.setItem('wasConnected', 'true');
+      // Small delay to ensure state is stable
+      setTimeout(() => {
+        navigate('/chain/dashboard', { replace: true });
+      }, 50);
     } else {
       // Set flag in localStorage to persist through any page reloads
       localStorage.setItem('navigateToDashboardAfterConnect', 'true');
