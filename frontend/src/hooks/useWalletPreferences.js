@@ -7,7 +7,8 @@ import WalletPreferencesABI from '../abis/WalletPreferences.json';
  * Hook for interacting with WalletPreferences smart contract
  */
 export function useWalletPreferences() {
-  const { pushChainClient, isInitialized, userAddress } = usePushChainClient();
+  const { pushChainClient, isInitialized } = usePushChainClient();
+  const userAddress = pushChainClient?.universal?.account;
 
   const getContract = async () => {
     const provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
@@ -22,12 +23,26 @@ export function useWalletPreferences() {
    * Add a wallet to the user's linked wallets (smart contract)
    */
   const addWallet = async (walletAddress, chainName = 'Push Chain') => {
-    if (!isInitialized || !pushChainClient) {
-      throw new Error('Wallet not connected');
+    if (!pushChainClient || !userAddress) {
+      throw new Error('Wallet not connected. Please connect your wallet first.');
     }
 
     if (!pushChainClient.universal) {
       throw new Error('Push Chain universal client not available');
+    }
+
+    // Check if wallet is already linked
+    try {
+      const contract = await getContract();
+      const walletInfo = await contract.getWalletInfo(userAddress, walletAddress);
+      if (walletInfo && walletInfo.addedAt && Number(walletInfo.addedAt) > 0) {
+        throw new Error('Wallet already linked');
+      }
+    } catch (error) {
+      if (error.message.includes('already linked')) {
+        throw error;
+      }
+      // If getWalletInfo fails for other reasons, proceed with add
     }
 
     const addWalletData = ethers.Interface.from(WalletPreferencesABI).encodeFunctionData(
