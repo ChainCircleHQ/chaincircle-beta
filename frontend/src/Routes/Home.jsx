@@ -2,19 +2,23 @@ import React, { useEffect, useRef, useState } from 'react'
 import PurpleBtn from '../Components/PurpleBtn';
 import TransBtn from '../Components/TransBtn';
 import { Link, useNavigate } from 'react-router';
-import { usePushWalletContext, PushUI, PushUniversalAccountButton } from '@pushchain/ui-kit';
+import { usePushWalletContext, usePushChainClient, PushUI, PushUniversalAccountButton } from '@pushchain/ui-kit';
 import { useGlobalStats } from '../hooks/useCircleData';
 import { IoClose, IoArrowUp } from 'react-icons/io5';
 import { FaCoins, FaGasPump, FaBook } from 'react-icons/fa';
 import { FiSearch, FiMinus, FiPlus } from 'react-icons/fi';
+import { initializeWalletPreferences } from '../utils/walletPreferences';
 
 export default function Home() {
   const stepsRef = useRef(null);
   const videoSectionRef = useRef(null);
   const navigate = useNavigate();
   const { connectionStatus, handleConnectToPushWallet } = usePushWalletContext();
+  const { pushChainClient } = usePushChainClient();
   const { data: globalStats } = useGlobalStats();
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  
+  const currentWallet = pushChainClient?.universal?.account;
 
   // FAQ State
   const [searchTerm, setSearchTerm] = useState('');
@@ -95,6 +99,13 @@ export default function Home() {
       };
     }
   }, []);
+
+  // Initialize wallet preferences when user connects
+  useEffect(() => {
+    if (currentWallet && connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED) {
+      initializeWalletPreferences(currentWallet, 'Push Chain');
+    }
+  }, [currentWallet, connectionStatus]);
 
   // Navigate to dashboard when user connects wallet after clicking "Start Saving"
   useEffect(() => {
