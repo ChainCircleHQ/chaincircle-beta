@@ -15,8 +15,6 @@ export default function PageNotFound() {
 
   const isMobile = window.innerWidth <= 800;
 
-  console.log(isMobile);
-
   return (
     <>
       {isMobile ? (

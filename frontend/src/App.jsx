@@ -22,30 +22,19 @@ function App() {
   const queryClient = new QueryClient();
   const [walletTheme, setWalletTheme] = React.useState(() => {
     const theme = localStorage.getItem('theme') || 'dark';
-    if (theme === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? PushUI.CONSTANTS.THEME.DARK
-        : PushUI.CONSTANTS.THEME.LIGHT;
-    }
-    return theme === 'dark' ? PushUI.CONSTANTS.THEME.DARK : PushUI.CONSTANTS.THEME.LIGHT;
+    // Convert 'system' to 'dark' if found
+    const actualTheme = theme === 'system' ? 'dark' : theme;
+    return actualTheme === 'dark' ? PushUI.CONSTANTS.THEME.DARK : PushUI.CONSTANTS.THEME.LIGHT;
   });
 
-  // Log theme changes for debugging
-  React.useEffect(() => {
-    console.log('Wallet theme updated to:', walletTheme);
-  }, [walletTheme]);
 
   // Listen for theme changes
   React.useEffect(() => {
     const updateWalletTheme = () => {
       const theme = localStorage.getItem('theme') || 'dark';
 
-      let currentTheme;
-      if (theme === 'system') {
-        currentTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      } else {
-        currentTheme = theme;
-      }
+      // Convert 'system' to 'dark' if found
+      const currentTheme = theme === 'system' ? 'dark' : theme;
 
       const newWalletTheme = currentTheme === 'dark'
         ? PushUI.CONSTANTS.THEME.DARK

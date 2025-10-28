@@ -30,7 +30,7 @@ export default function PayoutPreferences() {
       <div className="w-fit ml-auto ">
         <PurpleBtn
           text={"Save preferences"}
-          action={() => console.log("Save preferences")}
+          action={() => {}}
         />
       </div>
     </div>

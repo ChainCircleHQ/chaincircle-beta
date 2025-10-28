@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 
 export default function ThemeToggle() {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'dark';
+    const savedTheme = localStorage.getItem('theme');
+    // Force to dark if system theme was saved
+    return savedTheme === 'system' || !savedTheme ? 'dark' : savedTheme;
   });
   const [isOpen, setIsOpen] = useState(false);
 
@@ -13,38 +15,18 @@ export default function ThemeToggle() {
     // Remove all theme classes first
     root.classList.remove('light', 'dark');
 
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
-    }
-
+    // Always set the theme directly, ignoring system preference
+    root.classList.add(theme);
+    
     localStorage.setItem('theme', theme);
 
     // Dispatch custom event to notify other components (like wallet)
     window.dispatchEvent(new Event('themeChange'));
   }, [theme]);
 
-  // Listen for system theme changes when in system mode
-  useEffect(() => {
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = (e) => {
-        const root = document.documentElement;
-        root.classList.remove('light', 'dark');
-        root.classList.add(e.matches ? 'dark' : 'light');
-      };
-
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-  }, [theme]);
-
   const themes = [
     { name: 'light', icon: Sun, label: 'Light' },
-    { name: 'dark', icon: Moon, label: 'Dark' },
-    { name: 'system', icon: Monitor, label: 'System' }
+    { name: 'dark', icon: Moon, label: 'Dark' }
   ];
 
   const currentTheme = themes.find(t => t.name === theme);

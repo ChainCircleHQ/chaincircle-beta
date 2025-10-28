@@ -17,10 +17,14 @@ export default function ProfileDetails() {
   const { handleUserLogOutEvent } = usePushWalletContext();
 
   const handleLogout = () => {
+    // Clear any navigation flags
+    localStorage.removeItem('navigateToDashboardAfterConnect');
+    localStorage.removeItem('wasConnected');
+    
     if (handleUserLogOutEvent) {
       handleUserLogOutEvent();
     }
-    navigate("/");
+    navigate("/", { replace: true });
   };
 
   return (

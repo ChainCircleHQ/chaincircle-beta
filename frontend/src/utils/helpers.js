@@ -136,10 +136,7 @@ function formatRelativeTime(timestamp) {
 
 // Transaction utilities
 async function waitForTransaction(tx, confirmations = 1) {
-    console.log("Transaction hash:", tx.hash);
-    console.log("Waiting for confirmations...");
     const receipt = await tx.wait(confirmations);
-    console.log("Transaction confirmed in block:", receipt.blockNumber);
     return receipt;
 }
 

@@ -60,7 +60,6 @@ export function useClaimFaucet() {
       // Encode the claimFromFaucet function call
       const claimData = ethers.Interface.from(CUSDABI.abi).encodeFunctionData('claimFromFaucet', []);
 
-      console.log('Claiming from faucet...');
 
       // Send transaction using Push Chain universal client
       const tx = await pushChainClient.universal.sendTransaction({
@@ -69,11 +68,9 @@ export function useClaimFaucet() {
         value: 0n
       });
 
-      console.log('Transaction sent, waiting for confirmation...');
 
       await tx.wait();
 
-      console.log('Claim successful!');
 
       return tx;
     },

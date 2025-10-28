@@ -12,12 +12,6 @@ export function useCreateCircle() {
 
   return useMutation({
     mutationFn: async ({ name, goalType, amount, duration, maxMembers, frequency }) => {
-      console.log('=== CREATE CIRCLE DEBUG ===');
-      console.log('Push Chain Client:', pushChainClient);
-      console.log('Push Chain Client.universal:', pushChainClient?.universal);
-      console.log('Is Initialized:', isInitialized);
-      console.log('User Address:', userAddress);
-
       if (!isInitialized || !pushChainClient) {
         throw new Error('Wallet not connected. Please ensure your wallet is connected via Push Chain.');
       }
@@ -30,15 +24,10 @@ export function useCreateCircle() {
       const coreAddress = CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE;
       const amountInWei = ethers.parseUnits(amount.toString(), 6);
 
-      console.log('Contract Addresses:', { cusdAddress, coreAddress });
-      console.log('Amount in Wei:', amountInWei.toString());
-
       // Check balance using read-only provider
       const provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
       const cusdReadOnly = new ethers.Contract(cusdAddress, CUSDABI.abi, provider);
       const balance = await cusdReadOnly.balanceOf(userAddress);
-
-      console.log('CUSD Balance:', ethers.formatUnits(balance, 6));
 
       // Warning only - let the transaction fail naturally if insufficient
       if (balance < amountInWei) {
@@ -46,14 +35,10 @@ export function useCreateCircle() {
       }
 
       // Step 1: Approve CUSD using Push Chain universal transaction
-      console.log('Step 1: Approving CUSD...');
-
       const approveData = ethers.Interface.from(CUSDABI.abi).encodeFunctionData(
         'approve',
         [coreAddress, amountInWei]
       );
-
-      console.log('Approve data encoded, sending transaction...');
 
       const approveTx = await pushChainClient.universal.sendTransaction({
         to: cusdAddress,
@@ -61,14 +46,9 @@ export function useCreateCircle() {
         value: 0n
       });
 
-      console.log('Approve transaction sent, waiting for confirmation...');
-
       await approveTx.wait();
-      console.log('CUSD approved');
 
       // Step 2: Create Circle using Push Chain universal transaction
-      console.log('Step 2: Creating circle...');
-
       const createData = ethers.Interface.from(ChainCircleCoreABI.abi).encodeFunctionData(
         'createCircle',
         [
@@ -88,9 +68,6 @@ export function useCreateCircle() {
       });
 
       const receipt = await createTx.wait();
-      console.log('Circle created successfully');
-      console.log('Transaction receipt:', receipt);
-      console.log('Transaction hash:', receipt.hash || receipt.transactionHash || createTx.hash);
 
       return receipt;
     },

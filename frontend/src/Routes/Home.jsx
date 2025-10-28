@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import PurpleBtn from '../Components/PurpleBtn';
 import TransBtn from '../Components/TransBtn';
-import ThemeToggle from '../Components/ThemeToggle';
 import { Link, useNavigate } from 'react-router';
 import { usePushWalletContext, PushUI, PushUniversalAccountButton } from '@pushchain/ui-kit';
 import { useGlobalStats } from '../hooks/useCircleData';
@@ -97,18 +96,21 @@ export default function Home() {
     }
   }, []);
 
-  // Track if user clicked "Start Saving" button
-  const [shouldNavigateToDashboard, setShouldNavigateToDashboard] = useState(false);
-
   // Navigate to dashboard when user connects wallet after clicking "Start Saving"
   useEffect(() => {
-    if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED && shouldNavigateToDashboard) {
-      // Reset the flag
-      setShouldNavigateToDashboard(false);
+    // Check if user should navigate after wallet connection
+    const shouldNavigate = localStorage.getItem('navigateToDashboardAfterConnect');
+
+    if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED && shouldNavigate === 'true') {
+      // Clear the navigation flag
+      localStorage.removeItem('navigateToDashboardAfterConnect');
+      // Set wasConnected BEFORE navigation to prevent redirect
+      localStorage.setItem('wasConnected', 'true');
+      
       // Navigate to dashboard
-      navigate('/chain/dashboard');
+      navigate('/chain/dashboard', { replace: true });
     }
-  }, [connectionStatus, shouldNavigateToDashboard, navigate]);
+  }, [connectionStatus, navigate]);
 
   // FAQ Data
   const categories = ['General', 'Build', 'Promote', 'Manage', 'Integrations', 'Legal'];
@@ -308,10 +310,10 @@ export default function Home() {
 };
   const handleStartSavingClick = () => {
     if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED) {
-      navigate('/chain/dashboard');
+      navigate('/chain/dashboard', { replace: true });
     } else {
-      // Set state to indicate we should navigate after connection
-      setShouldNavigateToDashboard(true);
+      // Set flag in localStorage to persist through any page reloads
+      localStorage.setItem('navigateToDashboardAfterConnect', 'true');
       handleConnectToPushWallet();
     }
   };
@@ -437,8 +439,6 @@ export default function Home() {
   </div>
 
   <div className="flex items-center gap-4">
-    <ThemeToggle />
-
     {!isTabletOrMobile && (
       <>
         {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED ? (
@@ -621,7 +621,7 @@ export default function Home() {
 
         {/* Optional Caption */}
         <p className="text-center text-[#aaa] text-[14px] lg:text-[18px] font-dm mt-6 lg:mt-8 px-10">
-          Watch how ChainCircle revolutionizes cross-chain savings
+          See how ChainCircle works
         </p>
       </section>
 

@@ -6,7 +6,6 @@ import { MdOutlineCreditCard, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRi
 import { FaRegUserCircle } from "react-icons/fa";
 import { FaRegBell } from "react-icons/fa6";
 import { PushUniversalAccountButton, usePushWalletContext } from '@pushchain/ui-kit';
-import ThemeToggle from './Components/ThemeToggle';
 
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 
@@ -19,21 +18,17 @@ export default function chain() {
   // Check current theme
   const [isDarkMode, setIsDarkMode] = React.useState(() => {
     const theme = localStorage.getItem('theme') || 'dark';
-    if (theme === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return theme === 'dark';
+    // Convert 'system' to 'dark' if found
+    return theme === 'system' || theme === 'dark';
   });
 
   // Listen for theme changes
   React.useEffect(() => {
     const updateTheme = () => {
       const theme = localStorage.getItem('theme') || 'dark';
-      if (theme === 'system') {
-        setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
-      } else {
-        setIsDarkMode(theme === 'dark');
-      }
+      // Convert 'system' to 'dark' if found
+      const actualTheme = theme === 'system' ? 'dark' : theme;
+      setIsDarkMode(actualTheme === 'dark');
     };
 
     window.addEventListener('themeChange', updateTheme);
@@ -128,11 +123,15 @@ export default function chain() {
 
           <div
             onClick={() => {
+              // Clear any navigation flags
+              localStorage.removeItem('navigateToDashboardAfterConnect');
+              localStorage.removeItem('wasConnected');
+              
               // Disconnect wallet and navigate to home
               if (handleUserLogOutEvent) {
                 handleUserLogOutEvent();
               }
-              navigate("/");
+              navigate("/", { replace: true });
             }}
             className={`p-2 rounded-[8px] flex items-center gap-4 w-full justify-center cursor-pointer hover:bg-[#D548EC] transition-all `}
           >
@@ -183,7 +182,6 @@ export default function chain() {
             <div className="max-w-[200px]">
               <PushUniversalAccountButton />
             </div>
-            <ThemeToggle />
           </div>
         </div>
         <div className="flex-1 pb-4 lg:pb-0">

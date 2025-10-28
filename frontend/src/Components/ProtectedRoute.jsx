@@ -16,10 +16,13 @@ export default function ProtectedRoute({ children }) {
     } else if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.NOT_CONNECTED && wasConnected && isInitialized) {
       // Wallet was disconnected after being connected, log out user
       // Only trigger this after initialization to avoid false disconnects on page load
+      // Clear navigation flags
+      localStorage.removeItem('navigateToDashboardAfterConnect');
+      localStorage.removeItem('wasConnected');
+      
       if (handleUserLogOutEvent) {
         handleUserLogOutEvent();
       }
-      localStorage.removeItem('wasConnected');
       navigate('/', { replace: true });
     }
   }, [connectionStatus, handleUserLogOutEvent, navigate, isInitialized]);

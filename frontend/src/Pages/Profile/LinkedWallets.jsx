@@ -25,7 +25,7 @@ export default function LinkedWallets() {
       </ul>
 
       <div className="w-fit ml-auto ">
-      <PurpleBtn text={"Link New Wallet"} action={()=>console.log("Link new wallet")} />
+      <PurpleBtn text={"Link New Wallet"} action={()=>{}} />
         
       </div>
     </div>
