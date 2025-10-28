@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { MdOutlineCreditCard } from "react-icons/md";
 import PurpleBtn from '../../Components/PurpleBtn';
-import { getLinkedWallets, getPreferredWallet, setPreferredWallet } from '../../utils/walletPreferences';
+import { useWalletPreferences } from '../../hooks/useWalletPreferences';
+import { usePushChainClient } from '@pushchain/ui-kit';
 
 const isTabletOrMobile = window.innerWidth <= 1014;
   
@@ -9,25 +10,52 @@ export default function PayoutPreferences() {
   const [linkedWallets, setLinkedWallets] = useState([]);
   const [preferredWallet, setPreferredWalletState] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  const { pushChainClient } = usePushChainClient();
+  const { getAllWalletDetails, getPreferredWallet, setPreferredWallet } = useWalletPreferences();
+  const currentWallet = pushChainClient?.universal?.account;
 
   useEffect(() => {
-    const wallets = getLinkedWallets();
-    setLinkedWallets(wallets);
-    
-    const preferred = getPreferredWallet();
-    setPreferredWalletState(preferred);
-  }, []);
+    const loadData = async () => {
+      if (!currentWallet) return;
+      
+      try {
+        const wallets = await getAllWalletDetails(currentWallet);
+        setLinkedWallets(wallets);
+        
+        const preferred = await getPreferredWallet(currentWallet);
+        setPreferredWalletState(preferred);
+      } catch (error) {
+        // Failed to load - will show empty state
+      }
+    };
 
-  const handleSelectPreferredWallet = (walletAddress) => {
-    setPreferredWallet(walletAddress);
-    setPreferredWalletState(walletAddress);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    loadData();
+  }, [currentWallet, getAllWalletDetails, getPreferredWallet]);
+
+  const handleSelectPreferredWallet = async (walletAddress) => {
+    if (!currentWallet) return;
+    
+    setLoading(true);
+    try {
+      await setPreferredWallet(walletAddress);
+      setPreferredWalletState(walletAddress);
+      
+      // Reload all wallets to update isPreferred flags
+      const wallets = await getAllWalletDetails(currentWallet);
+      setLinkedWallets(wallets);
+      
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      alert('Failed to set preferred wallet: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSavePreferences = () => {
-    // This could integrate with backend or smart contract in the future
-    alert('Preferences saved successfully!');
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
   };

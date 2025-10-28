@@ -2,38 +2,37 @@ import React, { useState, useEffect } from 'react'
 import { RiWallet3Line } from "react-icons/ri";
 import { Trash2 } from "lucide-react";
 import PurpleBtn from '../../Components/PurpleBtn';
-import { 
-  getLinkedWallets, 
-  removeWallet, 
-  isWalletLinked,
-  saveWallet,
-  initializeWalletPreferences 
-} from '../../utils/walletPreferences';
-import { usePushChainClient } from '@pushchain/ui-kit';
+import { useWalletPreferences } from '../../hooks/useWalletPreferences';
+import { usePushChainClient, usePushWalletContext, PushUI } from '@pushchain/ui-kit';
 
 const isTabletOrMobile = window.innerWidth <= 1014;
 
 export default function LinkedWallets() {
   const [linkedWallets, setLinkedWallets] = useState([]);
+  const [loading, setLoading] = useState(false);
   const { pushChainClient } = usePushChainClient();
+  const { handleConnectToPushWallet, connectionStatus } = usePushWalletContext();
+  const { getAllWalletDetails, removeWallet: removeWalletOnChain, addWallet } = useWalletPreferences();
   const currentWallet = pushChainClient?.universal?.account;
 
-  // Load wallets on mount
+  // Load wallets from smart contract
   useEffect(() => {
-    const wallets = getLinkedWallets();
-    setLinkedWallets(wallets);
-  }, []);
+    const loadWallets = async () => {
+      if (!currentWallet) return;
+      
+      try {
+        const wallets = await getAllWalletDetails(currentWallet);
+        setLinkedWallets(wallets);
+      } catch (error) {
+        // Fallback to empty array if contract call fails
+        setLinkedWallets([]);
+      }
+    };
 
-  // Initialize current wallet if not already linked
-  useEffect(() => {
-    if (currentWallet && !isWalletLinked(currentWallet)) {
-      initializeWalletPreferences(currentWallet, 'Push Chain');
-      const wallets = getLinkedWallets();
-      setLinkedWallets(wallets);
-    }
-  }, [currentWallet]);
+    loadWallets();
+  }, [currentWallet, getAllWalletDetails]);
 
-  const handleRemoveWallet = (walletAddress) => {
+  const handleRemoveWallet = async (walletAddress) => {
     if (linkedWallets.length <= 1) {
       alert('Cannot remove your last wallet');
       return;
@@ -42,19 +41,63 @@ export default function LinkedWallets() {
     const confirmRemove = window.confirm('Are you sure you want to remove this wallet?');
     if (!confirmRemove) return;
     
-    removeWallet(walletAddress);
-    setLinkedWallets(getLinkedWallets());
-  };
-
-  const handleLinkWallet = () => {
-    if (currentWallet && !isWalletLinked(currentWallet)) {
-      saveWallet(currentWallet, 'Push Chain');
-      setLinkedWallets(getLinkedWallets());
-      alert('Current wallet linked successfully!');
-    } else {
-      alert('Multi-wallet support coming soon! Your current wallet is automatically linked. To link additional wallets, you\'ll need to connect them through your wallet app in a future update.');
+    setLoading(true);
+    try {
+      await removeWalletOnChain(walletAddress);
+      // Reload wallets
+      const wallets = await getAllWalletDetails(currentWallet);
+      setLinkedWallets(wallets);
+    } catch (error) {
+      alert('Failed to remove wallet: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleLinkWallet = async () => {
+    setLoading(true);
+    try {
+      // Trigger wallet connection modal
+      await handleConnectToPushWallet();
+      // Note: Wallet will be auto-linked via useEffect when connectionStatus changes
+    } catch (error) {
+      alert('Failed to connect wallet');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Auto-add wallet when user connects or switches wallets
+  useEffect(() => {
+    const addConnectedWallet = async () => {
+      if (!currentWallet || loading) return;
+      
+      try {
+        const wallets = await getAllWalletDetails(currentWallet);
+        const isAlreadyAdded = wallets.some(w => w.address.toLowerCase() === currentWallet.toLowerCase());
+        
+        if (!isAlreadyAdded && wallets.length === 0) {
+          // First time connecting - add wallet automatically
+          await addWallet(currentWallet, 'Push Chain');
+          // Reload
+          const updatedWallets = await getAllWalletDetails(currentWallet);
+          setLinkedWallets(updatedWallets);
+        } else if (!isAlreadyAdded && wallets.length > 0) {
+          // User switched to a different wallet, add the new one
+          await addWallet(currentWallet, 'Push Chain');
+          // Reload
+          const updatedWallets = await getAllWalletDetails(currentWallet);
+          setLinkedWallets(updatedWallets);
+        }
+      } catch (error) {
+        // Silently fail - wallet might already be added or contract error
+      }
+    };
+
+    if (currentWallet) {
+      addConnectedWallet();
+    }
+  }, [currentWallet, loading, getAllWalletDetails, addWallet]);
 
   const truncateAddress = (address) => {
     if (!address) return '';
@@ -104,11 +147,15 @@ export default function LinkedWallets() {
       )}
 
       <div className="w-fit ml-auto ">
-        <PurpleBtn text={"Link New Wallet"} action={handleLinkWallet} />
+        <PurpleBtn 
+          text={loading ? "Loading..." : "Link New Wallet"} 
+          action={handleLinkWallet}
+          disabled={loading}
+        />
       </div>
       
       <p className="text-[#707070] text-[11px] lg:text-[13px]">
-        💡 Multi-wallet support coming soon. Your current wallet is automatically linked.
+        💡 Connect a different wallet to link it. Wallets are saved on-chain.
       </p>
     </div>
   );

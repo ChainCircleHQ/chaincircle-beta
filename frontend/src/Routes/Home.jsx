@@ -7,7 +7,6 @@ import { useGlobalStats } from '../hooks/useCircleData';
 import { IoClose, IoArrowUp } from 'react-icons/io5';
 import { FaCoins, FaGasPump, FaBook } from 'react-icons/fa';
 import { FiSearch, FiMinus, FiPlus } from 'react-icons/fi';
-import { initializeWalletPreferences } from '../utils/walletPreferences';
 
 export default function Home() {
   const stepsRef = useRef(null);
@@ -100,12 +99,6 @@ export default function Home() {
     }
   }, []);
 
-  // Initialize wallet preferences when user connects
-  useEffect(() => {
-    if (currentWallet && connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED) {
-      initializeWalletPreferences(currentWallet, 'Push Chain');
-    }
-  }, [currentWallet, connectionStatus]);
 
   // Navigate to dashboard when user connects wallet after clicking "Start Saving"
   useEffect(() => {
