@@ -28,14 +28,17 @@ export default function ProtectedRoute({ children }) {
   const wasConnected = localStorage.getItem('wasConnected') === 'true';
   const isCurrentlyConnected = connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED;
 
-  // Wait for provider to initialize before checking connection status
-  // This prevents redirecting while the wallet is reconnecting on page refresh
+  // If wallet is not initialized yet
   if (!isInitialized) {
+    // If user was never connected, redirect immediately (no loading screen)
+    if (!wasConnected) {
+      return <Navigate to="/" replace />;
+    }
+    // If user was connected before, show brief loading while wallet reconnects
     return null;
   }
 
-  // Only redirect if user was never connected AND is not currently connected
-  // This allows users to stay on 404 pages while logged in
+  // After initialization, only allow access if user is connected or was previously connected
   if (!wasConnected && !isCurrentlyConnected) {
     return <Navigate to="/" replace />;
   }

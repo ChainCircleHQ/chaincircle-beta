@@ -9,6 +9,7 @@ import { FaCoins, FaGasPump, FaBook } from 'react-icons/fa';
 
 export default function Home() {
   const stepsRef = useRef(null);
+  const videoSectionRef = useRef(null);
   const navigate = useNavigate();
   const { connectionStatus, handleConnectToPushWallet } = usePushWalletContext();
   const { data: globalStats } = useGlobalStats();
@@ -57,6 +58,33 @@ export default function Home() {
       return () => {
         if (stepsRef.current) {
           stepsObserver.unobserve(stepsRef.current);
+        }
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    // Observer for video section with fade-in and scale animation
+    if (typeof IntersectionObserver !== 'undefined' && videoSectionRef.current) {
+      const videoObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('video-visible');
+            }
+          });
+        },
+        {
+          threshold: 0.2,
+          rootMargin: '0px 0px -50px 0px'
+        }
+      );
+
+      videoObserver.observe(videoSectionRef.current);
+
+      return () => {
+        if (videoSectionRef.current) {
+          videoObserver.unobserve(videoSectionRef.current);
         }
       };
     }
@@ -354,8 +382,44 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Video Section */}
+      <section
+        ref={videoSectionRef}
+        className="py-20 lg:py-32 relative video-section w-full"
+      >
+        {/* Background */}
+        <div className="absolute top-0 left-0 w-full h-full -z-[1] opacity-30">
+          <img
+            src="/assets/blur.png"
+            alt=""
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        {/* Video Container - Centered with max width */}
+        <div className="relative w-full max-w-[900px] mx-auto overflow-hidden shadow-2xl shadow-[#F4AEFF]/20 rounded-[24px]">
+          {/* 1:1 Aspect Ratio Container for square video */}
+          <div className="relative w-full" style={{ paddingBottom: '100%' }}>
+            <video
+              src="https://ipfs.io/ipfs/bafybeih6o5aofmr3xttg2obokp5xgthiyf6jgr6mhhzfuxceqia23fwng4"
+              className="absolute top-0 left-0 w-full h-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+            />
+          </div>
+        </div>
+
+        {/* Optional Caption */}
+        <p className="text-center text-[#aaa] text-[14px] lg:text-[18px] font-dm mt-6 lg:mt-8 px-10">
+          Watch how ChainCircle revolutionizes cross-chain savings
+        </p>
+      </section>
+
       {/* How it works */}
-      <section className="p-20 relative" id="how-it-works">
+      <section className="p-20 relative scroll-mt-32" id="how-it-works">
         {/* Background */}
         <div className="absolute top-20 right-40 lg:right-100 w-[350px] h-[350px] -z-[1]">
           <img

@@ -267,3 +267,21 @@ svg.smooth-rotate {
   flex: 0 0 auto;
   margin-right: 40px; /* gap-10 equivalent */
 }
+
+/* Video section scroll animation */
+.video-section {
+  opacity: 0;
+  transform: translateY(50px) scale(0.95);
+  transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.video-section.video-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Add glow effect on video hover */
+.video-section .relative:hover {
+  transform: scale(1.02);
+  transition: transform 0.3s ease-in-out;
+}
