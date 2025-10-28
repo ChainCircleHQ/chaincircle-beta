@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import PurpleBtn from '../Components/PurpleBtn';
 import TransBtn from '../Components/TransBtn';
+import ThemeToggle from '../Components/ThemeToggle';
 import { Link, useNavigate } from 'react-router';
 import { usePushWalletContext, PushUI, PushUniversalAccountButton } from '@pushchain/ui-kit';
 import { useGlobalStats } from '../hooks/useCircleData';
@@ -430,19 +431,23 @@ export default function Home() {
     <h3 className="">Chaincircle</h3>
   </div>
 
-  {!isTabletOrMobile && (
-    <>
-      {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED ? (
-        <div className="max-w-[200px]">
-          <PushUniversalAccountButton />
-        </div>
-      ) : (
-        <div onClick={handleSignUpClick}>
-          <PurpleBtn text={"Sign up for free"} font={"bold"} />
-        </div>
-      )}
-    </>
-  )}
+  <div className="flex items-center gap-4">
+    <ThemeToggle />
+
+    {!isTabletOrMobile && (
+      <>
+        {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED ? (
+          <div className="max-w-[200px]">
+            <PushUniversalAccountButton />
+          </div>
+        ) : (
+          <div onClick={handleSignUpClick}>
+            <PurpleBtn text={"Sign up for free"} font={"bold"} />
+          </div>
+        )}
+      </>
+    )}
+  </div>
 </header>
 
       <section className="lg:pt-32 pb-20 px-0 lg:px-20 overflow-hidden gap-40 lg:gap-0 mt-30 relative flex flex-col lg:flex-row items-center justify-between">

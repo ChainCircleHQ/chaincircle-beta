@@ -20,7 +20,56 @@ import ProtectedRoute from './Components/ProtectedRoute'
 
 function App() {
   const queryClient = new QueryClient();
-  
+  const [walletTheme, setWalletTheme] = React.useState(() => {
+    const theme = localStorage.getItem('theme') || 'dark';
+    if (theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? PushUI.CONSTANTS.THEME.DARK
+        : PushUI.CONSTANTS.THEME.LIGHT;
+    }
+    return theme === 'dark' ? PushUI.CONSTANTS.THEME.DARK : PushUI.CONSTANTS.THEME.LIGHT;
+  });
+
+  // Log theme changes for debugging
+  React.useEffect(() => {
+    console.log('Wallet theme updated to:', walletTheme);
+  }, [walletTheme]);
+
+  // Listen for theme changes
+  React.useEffect(() => {
+    const updateWalletTheme = () => {
+      const theme = localStorage.getItem('theme') || 'dark';
+
+      let currentTheme;
+      if (theme === 'system') {
+        currentTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      } else {
+        currentTheme = theme;
+      }
+
+      const newWalletTheme = currentTheme === 'dark'
+        ? PushUI.CONSTANTS.THEME.DARK
+        : PushUI.CONSTANTS.THEME.LIGHT;
+
+      setWalletTheme(newWalletTheme);
+    };
+
+    // Check for theme changes via storage event (cross-tab sync)
+    window.addEventListener('storage', updateWalletTheme);
+
+    // Check for theme changes via custom event (same tab)
+    const handleThemeChange = () => updateWalletTheme();
+    window.addEventListener('themeChange', handleThemeChange);
+
+    // Initial check
+    updateWalletTheme();
+
+    return () => {
+      window.removeEventListener('storage', updateWalletTheme);
+      window.removeEventListener('themeChange', handleThemeChange);
+    };
+  }, []);
+
   const walletConfig = {
     network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET,
     login: {
@@ -46,10 +95,10 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <PushUniversalWalletProvider 
+      <PushUniversalWalletProvider
         config={walletConfig}
         app={appMetadata}
-        themeMode={PushUI.CONSTANTS.THEME.DARK}
+        themeMode={walletTheme}
       >
         <BrowserRouter>
           <Routes>

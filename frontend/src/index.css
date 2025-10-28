@@ -14,11 +14,38 @@ html{
   scroll-behavior: smooth;
   font-size: 62.5%;
 }
+
+/* Dark mode (default) */
+html.dark body,
 body{
   font-family: "Space Grotesk", sans-serif;
   font-size: 24px;
   background-color: #000;
   color: #fff;
+}
+
+/* Light mode */
+html.light body {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+html.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --text-primary: #000000;
+  --text-secondary: #4a4a4a;
+  --border-color: #D548EC;
+  --shadow-color: rgba(213, 72, 236, 0.2);
+}
+
+html.dark {
+  --bg-primary: #000000;
+  --bg-secondary: #111111;
+  --text-primary: #ffffff;
+  --text-secondary: #aaaaaa;
+  --border-color: #F4AEFF;
+  --shadow-color: rgba(244, 174, 255, 0.2);
 }
 
 /* Prevent mobile zoom on input focus - ensure minimum 16px font size */
@@ -284,4 +311,311 @@ svg.smooth-rotate {
 .video-section .relative:hover {
   transform: scale(1.02);
   transition: transform 0.3s ease-in-out;
+}
+
+/* Light mode specific styles */
+html.light .light\:bg-white {
+  background-color: #ffffff;
+}
+
+html.light .light\:bg-white\/80 {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+html.light .light\:bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+html.light .light\:text-gray-700 {
+  color: #374151;
+}
+
+html.light .light\:text-gray-900 {
+  color: #111827;
+}
+
+html.light .light\:border-gray-300 {
+  border-color: #d1d5db;
+}
+
+/* Light mode header backdrop */
+html.light header {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom-color: #D548EC !important;
+}
+
+/* Light mode text colors */
+html.light h1,
+html.light h2,
+html.light h3,
+html.light h4,
+html.light h5,
+html.light h6,
+html.light p {
+  color: #000000;
+}
+
+/* Light mode for specific elements that need to stay visible */
+html.light .text-\[\#aaa\],
+html.light .text-gray-300,
+html.light .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+html.light .text-\[\#707070\] {
+  color: #4b5563 !important;
+}
+
+/* Light mode shadows and borders */
+html.light .shadow-\[\#F4AEFF\],
+html.light .border-\[\#F4AEFF\] {
+  border-color: #D548EC !important;
+  box-shadow: 0 0 10px rgba(213, 72, 236, 0.3) !important;
+}
+
+/* Light mode backgrounds for cards and sections */
+html.light .bg-\[\#111111\],
+html.light .bg-\[\#111111\]\/50 {
+  background-color: #f9fafb !important;
+  border: 1px solid #e5e7eb;
+}
+
+html.light .bg-\[\\#70707026\] {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Light mode for inputs */
+html.light input,
+html.light textarea {
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #D548EC;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Light mode for welcome popup */
+html.light .bg-black\/60 {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+html.light .bg-\[\\#d648ec1a\] {
+  background-color: rgba(214, 72, 236, 0.1) !important;
+}
+
+/* Light mode carousel items */
+html.light .carousel-item {
+  background-color: #f9fafb !important;
+}
+
+/* Light mode step cards */
+html.light .step-card {
+  background-color: #f9fafb !important;
+}
+
+/* Light mode for mockup background */
+html.light .bg-black {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-\[\\#000\] {
+  background-color: #ffffff !important;
+}
+
+/* Keep primary color visible in both modes */
+.text-primary {
+  color: #D548EC !important;
+}
+
+/* Light mode for buttons */
+html.light button:not(.text-primary) {
+  color: #000000;
+}
+
+/* Light mode for back to top button */
+html.light button.bg-\[\\#000\] {
+  background-color: #f3f4f6 !important;
+  color: #000000;
+}
+
+html.light button.bg-\[\\#000\]:hover {
+  background-color: #e5e7eb !important;
+}
+
+/* Light mode for blur effects - make them lighter */
+html.light img[src*="blur.png"],
+html.light img[src*="Blur-oval.png"] {
+  opacity: 0.3;
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Light mode for dashboard sidebar and navigation */
+html.light [style*="linear-gradient(to bottom, #111111 80%, #f2b4f8 100%)"] {
+  background: linear-gradient(to bottom, #f5f5f5 80%, #f2b4f8 100%) !important;
+}
+
+/* Light mode for bottom navigation mobile */
+html.light .bg-\[\\#d648ec43\] {
+  background-color: rgba(214, 72, 236, 0.3) !important;
+  border: 1px solid #D548EC;
+}
+
+/* Light mode for dashboard header card */
+html.light .bg-\[\\#853094\] {
+  background-color: #e0b3e8 !important;
+  color: #000000 !important;
+}
+
+/* Light mode text on dashboard cards */
+html.light .bg-\[\\#853094\] p,
+html.light .bg-\[\\#853094\] span {
+  color: #000000 !important;
+}
+
+/* Light mode for create circle button */
+html.light .bg-\[\\#64d35e\] {
+  background-color: #64d35e !important;
+}
+
+/* Light mode for all Link elements */
+html.light a {
+  color: #000000;
+}
+
+html.light a:hover {
+  color: #000000 !important;
+}
+
+/* Light mode for footer links */
+html.light .text-\[\\#707070\]:hover {
+  color: #000000 !important;
+}
+
+/* Light mode for back to top section and background */
+html.light section {
+  background-color: transparent;
+}
+
+/* Light mode social proof background */
+html.light section {
+  color: #000000;
+}
+
+/* Ensure back to top button is visible in light mode */
+html.light button {
+  border-color: #D548EC !important;
+}
+
+/* Light mode for animated bounce div at footer */
+html.light .animate-bounce {
+  background-color: rgba(214, 72, 236, 0.1) !important;
+  border-color: #D548EC !important;
+}
+
+/* Light mode sidebar link text */
+html.light .text-white {
+  color: #000000 !important;
+}
+
+/* Keep sidebar active/hover states visible */
+html.light a.bg-\[\\#D548EC\],
+html.light button.bg-\[\\#D548EC\] {
+  color: #ffffff !important;
+}
+
+html.light a.bg-\[\\#D548EC\]:hover,
+html.light button.bg-\[\\#D548EC\]:hover {
+  color: #ffffff !important;
+}
+
+/* Keep transparent bg links dark text */
+html.light a.bg-transparent {
+  color: #000000 !important;
+}
+
+html.light a.bg-transparent:hover {
+  color: #ffffff !important;
+}
+
+/* Light mode for icon colors in sidebar */
+html.light .text-\[\\#aaa\] {
+  color: #6b7280 !important;
+}
+
+/* Light mode for notification page specific styles */
+html.light .text-gray-400 {
+  color: #9ca3af !important;
+}
+
+html.light .light\:text-gray-600 {
+  color: #4b5563 !important;
+}
+
+html.light .light\:text-gray-700 {
+  color: #374151 !important;
+}
+
+html.light .light\:bg-white {
+  background-color: #ffffff !important;
+}
+
+html.light .light\:bg-gray-50 {
+  background-color: #f9fafb !important;
+}
+
+html.light .light\:bg-gray-100 {
+  background-color: #f3f4f6 !important;
+}
+
+html.light .light\:bg-gray-200 {
+  background-color: #e5e7eb !important;
+}
+
+html.light .light\:border-\[\\#D548EC\] {
+  border-color: #D548EC !important;
+}
+
+html.light .light\:border-gray-200 {
+  border-color: #e5e7eb !important;
+}
+
+html.light .light\:hover\:bg-gray-100:hover {
+  background-color: #f3f4f6 !important;
+}
+
+html.light .light\:hover\:bg-gray-200:hover {
+  background-color: #e5e7eb !important;
+}
+
+/* Specific fix for footer section links */
+html.light footer a,
+html.light footer button {
+  color: #4b5563 !important;
+}
+
+html.light footer a:hover,
+html.light footer button:hover {
+  color: #000000 !important;
+}
+
+/* Keep FAQ button visible */
+html.light button.text-left {
+  color: #4b5563 !important;
+}
+
+html.light button.text-left:hover {
+  color: #000000 !important;
+}
+
+/* Ensure back to top button has proper styling */
+html.light .flex.items-center.gap-3 {
+  color: #000000;
+}
+
+/* Light mode for IoArrowUp icon */
+html.light svg {
+  color: inherit;
 }

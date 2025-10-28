@@ -6,6 +6,7 @@ import { MdOutlineCreditCard, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRi
 import { FaRegUserCircle } from "react-icons/fa";
 import { FaRegBell } from "react-icons/fa6";
 import { PushUniversalAccountButton, usePushWalletContext } from '@pushchain/ui-kit';
+import ThemeToggle from './Components/ThemeToggle';
 
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 
@@ -133,7 +134,7 @@ export default function chain() {
             </div>
           )}
 
-          {/* Right Side - Notifications & Account */}
+          {/* Right Side - Theme, Notifications & Account */}
           <div className="ml-auto justify-between lg:justify-end lg:w-fit flex flex-row-reverse items-center gap-4">
             <div
               className="relative cursor-pointer hover:scale-110 transition-transform"
@@ -151,6 +152,7 @@ export default function chain() {
             <div className="max-w-[200px]">
               <PushUniversalAccountButton />
             </div>
+            <ThemeToggle />
           </div>
         </div>
         <div className="flex-1 pb-4 lg:pb-0">

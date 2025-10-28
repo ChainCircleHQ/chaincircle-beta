@@ -5,6 +5,20 @@
     <link rel="icon" type="image/png" href="/assets/DP.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Chain Circle</title>
+    <script>
+      // Initialize theme immediately to prevent flash
+      (function() {
+        const theme = localStorage.getItem('theme') || 'dark';
+        const root = document.documentElement;
+
+        if (theme === 'system') {
+          const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          root.classList.add(systemTheme);
+        } else {
+          root.classList.add(theme);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

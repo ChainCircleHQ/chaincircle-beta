@@ -197,7 +197,7 @@ export default function Notification() {
   ) || []
 
   return (
-    <div className="flex flex-col gap-6 lg:gap-10 h-full bg-black text-white p-4 lg:p-0">
+    <div className="flex flex-col gap-6 lg:gap-10 h-full p-4 lg:p-0">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6">
         <h1 className="text-[24px] lg:text-[30px] font-bold">
@@ -212,7 +212,7 @@ export default function Notification() {
             placeholder="Search notifications"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#1a1a1a] border border-gray-700 rounded-[12px] pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[#D548EC] transition-colors text-[14px] lg:text-[16px]"
+            className="w-full bg-[#1a1a1a] dark:bg-[#1a1a1a] light:bg-white border border-gray-700 dark:border-gray-700 light:border-[#D548EC] rounded-[12px] pl-10 pr-4 py-3 placeholder-gray-400 focus:outline-none focus:border-[#D548EC] transition-colors text-[14px] lg:text-[16px]"
           />
         </div>
       </div>
@@ -226,7 +226,7 @@ export default function Notification() {
             className={`px-4 lg:px-6 py-2 lg:py-3 rounded-[20px] lg:rounded-[25px] text-[12px] lg:text-[16px] font-medium transition-all whitespace-nowrap ${
               activeTab === tab
                 ? 'bg-[#D548EC] text-white'
-                : 'bg-[#2a2a2a] text-gray-300 hover:bg-[#3a3a3a]'
+                : 'bg-[#2a2a2a] dark:bg-[#2a2a2a] light:bg-gray-100 text-gray-300 dark:text-gray-300 light:text-gray-700 hover:bg-[#3a3a3a] dark:hover:bg-[#3a3a3a] light:hover:bg-gray-200'
             }`}
           >
             {tab}
@@ -250,7 +250,7 @@ export default function Notification() {
             {filteredNotifications.map((notification) => (
               <div
                 key={notification.id}
-                className="bg-[#1a1a1a] rounded-[12px] lg:rounded-[16px] p-4 lg:p-6 flex items-center justify-between hover:bg-[#2a2a2a] transition-colors cursor-pointer"
+                className="bg-[#1a1a1a] dark:bg-[#1a1a1a] light:bg-gray-50 rounded-[12px] lg:rounded-[16px] p-4 lg:p-6 flex items-center justify-between hover:bg-[#2a2a2a] dark:hover:bg-[#2a2a2a] light:hover:bg-gray-100 transition-colors cursor-pointer border light:border-gray-200 dark:border-transparent"
               >
                 <div className="flex items-center gap-3 lg:gap-4 flex-1">
                   {/* Icon */}
@@ -260,10 +260,10 @@ export default function Notification() {
                   
                   {/* Content */}
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <h3 className="text-[14px] lg:text-[18px] font-medium text-white truncate">
+                    <h3 className="text-[14px] lg:text-[18px] font-medium truncate">
                       {notification.title}
                     </h3>
-                    <p className="text-[12px] lg:text-[14px] text-gray-400">
+                    <p className="text-[12px] lg:text-[14px] text-gray-400 dark:text-gray-400 light:text-gray-600">
                       {notification.time}
                     </p>
                   </div>
@@ -271,7 +271,7 @@ export default function Notification() {
 
                 {/* Amount */}
                 {notification.amount && (
-                  <div className="text-[14px] text-primary lg:text-[18px] font-semibold text-white ml-2 flex-shrink-0">
+                  <div className="text-[14px] lg:text-[18px] font-semibold ml-2 flex-shrink-0">
                     {notification.amount}
                   </div>
                 )}
