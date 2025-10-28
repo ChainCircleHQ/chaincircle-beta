@@ -84,17 +84,17 @@ A Rotating Savings and Credit Association is a group of individuals who agree to
 - **Notification System**: Transaction alerts, reminders, and service updates
 - **Circle Browser**: Search and filter active circles
 - **Invite System**: Share circle invite codes
-- **Settings**: Payout preferences, notification settings, linked wallets
+- **Settings**: Payout preferences, notification settings, linked wallets, wallet management
 - **Activity Feed**: Real-time updates on all activities
 - **FAQ & Terms**: Comprehensive documentation
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    ChainCircle Platform                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
+┌────────────────────────────────────────────────────────────────┐
+│                    ChainCircle Platform                        │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
 │  ┌──────────────────┐         ┌──────────────────────────┐     │
 │  │   Frontend App   │         │   Smart Contracts        │     │
 │  │   (React + Vite) │◄────────┤   (Solidity 0.8.22)      │     │
@@ -106,26 +106,26 @@ A Rotating Savings and Credit Association is a group of individuals who agree to
 │  └──────────────────┘         │  └─────────┬────────┘    │     │
 │           │                   │            │             │     │
 │           │                   │  ┌─────────▼──────────┐  │     │
-│  ┌────────▼────────┐          │  │ ChainCircleCore   │  │     │
-│  │  Push Chain     │          │  │  (Main Logic)     │  │     │
-│  │  UI Kit         │          │  │  + Activity Log   │  │     │
-│  │  (Wallet)       │          │  └───────┬───────────┘  │     │
-│  └─────────────────┘          │          │              │     │
-│                               │  ┌───────┼───────────┐  │     │
-│                               │  │       │           │  │     │
-│                               │  ▼       ▼           ▼  │     │
-│                               │ ┌──────┐ ┌────┐ ┌─────┐│     │
-│                               │ │Reptn.│ │Yld │ │Gov. ││     │
-│                               │ │Mgr.  │ │4% │ │Mod. ││     │
-│                               │ └──┬───┘ └────┘ └─────┘│     │
-│                               │    │                    │     │
-│                               │  ┌─▼──────┐ ┌──────────┐│     │
-│                               │  │Badge   │ │  Name    ││     │
-│                               │  │NFT     │ │Registry  ││     │
-│                               │  └────────┘ └──────────┘│     │
-│                               └──────────────────────────┘     │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+│  ┌────────▼────────┐          │  │ ChainCircleCore    │ │      │
+│  │  Push Chain     │          │  │  (Main Logic)      │ │      │
+│  │  UI Kit         │          │  │  + Activity Log    │ │      │
+│  │  (Wallet)       │          │  └───────┬────────── ─┘ │      │
+│  └─────────────────┘          │          │              │      │
+│                               │  ┌───────┼───────────┐  │      │
+│                               │  │       │           │  │      │
+│                               │  ▼       ▼           ▼  │      │
+│                               │ ┌──────┐ ┌────┐ ┌─────┐ │      │
+│                               │ │Reptn.│ │Yld │ │Gov. │ │      │
+│                               │ │Mgr.  │ │4% │ │Mod. ││        │
+│                               │ └──┬───┘ └────┘ └─────┘ │      │
+│                               │    │                    │      │
+│                               │  ┌─▼──────┐ ┌──────────┐│      │
+│                               │  │Badge   │ │  Name    ││      │
+│                               │  │NFT     │ │Registry  ││      │
+│                               │  └────────┘ └──────────┘│      │
+│                               └─────────────────────────┘      │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
@@ -249,7 +249,7 @@ chaincircle_beta/
 │   │   │   │   ├── StatsArchive.jsx
 │   │   │   │   ├── PayoutPreferences.jsx
 │   │   │   │   ├── NotificationSettings.jsx
-│   │   │   │   └── LinkedWallets.jsx
+│   │   │   │   └── LinkedWallets.jsx       # Wallet preferences UI
 │   │   │   └── Landing/
 │   │   │       ├── FAQ.jsx
 │   │   │       └── Terms.jsx
@@ -290,13 +290,16 @@ chaincircle_beta/
     │   ├── modules/
     │   │   ├── ReputationManager.sol # Reputation tracking
     │   │   ├── MockYield.sol         # Yield simulator
-    │   │   └── NameRegistry.sol      # Display names
+    │   │   ├── NameRegistry.sol       # Display names
+    │   │   └── WalletPreferences.sol  # Wallet management
     │   └── interfaces/
     │       └── Interfaces.sol        # Push Chain interfaces
     ├── scripts/
-    │   ├── deploy.js                 # Deployment script
-    │   ├── verify.js                 # Contract verification
-    │   └── interact.js               # Interaction examples
+    │   ├── deploy.js                        # Deployment script
+    │   ├── verify.js                        # Contract verification
+    │   ├── deploy-wallet-preferences.js     # WalletPreferences deployment
+    │   ├── verify-wallet-preferences.js     # WalletPreferences verification
+    │   └── interact.js                      # Interaction examples
     ├── test/                          # Test suite (52 tests)
     │   ├── ChainCircleCore.test.js
     │   ├── ReputationManager.test.js
@@ -325,6 +328,7 @@ chaincircle_beta/
 | BadgeNFT | `0x9171F3AE9Cb9EBBa0826ad31971647DceB52Bd50` | [View](https://donut.push.network/address/0x9171F3AE9Cb9EBBa0826ad31971647DceB52Bd50) |
 | GovernanceModule | `0xA3c786088a6D3EB9216B5647a4149a7dF0149b49` | [View](https://donut.push.network/address/0xA3c786088a6D3EB9216B5647a4149a7dF0149b49) |
 | NameRegistry | `0x1c8fCc121D52EAa6d4705fCcE95e34E2CEDced5E` | [View](https://donut.push.network/address/0x1c8fCc121D52EAa6d4705fCcE95e34E2CEDced5E) |
+| WalletPreferences | `0xB5b71E6fbA444d0B791C62C855cc31b3521e8E38` | [View](https://donut.push.network/address/0xB5b71E6fbA444d0B791C62C855cc31b3521e8E38) |
 
 **Network Info:**
 - RPC: `https://evm.rpc-testnet-donut-node1.push.org/`
@@ -361,6 +365,7 @@ The frontend is organized into main routes and sub-pages:
 - **useCircleContract** - Manages contract instances (core, CUSD, reputation)
 - **useBadgeNFT** - Badge NFT interactions (mint, upgrade, view)
 - **useNameRegistry** - Name registration and resolution
+- **useWalletPreferences** - Linked wallet management and preferences
 
 ### Services
 
@@ -462,6 +467,24 @@ Display name registration for better UX.
 - `getName(user)` - Get display name for address
 - `resolveAddress(name)` - Get address for name
 - `isNameAvailable(name)` - Check name availability
+
+### WalletPreferences
+
+On-chain storage for linked wallet addresses and payout preferences.
+
+**Key Functions:**
+- `addWallet(walletAddress, chainName)` - Link a wallet address to your account
+- `removeWallet(walletAddress)` - Remove a linked wallet
+- `setPreferredWallet(walletAddress)` - Set preferred wallet for payouts
+- `getLinkedWallets(user)` - Get all linked wallet addresses
+- `getPreferredWallet(user)` - Get preferred payout wallet
+- `getWalletInfo(user, walletAddress)` - Get details for a specific wallet
+- `getAllWalletDetails(user)` - Get all wallets with full info
+
+**Use Cases:**
+- Store multiple payout destination addresses
+- Manage preferred wallet for receiving funds
+- Cross-chain compatibility (any EVM address)
 
 ## Testing
 
@@ -594,6 +617,7 @@ vercel deploy
 - Soulbound NFT badges
 - Governance module for withdrawals
 - Name registry for display names
+- Wallet preferences system for payouts
 - Full frontend application
 - Comprehensive test suite (52 tests)
 - Push Chain Donut testnet deployment
