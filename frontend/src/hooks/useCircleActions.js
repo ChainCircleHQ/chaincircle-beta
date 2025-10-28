@@ -29,10 +29,7 @@ export function useCreateCircle() {
       const cusdReadOnly = new ethers.Contract(cusdAddress, CUSDABI.abi, provider);
       const balance = await cusdReadOnly.balanceOf(userAddress);
 
-      // Warning only - let the transaction fail naturally if insufficient
-      if (balance < amountInWei) {
-        console.warn(`Warning: Balance might be insufficient. You need ${amount} CUSD but have ${ethers.formatUnits(balance, 6)} CUSD`);
-      }
+      // Note: Insufficient balance will be caught by the transaction
 
       // Step 1: Approve CUSD using Push Chain universal transaction
       const approveData = ethers.Interface.from(CUSDABI.abi).encodeFunctionData(

@@ -146,7 +146,6 @@ async function estimateGas(contract, functionName, args) {
         const gasWithBuffer = (gasEstimate * 120n) / 100n; // 20% buffer
         return gasWithBuffer;
     } catch (error) {
-        console.error("Gas estimation failed:", error);
         throw error;
     }
 }

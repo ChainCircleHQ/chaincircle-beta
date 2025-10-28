@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { RiWallet3Line } from "react-icons/ri";
-import { IoClose } from "react-icons/io5";
+import { Trash2 } from "lucide-react";
 import PurpleBtn from '../../Components/PurpleBtn';
 import { 
   getLinkedWallets, 
@@ -52,7 +52,7 @@ export default function LinkedWallets() {
       setLinkedWallets(getLinkedWallets());
       alert('Current wallet linked successfully!');
     } else {
-      alert('Current wallet is already linked. Connect a different wallet from your wallet app to link it.');
+      alert('Multi-wallet support coming soon! Your current wallet is automatically linked. To link additional wallets, you\'ll need to connect them through your wallet app in a future update.');
     }
   };
 
@@ -92,10 +92,10 @@ export default function LinkedWallets() {
               {linkedWallets.length > 1 && (
                 <button
                   onClick={() => handleRemoveWallet(wallet.address)}
-                  className="p-2 hover:bg-[#D548EC]/20 rounded-full transition-colors"
+                  className="p-2 hover:bg-[#D548EC]/20 rounded-full transition-colors text-[#aaa] hover:text-[#D548EC]"
                   title="Remove wallet"
                 >
-                  <IoClose size={20} className="text-[#aaa]" />
+                  <Trash2 size={18} />
                 </button>
               )}
             </li>
@@ -108,10 +108,7 @@ export default function LinkedWallets() {
       </div>
       
       <p className="text-[#707070] text-[11px] lg:text-[13px]">
-        {currentWallet && isWalletLinked(currentWallet) 
-          ? '💡 Connect a different wallet from your wallet app to link it'
-          : '💡 Current wallet will be automatically linked'
-        }
+        💡 Multi-wallet support coming soon. Your current wallet is automatically linked.
       </p>
     </div>
   );
