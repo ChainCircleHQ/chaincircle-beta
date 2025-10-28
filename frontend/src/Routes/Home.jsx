@@ -97,14 +97,18 @@ export default function Home() {
     }
   }, []);
 
+  // Track if user clicked "Start Saving" button
+  const [shouldNavigateToDashboard, setShouldNavigateToDashboard] = useState(false);
+
   // Navigate to dashboard when user connects wallet after clicking "Start Saving"
   useEffect(() => {
-    const shouldNavigate = sessionStorage.getItem('navigateToDashboard');
-    if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED && shouldNavigate === 'true') {
-      sessionStorage.removeItem('navigateToDashboard');
+    if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED && shouldNavigateToDashboard) {
+      // Reset the flag
+      setShouldNavigateToDashboard(false);
+      // Navigate to dashboard
       navigate('/chain/dashboard');
     }
-  }, [connectionStatus, navigate]);
+  }, [connectionStatus, shouldNavigateToDashboard, navigate]);
 
   // FAQ Data
   const categories = ['General', 'Build', 'Promote', 'Manage', 'Integrations', 'Legal'];
@@ -306,7 +310,8 @@ export default function Home() {
     if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED) {
       navigate('/chain/dashboard');
     } else {
-      sessionStorage.setItem('navigateToDashboard', 'true');
+      // Set state to indicate we should navigate after connection
+      setShouldNavigateToDashboard(true);
       handleConnectToPushWallet();
     }
   };
@@ -1119,9 +1124,9 @@ export default function Home() {
               behavior: 'smooth'
             });
           }}
-          className="flex items-center gap-3 px-6 lg:px-8 py-3 lg:py-4 bg-[#000] hover:bg-[#111] rounded-full transition-all hover:scale-105 border border-[#F4AEFF]"
+          className="flex items-center gap-3 px-6 lg:px-8 py-3 lg:py-4 bg-[#000] dark:bg-[#000] light:bg-gray-100 hover:bg-[#111] dark:hover:bg-[#111] light:hover:bg-gray-200 rounded-full transition-all hover:scale-105 border border-[#F4AEFF] dark:border-[#F4AEFF] light:border-[#D548EC]"
         >
-          <span className="text-white font-semibold text-[14px] lg:text-[18px] uppercase">Back to top</span>
+          <span className="text-white dark:text-white light:text-black font-semibold text-[14px] lg:text-[18px] uppercase">Back to top</span>
           <IoArrowUp size={isTabletOrMobile ? 20 : 24} className="text-[#D548EC]" />
         </button>
       </div>

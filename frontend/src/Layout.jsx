@@ -16,6 +16,35 @@ export default function chain() {
   const { handleUserLogOutEvent } = usePushWalletContext();
   const [sidebarVisible, setSidebarVisible] = React.useState(true);
 
+  // Check current theme
+  const [isDarkMode, setIsDarkMode] = React.useState(() => {
+    const theme = localStorage.getItem('theme') || 'dark';
+    if (theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return theme === 'dark';
+  });
+
+  // Listen for theme changes
+  React.useEffect(() => {
+    const updateTheme = () => {
+      const theme = localStorage.getItem('theme') || 'dark';
+      if (theme === 'system') {
+        setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
+      } else {
+        setIsDarkMode(theme === 'dark');
+      }
+    };
+
+    window.addEventListener('themeChange', updateTheme);
+    window.addEventListener('storage', updateTheme);
+
+    return () => {
+      window.removeEventListener('themeChange', updateTheme);
+      window.removeEventListener('storage', updateTheme);
+    };
+  }, []);
+
   const isTabletOrMobile = window.innerWidth <= 1014;
   const isOnNotificationPage = location.pathname === '/chain/notification';
 
@@ -26,7 +55,9 @@ export default function chain() {
         <div
           className="w-[306px] p-10 h-full flex flex-col gap-[50px]"
           style={{
-            background: "linear-gradient(to bottom, #111111 80%, #f2b4f8 100%)",
+            background: isDarkMode
+              ? "linear-gradient(to bottom, #111111 80%, #f2b4f8 100%)"
+              : "linear-gradient(to bottom, #ffffff 80%, #f2b4f8 100%)",
           }}
         >
           <div className="flex items-center justify-between gap-2">

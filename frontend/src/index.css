@@ -452,9 +452,18 @@ html.light img[src*="Blur-oval.png"] {
   filter: invert(1) hue-rotate(180deg);
 }
 
-/* Light mode for dashboard sidebar and navigation */
-html.light [style*="linear-gradient(to bottom, #111111 80%, #f2b4f8 100%)"] {
-  background: linear-gradient(to bottom, #f5f5f5 80%, #f2b4f8 100%) !important;
+/* Light mode for dashboard sidebar and navigation - more specific */
+html.light .w-\[306px\].p-10.h-full,
+html.light .w-\[306px\][style*="background"],
+html.light div[class*="w-[306px]"][style],
+html.light aside,
+html.light nav[class*="w-[306px]"] {
+  background: linear-gradient(to bottom, #ffffff 80%, #f2b4f8 100%) !important;
+}
+
+/* Target sidebar specifically */
+html.light .flex.gap-\[68px\] > div:first-child {
+  background: linear-gradient(to bottom, #ffffff 80%, #f2b4f8 100%) !important;
 }
 
 /* Light mode for bottom navigation mobile */
@@ -618,4 +627,165 @@ html.light .flex.items-center.gap-3 {
 /* Light mode for IoArrowUp icon */
 html.light svg {
   color: inherit;
+}
+
+/* Light mode for Feature Highlights section - keep video the same */
+html.light video[src*="bafybeibwhczyidexmveesm7wxpxyeyqjljfffdbhyj3nh4vd37altilra4"] {
+  opacity: 1;
+  filter: none;
+}
+
+/* Light mode for feature highlight cards */
+html.light .shadow.shadow-\[\\#F4AEFF\] {
+  background-color: #ffffff !important;
+  border: 2px solid #D548EC;
+  box-shadow: 0 4px 6px rgba(213, 72, 236, 0.2) !important;
+}
+
+/* Light mode for Social Proof section */
+html.light section h1 {
+  color: #000000;
+}
+
+/* Light mode carousel item specific styling */
+html.light .carousel-item {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb;
+}
+
+html.light .carousel-item p {
+  color: #000000 !important;
+}
+
+/* Keep primary text purple in carousel */
+html.light .carousel-item .text-primary {
+  color: #D548EC !important;
+}
+
+/* Light mode back to top button comprehensive fix */
+html.light button[class*="bg-[#000]"] {
+  background-color: #f3f4f6 !important;
+  color: #000000 !important;
+  border: 2px solid #D548EC !important;
+}
+
+html.light button[class*="bg-[#000]"]:hover {
+  background-color: #e5e7eb !important;
+}
+
+html.light button[class*="bg-[#000]"] span {
+  color: #000000 !important;
+}
+
+/* Light mode for Push Wallet address button */
+html.light button[class*="push-"],
+html.light div[class*="push-"] button {
+  background-color: #f3f4f6 !important;
+  color: #000000 !important;
+  border-color: #D548EC !important;
+}
+
+html.light button[class*="push-"]:hover,
+html.light div[class*="push-"] button:hover {
+  background-color: #e5e7eb !important;
+}
+
+/* Override Push UI Kit wallet button in light mode */
+html.light [class*="AccountButton"],
+html.light [class*="account-button"],
+html.light [class*="wallet-button"] {
+  background-color: #f3f4f6 !important;
+  color: #000000 !important;
+}
+
+html.light [class*="AccountButton"] *,
+html.light [class*="account-button"] *,
+html.light [class*="wallet-button"] * {
+  color: #000000 !important;
+}
+
+/* Target nested Push UI elements in light mode */
+html.light button span,
+html.light button div {
+  color: inherit;
+}
+
+/* Force wallet address text to be visible in light mode */
+html.light [class*="max-w-"] button,
+html.light .max-w-\[200px\] button,
+html.light .max-w-\[200px\] * {
+  background-color: #f3f4f6 !important;
+  color: #000000 !important;
+}
+
+/* Additional push wallet overrides */
+html.light button[data-testid*="account"],
+html.light button[data-testid*="wallet"],
+html.light button[id*="push"],
+html.light div[id*="push"] button {
+  background-color: #f3f4f6 !important;
+  color: #000000 !important;
+  border: 1px solid #D548EC !important;
+}
+
+/* Override any inline styles from Push UI in light mode */
+html.light button[style*="background"] {
+  background-color: #f3f4f6 !important;
+}
+
+html.light button[style*="color"] span,
+html.light button[style*="color"] div {
+  color: #000000 !important;
+}
+
+/* Light mode utility classes */
+html.light .light\:bg-gray-100 {
+  background-color: #f3f4f6 !important;
+}
+
+html.light .light\:bg-gray-200 {
+  background-color: #e5e7eb !important;
+}
+
+html.light .light\:text-black {
+  color: #000000 !important;
+}
+
+html.light .light\:hover\:bg-gray-200:hover {
+  background-color: #e5e7eb !important;
+}
+
+html.light .light\:border-\[\\#D548EC\] {
+  border-color: #D548EC !important;
+}
+
+/* Dark mode utility classes */
+html.dark .dark\:bg-\[\\#000\] {
+  background-color: #000000 !important;
+}
+
+html.dark .dark\:hover\:bg-\[\\#111\]:hover {
+  background-color: #111111 !important;
+}
+
+html.dark .dark\:text-white {
+  color: #ffffff !important;
+}
+
+html.dark .dark\:border-\[\\#F4AEFF\] {
+  border-color: #F4AEFF !important;
+}
+
+/* Ensure social proof text is always visible */
+html.light .font-dm {
+  color: #000000;
+}
+
+/* Fix for animated bounce element */
+html.light .border-white\/20 {
+  border-color: rgba(213, 72, 236, 0.3) !important;
+}
+
+html.light .bg-white\/10 {
+  background-color: rgba(213, 72, 236, 0.05) !important;
 }
