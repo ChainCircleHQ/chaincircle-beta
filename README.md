@@ -10,7 +10,7 @@ ChainCircle is a full-stack blockchain-based savings platform that enables users
 [![Vite](https://img.shields.io/badge/Vite-7.1.7-yellow)](https://vitejs.dev)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**Live Demo**: [chaincircle-beta1.vercel.app](#) | **Testnet**: Push Chain Donut
+**Live Demo**: [chaincircle.org](#) | **Testnet**: Push Chain Donut
 
 ## Table of Contents
 
