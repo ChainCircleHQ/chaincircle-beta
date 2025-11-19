@@ -17,6 +17,7 @@ import Dashboard404 from './Pages/Dashboard404'
 import General404 from './Pages/General404'
 import { PushUniversalWalletProvider, PushUI } from '@pushchain/ui-kit'
 import ProtectedRoute from './Components/ProtectedRoute'
+import { Analytics } from "@vercel/analytics/react"
 
 function App() {
   const queryClient = new QueryClient();
@@ -109,6 +110,7 @@ function App() {
             {/* General 404 - for when user is not on dashboard */}
             <Route path="*" element={<General404 />} />
           </Routes>
+          <Analytics />
         </BrowserRouter>
       </PushUniversalWalletProvider>
     </QueryClientProvider>

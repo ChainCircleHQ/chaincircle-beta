@@ -450,6 +450,14 @@ export default function Home() {
   <div className="flex items-center gap-4">
     {!isTabletOrMobile && (
       <>
+        <a
+          href="https://x.com/PushChain/status/1989664436433637415"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 bg-[#D548EC] hover:bg-[#B83CC3] text-white font-semibold rounded-[8px] transition-all hover:scale-105"
+        >
+          Vote for ChainCircle
+        </a>
         {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED ? (
           <div className="max-w-[200px]">
             <PushUniversalAccountButton />
@@ -1083,6 +1091,14 @@ export default function Home() {
               rel="noopener noreferrer"
             >
               FAUCET
+            </Link>
+            <Link
+              className="hover:text-white transition ease-in-out hover:underline hover:scale-110 "
+              to={"https://youtu.be/d9FZWjPPJmY"}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              DEMO VIDEO
             </Link>
             <Link
               className="hover:text-white transition ease-in-out hover:underline hover:scale-110 "
