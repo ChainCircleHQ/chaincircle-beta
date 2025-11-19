@@ -454,7 +454,7 @@ export default function Home() {
           href="https://x.com/PushChain/status/1989664436433637415"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-2 bg-[#D548EC] hover:bg-[#B83CC3] text-white font-semibold rounded-[8px] transition-all hover:scale-105"
+          className="bg-[#D548EC] hover:bg-[#B83CC3] flex items-center gap-2 cursor-pointer transition ease-in-out px-[31px] py-[12px] text-[17px] lg:text-[24px] text-white rounded-[16px] font-bold hover:scale-x-105"
         >
           Vote for ChainCircle
         </a>
