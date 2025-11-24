@@ -16,8 +16,6 @@ export default function Home() {
   const { pushChainClient } = usePushChainClient();
   const { data: globalStats } = useGlobalStats();
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  
-  const currentWallet = pushChainClient?.universal?.account;
 
   // FAQ State
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,11 +60,12 @@ export default function Home() {
         }
       );
 
-      stepsObserver.observe(stepsRef.current);
+      const currentStepsRef = stepsRef.current;
+      stepsObserver.observe(currentStepsRef);
 
       return () => {
-        if (stepsRef.current) {
-          stepsObserver.unobserve(stepsRef.current);
+        if (currentStepsRef) {
+          stepsObserver.unobserve(currentStepsRef);
         }
       };
     }
@@ -89,11 +88,12 @@ export default function Home() {
         }
       );
 
-      videoObserver.observe(videoSectionRef.current);
+      const currentVideoRef = videoSectionRef.current;
+      videoObserver.observe(currentVideoRef);
 
       return () => {
-        if (videoSectionRef.current) {
-          videoObserver.unobserve(videoSectionRef.current);
+        if (currentVideoRef) {
+          videoObserver.unobserve(currentVideoRef);
         }
       };
     }
@@ -450,14 +450,6 @@ export default function Home() {
   <div className="flex items-center gap-4">
     {!isTabletOrMobile && (
       <>
-        <a
-          href="https://x.com/PushChain/status/1989664436433637415"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-[#D548EC] hover:bg-[#B83CC3] flex items-center gap-2 cursor-pointer transition ease-in-out px-[31px] py-[12px] text-[17px] lg:text-[24px] text-white rounded-[16px] font-bold hover:scale-x-105"
-        >
-          Vote for ChainCircle
-        </a>
         {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED ? (
           <div className="max-w-[200px]">
             <PushUniversalAccountButton />
