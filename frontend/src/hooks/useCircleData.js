@@ -488,43 +488,63 @@ export function useCircleByInviteCode(inviteCode) {
   return useQuery({
     queryKey: ['circleByInviteCode', inviteCode],
     queryFn: async () => {
-
       const contract = await getContract('core');
 
       // Get total number of circles
       const circleCounter = await contract.circleCounter();
       const totalCircles = Number(circleCounter);
 
+      // Optimized: Check circles in parallel batches to reduce lookup time
+      // from O(n) sequential to parallel batch processing
+      const BATCH_SIZE = 100; // Check 100 circles at a time
+      const normalizedInviteCode = inviteCode.toLowerCase();
 
-      // Search through all circles to find matching invite code
-      // This is brute force but necessary since there's no direct lookup
-      for (let i = 1; i <= totalCircles; i++) {
-        try {
-          const code = await contract.getCircleInviteCode(i);
+      for (let start = 1; start <= totalCircles; start += BATCH_SIZE) {
+        const end = Math.min(start + BATCH_SIZE, totalCircles + 1);
 
-          if (code.toLowerCase() === inviteCode.toLowerCase()) {
+        // Create array of promises to check invite codes in parallel
+        const checkPromises = [];
+        for (let i = start; i < end; i++) {
+          checkPromises.push(
+            contract.getCircleInviteCode(i)
+              .then(code => ({ id: i, code: code.toLowerCase() }))
+              .catch(() => ({ id: i, code: null })) // Handle errors gracefully
+          );
+        }
 
-            // Fetch full circle details
-            const details = await contract.getCircleDetails(i);
-            const progress = await contract.getCircleProgress(i);
+        // Wait for all checks in this batch to complete
+        const results = await Promise.all(checkPromises);
 
-            // Fetch all members
+        // Check if any match
+        const match = results.find(r => r.code === normalizedInviteCode);
+
+        if (match) {
+          // Found matching circle, fetch full details
+          const circleId = match.id;
+
+          try {
+            const [details, progress] = await Promise.all([
+              contract.getCircleDetails(circleId),
+              contract.getCircleProgress(circleId)
+            ]);
+
+            // Fetch all members in parallel
             const maxMembers = Number(details.maxMembers);
-            const memberAddresses = [];
+            const memberPromises = [];
 
             for (let j = 0; j < maxMembers; j++) {
-              try {
-                const memberAddress = await contract.circleMembers(i, j);
-                if (memberAddress !== '0x0000000000000000000000000000000000000000') {
-                  memberAddresses.push(memberAddress);
-                }
-              } catch (e) {
-                break;
-              }
+              memberPromises.push(
+                contract.circleMembers(circleId, j)
+                  .then(addr => addr !== '0x0000000000000000000000000000000000000000' ? addr : null)
+                  .catch(() => null)
+              );
             }
 
+            const memberResults = await Promise.all(memberPromises);
+            const memberAddresses = memberResults.filter(addr => addr !== null);
+
             return {
-              id: i.toString(),
+              id: circleId.toString(),
               name: details.name,
               goalType: Number(details.goalType),
               amount: ethers.formatUnits(details.amount, 6),
@@ -541,12 +561,13 @@ export function useCircleByInviteCode(inviteCode) {
               creator: details.creator,
               progress: Number(progress.percentage),
               icon: progress.icon,
-              inviteCode: code
+              inviteCode: match.code,
+              memberAddresses: memberAddresses
             };
+          } catch (error) {
+            console.error('Error fetching circle details:', error);
+            throw error;
           }
-        } catch (error) {
-          // Circle might not exist or other error, continue searching
-          continue;
         }
       }
 
