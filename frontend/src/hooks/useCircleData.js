@@ -219,7 +219,13 @@ export function useRecentActivities(limit = 10) {
           for (const event of events) {
             try {
               const block = await event.getBlock();
-              txHashMap[block.timestamp] = event.transactionHash;
+              // Use composite key: circleId + activityType + amount + timestamp
+              // This ensures unique mapping even when multiple events happen in same block
+              const circleId = event.args.circleId.toString();
+              const activityType = event.args.activityType;
+              const amount = event.args.amount.toString();
+              const compositeKey = `${circleId}-${activityType}-${amount}-${block.timestamp}`;
+              txHashMap[compositeKey] = event.transactionHash;
             } catch (e) {
               // Skip if we can't get block info for this event
               continue;
@@ -266,6 +272,9 @@ export function useRecentActivities(limit = 10) {
               title = formatActivityType(activityType);
             }
 
+            // Build same composite key to lookup transaction hash
+            const compositeKey = `${activity.circleId.toString()}-${activityType}-${activity.amount.toString()}-${timestamp}`;
+
             return {
               id: `${activity.circleId}-${timestamp}`,
               type: getActivityIconType(activityType),
@@ -275,7 +284,7 @@ export function useRecentActivities(limit = 10) {
               circleId: activity.circleId.toString(),
               circleName: circleName,
               timestamp: timestamp,
-              txHash: txHashMap[timestamp] || null
+              txHash: txHashMap[compositeKey] || null
             };
           })
         );
