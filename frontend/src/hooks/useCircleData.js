@@ -211,26 +211,36 @@ export function useRecentActivities(limit = 10) {
         try {
           const provider = contract.runner.provider;
           const currentBlock = await provider.getBlockNumber();
-          const fromBlock = Math.max(0, currentBlock - 10000);
+          // Increase search range to 50000 blocks to catch older activities
+          const fromBlock = Math.max(0, currentBlock - 50000);
 
           const filter = contract.filters.ActivityLogged(userAddress);
           const events = await contract.queryFilter(filter, fromBlock, currentBlock);
 
-          for (const event of events) {
+          // Batch fetch all blocks to improve performance
+          const blockPromises = events.map(event => event.getBlock().catch(() => null));
+          const blocks = await Promise.all(blockPromises);
+
+          events.forEach((event, index) => {
+            const block = blocks[index];
+            if (!block) return; // Skip if block fetch failed
+
             try {
-              const block = await event.getBlock();
-              // Use composite key: circleId + activityType + amount + timestamp
-              // This ensures unique mapping even when multiple events happen in same block
+              // Normalize all values to strings for consistent key matching
               const circleId = event.args.circleId.toString();
               const activityType = event.args.activityType;
               const amount = event.args.amount.toString();
-              const compositeKey = `${circleId}-${activityType}-${amount}-${block.timestamp}`;
+              const timestamp = block.timestamp.toString();
+
+              const compositeKey = `${circleId}-${activityType}-${amount}-${timestamp}`;
               txHashMap[compositeKey] = event.transactionHash;
             } catch (e) {
-              // Skip if we can't get block info for this event
-              continue;
+              // Skip if we can't process this event
+              console.warn('Error processing event:', e);
             }
-          }
+          });
+
+          console.log(`Mapped ${Object.keys(txHashMap).length} transaction hashes from ${events.length} events`);
         } catch (eventError) {
           console.warn('Could not fetch transaction hashes, continuing without them:', eventError);
           // Continue without transaction hashes - not critical
@@ -273,7 +283,20 @@ export function useRecentActivities(limit = 10) {
             }
 
             // Build same composite key to lookup transaction hash
-            const compositeKey = `${activity.circleId.toString()}-${activityType}-${activity.amount.toString()}-${timestamp}`;
+            // Ensure all values are normalized to strings for consistent matching
+            const compositeKey = `${activity.circleId.toString()}-${activityType}-${activity.amount.toString()}-${timestamp.toString()}`;
+
+            const txHash = txHashMap[compositeKey];
+            if (!txHash) {
+              console.warn('No transaction hash found for activity:', {
+                compositeKey,
+                circleId: activity.circleId.toString(),
+                activityType,
+                amount: activity.amount.toString(),
+                timestamp: timestamp.toString(),
+                availableKeys: Object.keys(txHashMap).slice(0, 3) // Log first 3 keys for debugging
+              });
+            }
 
             return {
               id: `${activity.circleId}-${timestamp}`,
@@ -284,7 +307,7 @@ export function useRecentActivities(limit = 10) {
               circleId: activity.circleId.toString(),
               circleName: circleName,
               timestamp: timestamp,
-              txHash: txHashMap[compositeKey] || null
+              txHash: txHash || null
             };
           })
         );
