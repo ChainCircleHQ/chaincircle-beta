@@ -15,30 +15,6 @@ export default function chain() {
   const { handleUserLogOutEvent } = usePushWalletContext();
   const [sidebarVisible, setSidebarVisible] = React.useState(true);
 
-  // Check current theme
-  const [isDarkMode, setIsDarkMode] = React.useState(() => {
-    const theme = localStorage.getItem('theme') || 'dark';
-    // Convert 'system' to 'dark' if found
-    return theme === 'system' || theme === 'dark';
-  });
-
-  // Listen for theme changes
-  React.useEffect(() => {
-    const updateTheme = () => {
-      const theme = localStorage.getItem('theme') || 'dark';
-      // Convert 'system' to 'dark' if found
-      const actualTheme = theme === 'system' ? 'dark' : theme;
-      setIsDarkMode(actualTheme === 'dark');
-    };
-
-    window.addEventListener('themeChange', updateTheme);
-    window.addEventListener('storage', updateTheme);
-
-    return () => {
-      window.removeEventListener('themeChange', updateTheme);
-      window.removeEventListener('storage', updateTheme);
-    };
-  }, []);
 
   const isTabletOrMobile = window.innerWidth <= 1014;
   const isOnNotificationPage = location.pathname === '/chain/notification';
@@ -50,9 +26,7 @@ export default function chain() {
         <div
           className="w-[306px] p-10 h-full flex flex-col gap-[50px]"
           style={{
-            background: isDarkMode
-              ? "linear-gradient(to bottom, #111111 80%, #f2b4f8 100%)"
-              : "linear-gradient(to bottom, #ffffff 80%, #f2b4f8 100%)",
+            background: "linear-gradient(to bottom, #111111 80%, #f2b4f8 100%)",
           }}
         >
           <div className="flex items-center justify-between gap-2">
@@ -76,45 +50,41 @@ export default function chain() {
           <div className="flex-1 flex flex-col gap-10">
             <Link
               to={"/chain/dashboard"}
-              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${
-                location.pathname === "/chain" ||
+              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${location.pathname === "/chain" ||
                 location.pathname === "/chain/dashboard"
-                  ? "bg-[#D548EC] hover:bg-[#B83CC3]"
-                  : "bg-transparent hover:bg-[#D548EC]"
-              } `}
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } `}
             >
               <CiGrid42 size={32} className="text-[#aaa] " />
               <p>Dashboard</p>
             </Link>
             <Link
               to={"/chain/circle"}
-              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${
-                location.pathname === "/chain/circle"
-                  ? "bg-[#D548EC] hover:bg-[#B83CC3]"
-                  : "bg-transparent hover:bg-[#D548EC]"
-              } `}
+              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${location.pathname === "/chain/circle"
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } `}
             >
               <PiCirclesThreeBold size={32} className="text-[#aaa] " />
               <p>Circle</p>
             </Link>
             <Link
               to={"/chain/payout"}
-              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${
-                location.pathname === "/chain/payout"
-                  ? "bg-[#D548EC] hover:bg-[#B83CC3]"
-                  : "bg-transparent hover:bg-[#D548EC]"
-              } `}
+              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${location.pathname === "/chain/payout"
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } `}
             >
               <MdOutlineCreditCard size={32} className="text-[#aaa] " />
               <p>Payouts</p>
             </Link>
             <Link
               to={"/chain/profile"}
-              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${
-                location.pathname === "/chain/profile"
-                  ? "bg-[#D548EC] hover:bg-[#B83CC3]"
-                  : "bg-transparent hover:bg-[#D548EC]"
-              } `}
+              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${location.pathname === "/chain/profile"
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } `}
             >
               <FaRegUserCircle size={32} className="text-[#aaa] " />
               <p>Profile</p>
@@ -126,7 +96,7 @@ export default function chain() {
               // Clear any navigation flags
               localStorage.removeItem('navigateToDashboardAfterConnect');
               localStorage.removeItem('wasConnected');
-              
+
               // Disconnect wallet and navigate to home
               if (handleUserLogOutEvent) {
                 handleUserLogOutEvent();
@@ -193,45 +163,41 @@ export default function chain() {
           <Link to={"/chain/dashboard"}>
             <CiGrid42
               size={32}
-              className={`text-[#fff] p-1.5 rounded-[4px] ${
-                location.pathname === "/chain" ||
+              className={`text-[#fff] p-1.5 rounded-[4px] ${location.pathname === "/chain" ||
                 location.pathname === "/chain/dashboard"
-                  ? "bg-[#D548EC] hover:bg-[#B83CC3]"
-                  : "bg-transparent hover:bg-[#D548EC]"
-              } transition-all ease-in-out`}
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } transition-all ease-in-out`}
             />
           </Link>
 
           <Link to={"/chain/circle"}>
             <PiCirclesThreeBold
               size={32}
-              className={`text-[#fff] p-1.5 rounded-[4px] ${
-                location.pathname === "/chain/circle"
-                  ? "bg-[#D548EC] hover:bg-[#B83CC3]"
-                  : "bg-transparent hover:bg-[#D548EC]"
-              } transition-all ease-in-out`}
+              className={`text-[#fff] p-1.5 rounded-[4px] ${location.pathname === "/chain/circle"
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } transition-all ease-in-out`}
             />
           </Link>
 
           <Link to={"/chain/payout"}>
             <MdOutlineCreditCard
               size={32}
-              className={`text-[#fff] p-1.5 rounded-[4px] ${
-                location.pathname === "/chain/payout"
-                  ? "bg-[#D548EC] hover:bg-[#B83CC3]"
-                  : "bg-transparent hover:bg-[#D548EC]"
-              } transition-all ease-in-out`}
+              className={`text-[#fff] p-1.5 rounded-[4px] ${location.pathname === "/chain/payout"
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } transition-all ease-in-out`}
             />
           </Link>
 
           <Link to={"/chain/profile"}>
             <FaRegUserCircle
               size={32}
-              className={`text-[#fff] p-1.5 rounded-[4px] ${
-                location.pathname === "/chain/profile"
-                  ? "bg-[#D548EC] hover:bg-[#B83CC3]"
-                  : "bg-transparent hover:bg-[#D548EC]"
-              } transition-all ease-in-out`}
+              className={`text-[#fff] p-1.5 rounded-[4px] ${location.pathname === "/chain/profile"
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } transition-all ease-in-out`}
             />
           </Link>
         </div>
