@@ -16,7 +16,7 @@ export default function Home() {
   const { pushChainClient } = usePushChainClient();
   const { data: globalStats } = useGlobalStats();
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  
+
   const currentWallet = pushChainClient?.universal?.account;
 
   // FAQ State
@@ -110,7 +110,7 @@ export default function Home() {
       localStorage.removeItem('navigateToDashboardAfterConnect');
       // Set wasConnected BEFORE navigation to prevent redirect
       localStorage.setItem('wasConnected', 'true');
-      
+
       // Navigate to dashboard
       navigate('/chain/dashboard', { replace: true });
     }
@@ -308,10 +308,10 @@ export default function Home() {
     setExpandedQuestion(expandedQuestion === question ? null : question);
   };
 
- const handleSignUpClick = () => {
-  // Don't set navigation flag - keep user on landing page
-  handleConnectToPushWallet();
-};
+  const handleSignUpClick = () => {
+    // Don't set navigation flag - keep user on landing page
+    handleConnectToPushWallet();
+  };
   const handleStartSavingClick = () => {
     if (connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED) {
       // Ensure wasConnected is set before navigation to prevent redirect
@@ -438,31 +438,31 @@ export default function Home() {
       )}
 
       <header className="fixed top-0 left-0 w-full z-500 bg-[#70707026] backdrop-blur-md flex items-center justify-between px-10 lg:px-20 py-8 border-b border-b-[#F4AEFF]">
-  <div className="flex items-center gap-2">
-    <img
-      src="/assets/logo.png"
-      alt="logo"
-      className="w-[25px] h-[25px]"
-    />
-    <h3 className="">Chaincircle</h3>
-  </div>
+        <div className="flex items-center gap-2">
+          <img
+            src="/assets/logo.png"
+            alt="logo"
+            className="w-[25px] h-[25px]"
+          />
+          <h3 className="">Chaincircle</h3>
+        </div>
 
-  <div className="flex items-center gap-4">
-    {!isTabletOrMobile && (
-      <>
-        {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED ? (
-          <div className="max-w-[200px]">
-            <PushUniversalAccountButton />
-          </div>
-        ) : (
-          <div onClick={handleSignUpClick}>
-            <PurpleBtn text={"Sign up for free"} font={"bold"} />
-          </div>
-        )}
-      </>
-    )}
-  </div>
-</header>
+        <div className="flex items-center gap-4">
+          {!isTabletOrMobile && (
+            <>
+              {connectionStatus === PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED ? (
+                <div className="max-w-[200px]">
+                  <PushUniversalAccountButton />
+                </div>
+              ) : (
+                <div onClick={handleSignUpClick}>
+                  <PurpleBtn text={"Sign up for free"} font={"bold"} />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </header>
 
       <section className="lg:pt-32 pb-20 px-0 lg:px-20 overflow-hidden gap-40 lg:gap-0 mt-30 relative flex flex-col lg:flex-row items-center justify-between">
         {/* Hero Text */}
@@ -588,13 +588,23 @@ export default function Home() {
           <img
             src="/assets/mockup.png"
             className="lg:h-[625px] lg:w-[600px] h-[500px] w-[400px] object-contain z-[20]"
-            alt="mockup"
+            alt="ChainCircle mobile app dashboard mockup showing savings circles"
+            width="600"
+            height="625"
           />
         </div>
 
         {/* Background */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-[5] ">
-          <img src="/assets/blur.png" alt="" className="w-[650px] h-[550px] " />
+          <img
+            src="/assets/blur.png"
+            alt=""
+            aria-hidden="true"
+            className="w-[650px] h-[550px]"
+            width="650"
+            height="550"
+            loading="lazy"
+          />
         </div>
       </section>
 
@@ -608,7 +618,9 @@ export default function Home() {
           <img
             src="/assets/blur.png"
             alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover"
+            loading="lazy"
           />
         </div>
 
@@ -641,14 +653,20 @@ export default function Home() {
           <img
             src="/assets/wiw-bg.png"
             alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover"
+            width="350"
+            height="350"
+            loading="lazy"
           />
         </div>
         <div className="absolute -bottom-20 left-0 w-full h-[350px] -z-[1]">
           <img
             src="/assets/Blur-oval.png"
             alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover"
+            loading="lazy"
           />
         </div>
 
@@ -672,8 +690,11 @@ export default function Home() {
             </div>
             <img
               src="/assets/Circle-Icon.png"
-              alt=""
+              alt="Create or join circle icon"
               className="w-[80px] h-[80px] lg:w-[110px] lg:h-[110px] object-cover absolute top-0 left-1/2 -translate-y-1/2 -translate-x-1/2"
+              width="110"
+              height="110"
+              loading="lazy"
             />
           </div>
           {/* Step 2 */}
@@ -688,8 +709,11 @@ export default function Home() {
             </div>
             <img
               src="/assets/Wallet-Icon.png"
-              alt=""
+              alt="Multi-chain wallet icon"
               className="w-[80px] h-[80px] lg:w-[110px] lg:h-[110px] object-cover absolute top-0 left-1/2 -translate-y-1/2 -translate-x-1/2"
+              width="110"
+              height="110"
+              loading="lazy"
             />
           </div>
           {/* Step 3 */}
@@ -704,8 +728,11 @@ export default function Home() {
             </div>
             <img
               src="/assets/Interest-Icon.png"
-              alt=""
+              alt="Interest earnings icon"
               className="w-[80px] h-[80px] lg:w-[110px] lg:h-[110px] object-cover absolute top-0 left-1/2 -translate-y-1/2 -translate-x-1/2"
+              width="110"
+              height="110"
+              loading="lazy"
             />
           </div>
         </div>
@@ -716,7 +743,9 @@ export default function Home() {
           <img
             src="/assets/Bg-Grid.png"
             alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover"
+            loading="lazy"
           />
         </div>
 
@@ -862,7 +891,7 @@ export default function Home() {
                 className="lg:h-full lg:w-[87px] h-[53px] w-[53px] "
               />
               <p className="font-dm text-primary text-[12px] lg:text-[24px] ">
-                ${globalStats?.totalPooled ? parseFloat(globalStats.totalPooled).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '0'} pooled
+                ${globalStats?.totalPooled ? parseFloat(globalStats.totalPooled).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0'} pooled
               </p>
             </div>
 
@@ -907,7 +936,7 @@ export default function Home() {
                 className="lg:h-full lg:w-[87px] h-[53px] w-[53px] "
               />
               <p className="font-dm text-primary text-[12px] lg:text-[24px] ">
-                ${globalStats?.totalPooled ? parseFloat(globalStats.totalPooled).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '0'} pooled
+                ${globalStats?.totalPooled ? parseFloat(globalStats.totalPooled).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0'} pooled
               </p>
             </div>
 
@@ -967,11 +996,10 @@ export default function Home() {
                       setActiveCategory(category);
                       setExpandedQuestion(null);
                     }}
-                    className={`px-4 py-3 text-left rounded-[12px] transition-all text-[14px] lg:text-[18px] cursor-pointer whitespace-nowrap lg:whitespace-normal ${
-                      activeCategory === category
+                    className={`px-4 py-3 text-left rounded-[12px] transition-all text-[14px] lg:text-[18px] cursor-pointer whitespace-nowrap lg:whitespace-normal ${activeCategory === category
                         ? 'text-white bg-[#D548EC] shadow-lg shadow-[#D548EC]/30'
                         : 'text-gray-300 hover:text-white hover:bg-[#D548EC]/20 border border-[#F4AEFF]/30'
-                    }`}
+                      }`}
                   >
                     {category}
                   </button>
@@ -1011,9 +1039,8 @@ export default function Home() {
                       </button>
 
                       {/* Answer */}
-                      <div className={`overflow-hidden transition-all duration-300 ${
-                        expandedQuestion === item.question ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-                      }`}>
+                      <div className={`overflow-hidden transition-all duration-300 ${expandedQuestion === item.question ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                        }`}>
                         <p className="px-6 pb-6 text-[14px] lg:text-[18px] text-gray-300 leading-relaxed font-dm">
                           {item.answer}
                         </p>
