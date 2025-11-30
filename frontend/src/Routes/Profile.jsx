@@ -76,8 +76,10 @@ export default function Profile() {
           <div className="relative">
             <img
               src={tierInfo.image}
-              alt="profile"
+              alt={`${tierInfo.name} badge`}
               className={`w-[60px] h-[60px] lg:w-[120px] lg:h-[120px] ${tierInfo.isWelcome ? 'animate-bounce' : 'animate-pulse'}`}
+              width="120"
+              height="120"
             />
             {tierInfo.isWelcome && (
               <div className="absolute -top-1 -right-1 lg:-top-2 lg:-right-2">
@@ -103,14 +105,14 @@ export default function Profile() {
             <p>User since {reputation.accountAge && reputation.accountAge > 0 ? formatDate(reputation.accountAge) : 'New user'}</p>
           </div>
           <div className="w-full bg-[#ad3dc0] py-2 rounded-[8px]  flex items-center justify-center gap-2">
-            <PiCirclesThreeBold size={isTabletOrMobile? 12 : 24} color="#AEFFDA" />
+            <PiCirclesThreeBold size={isTabletOrMobile ? 12 : 24} color="#AEFFDA" />
             <div className="flex items-center gap-1">
               <CountUp target={Number(reputation.completedCircles) || 0} duration={300} />
               <p> completed circles</p>
             </div>
           </div>
           <div className="w-full bg-[#ad3dc0] py-2 rounded-[8px]  flex items-center justify-center gap-2">
-            <FaSackDollar size={isTabletOrMobile? 12 : 24} color="#FBFFAE" />
+            <FaSackDollar size={isTabletOrMobile ? 12 : 24} color="#FBFFAE" />
             <div className="flex items-center gap-1">
               <p>$</p>
               <CountUp target={totalSaved} duration={2500} />
@@ -118,7 +120,7 @@ export default function Profile() {
             </div>
           </div>
           <div className="w-full bg-[#ad3dc0] py-2 rounded-[8px]  flex items-center justify-center gap-2">
-            <FaSackDollar size={isTabletOrMobile? 12 : 24} color="#FBFFAE" />
+            <FaSackDollar size={isTabletOrMobile ? 12 : 24} color="#FBFFAE" />
             <p>{Number(reputation.onTimeRate) || 0}% On-time rate</p>
           </div>
         </div>

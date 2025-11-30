@@ -772,8 +772,11 @@ export default function Home() {
             <div className="absolute top-1/2 left-1/2 p-2 -translate-x-[45%] -translate-y-[40%] rounded-full flex items-center justify-center">
               <img
                 src="/assets/centre-logo.png"
-                alt=""
+                alt="ChainCircle logo"
                 className="h-[120px] w-[120px]"
+                width="120"
+                height="120"
+                loading="lazy"
               />
             </div>
           )}
@@ -782,8 +785,11 @@ export default function Home() {
           <div className="shadow shadow-[#F4AEFF] rounded-[16px]  w-full py-[50px] px-[30px] flex items-center gap-0 lg:gap-[30px] ">
             <img
               src="/assets/padlock.png"
-              alt=""
+              alt="Secure universal access icon"
               className="h-[110px] w-[110px] lg:h-[80px] lg:w-[80px] object-cover"
+              width="80"
+              height="80"
+              loading="lazy"
             />
             <div className="">
               <h3 className="font-bold text-[16px] lg:text-[24px] ">
@@ -806,16 +812,22 @@ export default function Home() {
             </div>
             <img
               src="/assets/Earn-Icon.png"
-              alt=""
+              alt="Earn interest while saving icon"
               className="h-[110px] w-[110px] lg:h-[80px] lg:w-[80px] object-cover"
+              width="80"
+              height="80"
+              loading="lazy"
             />
           </div>
 
           <div className="shadow shadow-[#F4AEFF] rounded-[16px] w-full py-[50px] px-[30px] flex items-center ggap-0 lg:gap-[30px] ">
             <img
               src="/assets/Reputation-Icon.png"
-              alt=""
+              alt="Build reputation icon"
               className="h-[110px] w-[110px] lg:h-[80px] lg:w-[80px] object-cover"
+              width="80"
+              height="80"
+              loading="lazy"
             />
             <div className="">
               <h3 className="font-bold text-[16px] lg:text-[24px] ">
@@ -997,8 +1009,8 @@ export default function Home() {
                       setExpandedQuestion(null);
                     }}
                     className={`px-4 py-3 text-left rounded-[12px] transition-all text-[14px] lg:text-[18px] cursor-pointer whitespace-nowrap lg:whitespace-normal ${activeCategory === category
-                        ? 'text-white bg-[#D548EC] shadow-lg shadow-[#D548EC]/30'
-                        : 'text-gray-300 hover:text-white hover:bg-[#D548EC]/20 border border-[#F4AEFF]/30'
+                      ? 'text-white bg-[#D548EC] shadow-lg shadow-[#D548EC]/30'
+                      : 'text-gray-300 hover:text-white hover:bg-[#D548EC]/20 border border-[#F4AEFF]/30'
                       }`}
                   >
                     {category}
