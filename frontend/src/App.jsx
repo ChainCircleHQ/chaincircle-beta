@@ -20,44 +20,9 @@ import ProtectedRoute from './Components/ProtectedRoute'
 
 function App() {
   const queryClient = new QueryClient();
-  const [walletTheme, setWalletTheme] = React.useState(() => {
-    const theme = localStorage.getItem('theme') || 'dark';
-    // Convert 'system' to 'dark' if found
-    const actualTheme = theme === 'system' ? 'dark' : theme;
-    return actualTheme === 'dark' ? PushUI.CONSTANTS.THEME.DARK : PushUI.CONSTANTS.THEME.LIGHT;
-  });
+  // Always use dark mode for wallet
+  const walletTheme = PushUI.CONSTANTS.THEME.DARK;
 
-
-  // Listen for theme changes
-  React.useEffect(() => {
-    const updateWalletTheme = () => {
-      const theme = localStorage.getItem('theme') || 'dark';
-
-      // Convert 'system' to 'dark' if found
-      const currentTheme = theme === 'system' ? 'dark' : theme;
-
-      const newWalletTheme = currentTheme === 'dark'
-        ? PushUI.CONSTANTS.THEME.DARK
-        : PushUI.CONSTANTS.THEME.LIGHT;
-
-      setWalletTheme(newWalletTheme);
-    };
-
-    // Check for theme changes via storage event (cross-tab sync)
-    window.addEventListener('storage', updateWalletTheme);
-
-    // Check for theme changes via custom event (same tab)
-    const handleThemeChange = () => updateWalletTheme();
-    window.addEventListener('themeChange', handleThemeChange);
-
-    // Initial check
-    updateWalletTheme();
-
-    return () => {
-      window.removeEventListener('storage', updateWalletTheme);
-      window.removeEventListener('themeChange', handleThemeChange);
-    };
-  }, []);
 
   const walletConfig = {
     network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET,
@@ -77,10 +42,10 @@ function App() {
   };
 
   const appMetadata = {
-  logoUrl: 'https://ipfs.io/ipfs/bafkreieh7eiefgyfhjkgmon74kfpun4ivvxgrnrbiymmtbzx3aaqxwujbi', // This controls the wallet modal logo (LHS)
-  title: 'ChainCircle',
-  description: 'Chaincircle is a Decentralized savings platform for EVERY user on ANY blockchain WITHOUT bridging',
-};
+    logoUrl: 'https://ipfs.io/ipfs/bafkreieh7eiefgyfhjkgmon74kfpun4ivvxgrnrbiymmtbzx3aaqxwujbi', // This controls the wallet modal logo (LHS)
+    title: 'ChainCircle',
+    description: 'Chaincircle is a Decentralized savings platform for EVERY user on ANY blockchain WITHOUT bridging',
+  };
 
   return (
     <QueryClientProvider client={queryClient}>

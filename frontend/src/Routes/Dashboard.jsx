@@ -34,7 +34,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 ">
             <h3 className="font-bold text-[32px] lg:text-[40px] ">
               {showBalance
-                ? `$${totalSaved.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                ? `$${totalSaved.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : "******"}
             </h3>
             <div
@@ -61,7 +61,7 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex-1 flex items-center justify-center rounded-[8px] gap-2 px-5 py-2 bg-[#853094] text-[12px] lg:text-[16px] font-dm ">
-            <img src="/assets/money-interest.png" alt="" className="w-6 h-6" />
+            <img src="/assets/money-interest.png" alt="Interest earned" className="w-6 h-6" width="24" height="24" />
             <p>
               {" "}
               <span className="text-[12px]">${totalInterest.toFixed(2)}</span> interest earned
