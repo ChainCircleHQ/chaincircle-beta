@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import PurpleBtn from '../Components/PurpleBtn';
 import TransBtn from '../Components/TransBtn';
 import { Link, useNavigate } from 'react-router';
-import { usePushWalletContext, usePushChainClient, PushUI, PushUniversalAccountButton } from '@pushchain/ui-kit';
+import { usePushWalletContext, PushUI, PushUniversalAccountButton } from '@pushchain/ui-kit';
 import { useGlobalStats } from '../hooks/useCircleData';
 import { IoClose, IoArrowUp } from 'react-icons/io5';
 import { FaCoins, FaGasPump, FaBook } from 'react-icons/fa';
@@ -13,11 +13,8 @@ export default function Home() {
   const videoSectionRef = useRef(null);
   const navigate = useNavigate();
   const { connectionStatus, handleConnectToPushWallet } = usePushWalletContext();
-  const { pushChainClient } = usePushChainClient();
   const { data: globalStats } = useGlobalStats();
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-
-  const currentWallet = pushChainClient?.universal?.account;
 
   // FAQ State
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,11 +59,12 @@ export default function Home() {
         }
       );
 
-      stepsObserver.observe(stepsRef.current);
+      const currentStepsRef = stepsRef.current;
+      stepsObserver.observe(currentStepsRef);
 
       return () => {
-        if (stepsRef.current) {
-          stepsObserver.unobserve(stepsRef.current);
+        if (currentStepsRef) {
+          stepsObserver.unobserve(currentStepsRef);
         }
       };
     }
@@ -89,11 +87,12 @@ export default function Home() {
         }
       );
 
-      videoObserver.observe(videoSectionRef.current);
+      const currentVideoRef = videoSectionRef.current;
+      videoObserver.observe(currentVideoRef);
 
       return () => {
-        if (videoSectionRef.current) {
-          videoObserver.unobserve(videoSectionRef.current);
+        if (currentVideoRef) {
+          videoObserver.unobserve(currentVideoRef);
         }
       };
     }
@@ -1122,6 +1121,14 @@ export default function Home() {
               rel="noopener noreferrer"
             >
               FAUCET
+            </Link>
+            <Link
+              className="hover:text-white transition ease-in-out hover:underline hover:scale-110 "
+              to={"https://youtu.be/d9FZWjPPJmY"}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              DEMO VIDEO
             </Link>
             <Link
               className="hover:text-white transition ease-in-out hover:underline hover:scale-110 "
