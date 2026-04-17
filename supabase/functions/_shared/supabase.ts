@@ -1,7 +1,7 @@
 // Shared Supabase admin client for Edge Functions.
 // Uses the service role key (set as a secret) so writes bypass RLS.
 
-import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.103.3";
 
 export function supabaseAdmin(): SupabaseClient {
     const url = Deno.env.get("SUPABASE_URL");

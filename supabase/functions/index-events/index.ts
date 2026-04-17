@@ -1,47 +1,59 @@
-// Incremental indexer — pulls new events since last checkpoint, decodes them,
-// writes to DB. Designed to run on a 1-minute pg_cron schedule.
-// Idempotent: primary keys on (tx_hash) and (tx_hash, log_index) guarantee
-// safe re-runs.
+// Incremental indexer — pulls new events since last checkpoint, decodes them
+// against the real deployed ABIs, enriches circles via contract reads, writes
+// to DB. Runs on pg_cron (1 min). Idempotent on re-runs.
 
 import { supabaseAdmin, lc } from "../_shared/supabase.ts";
 import {
-    CONTRACTS,
     IFACES,
+    NAME_TO_KEY,
     provider,
+    coreContract,
     fetchLogs,
     blockTimestamp,
 } from "../_shared/chain.ts";
 
-const BATCH_SIZE = 5000; // max blocks per run per contract
+const BATCH_SIZE = 10_000; // Push Chain RPC hard cap
 
 Deno.serve(async (_req: Request) => {
+    try {
+        return await run();
+    } catch (e) {
+        return json(
+            {
+                error: (e as Error).message,
+                stack: (e as Error).stack?.split("\n").slice(0, 10),
+            },
+            500,
+        );
+    }
+});
+
+async function run(): Promise<Response> {
     const db = supabaseAdmin();
     const p = provider();
+    const core = coreContract(p);
     const head = await p.getBlockNumber();
     const results: Record<string, unknown> = { head, per_contract: {} };
 
-    const { data: states, error } = await db
-        .from("indexer_state")
-        .select("*");
-    if (error) return json({ error: error.message }, 500);
+    const { data: states, error } = await db.from("indexer_state").select("*");
+    if (error) return json({ error: error.message, phase: "select_indexer_state" }, 500);
+
+    const blockTsCache = new Map<number, Date>();
 
     for (const s of states ?? []) {
-        const contractName = s.contract_name as keyof typeof IFACES;
-        if (!IFACES[contractName]) continue;
+        const key = NAME_TO_KEY[s.contract_name];
+        if (!key) continue;
 
         const fromBlock = Number(s.last_block_processed) + 1;
         const toBlock = Math.min(head, fromBlock + BATCH_SIZE - 1);
         if (fromBlock > head) {
-            (results.per_contract as Record<string, unknown>)[contractName] = {
-                skipped: true,
-                at: head,
-            };
+            (results.per_contract as Record<string, unknown>)[key] = { skipped: true, at: head };
             continue;
         }
 
         try {
             const logs = await fetchLogs(p, s.contract_address, fromBlock, toBlock);
-            const decoded = await decodeAndWrite(db, p, contractName, logs);
+            const counts = await writeBatch(db, p, core, key, logs, blockTsCache);
 
             await db
                 .from("indexer_state")
@@ -53,11 +65,7 @@ Deno.serve(async (_req: Request) => {
                 })
                 .eq("contract_address", s.contract_address);
 
-            (results.per_contract as Record<string, unknown>)[contractName] = {
-                from: fromBlock,
-                to: toBlock,
-                decoded,
-            };
+            (results.per_contract as Record<string, unknown>)[key] = { from: fromBlock, to: toBlock, logs: logs.length, ...counts };
         } catch (e) {
             await db
                 .from("indexer_state")
@@ -67,209 +75,152 @@ Deno.serve(async (_req: Request) => {
                     last_run_at: new Date().toISOString(),
                 })
                 .eq("contract_address", s.contract_address);
-            (results.per_contract as Record<string, unknown>)[contractName] = {
-                error: (e as Error).message,
-            };
+            (results.per_contract as Record<string, unknown>)[key] = { error: (e as Error).message };
         }
     }
 
-    // Refresh activity_log so the Recent Activity feed picks up new rows.
-    await db.rpc("refresh_activity_log").catch(() => {});
-
+    try { await db.rpc("refresh_activity_log"); } catch { /* non-fatal */ }
     return json(results);
-});
+}
 
-async function decodeAndWrite(
+async function writeBatch(
     db: ReturnType<typeof supabaseAdmin>,
     p: ReturnType<typeof provider>,
-    contract: keyof typeof IFACES,
+    core: ReturnType<typeof coreContract>,
+    key: keyof typeof IFACES,
     logs: Awaited<ReturnType<typeof fetchLogs>>,
-): Promise<number> {
-    const iface = IFACES[contract];
-    let n = 0;
-    const tsCache = new Map<number, Date>();
-    const ts = async (blk: number) => {
-        if (!tsCache.has(blk)) tsCache.set(blk, await blockTimestamp(p, blk));
-        return tsCache.get(blk)!;
+    blockTsCache: Map<number, Date>,
+): Promise<Record<string, number>> {
+    const iface = IFACES[key];
+    const ts = async (b: number) => {
+        if (!blockTsCache.has(b)) blockTsCache.set(b, await blockTimestamp(p, b));
+        return blockTsCache.get(b)!.toISOString();
     };
+
+    const users = new Set<string>();
+    const circleCreated: Record<string, unknown>[] = [];
+    const members: Record<string, unknown>[] = [];
+    const contributions: Record<string, unknown>[] = [];
+    const payouts: Record<string, unknown>[] = [];
+    const reputation: Record<string, unknown>[] = [];
+    const badges: Record<string, unknown>[] = [];
+    const completions: { circle_id: number; completed_at: string }[] = [];
+    const nameUpserts: { address: string; display_name: string }[] = [];
 
     for (const log of logs) {
-        try {
-            const parsed = iface.parseLog(log);
-            if (!parsed) continue;
-            n++;
-            await route(db, contract, parsed, log, await ts(log.blockNumber));
-        } catch {
-            // unknown event (not in our minimal ABI) — skip
-        }
-    }
-    return n;
-}
+        let parsed;
+        try { parsed = iface.parseLog(log); } catch { continue; }
+        if (!parsed) continue;
+        const tsIso = await ts(log.blockNumber);
 
-async function route(
-    db: ReturnType<typeof supabaseAdmin>,
-    contract: keyof typeof IFACES,
-    parsed: { name: string; args: readonly unknown[] },
-    log: { transactionHash: string; blockNumber: number; index: number },
-    blockTs: Date,
-): Promise<void> {
-    const common = {
-        tx_hash: log.transactionHash,
-        block_number: log.blockNumber,
-        block_timestamp: blockTs.toISOString(),
-    };
-
-    if (contract === "CHAIN_CIRCLE_CORE") {
-        switch (parsed.name) {
-            case "CircleCreated": {
-                const [circleId, creator, name, goalType, amount, duration, memberCap, frequency] =
-                    parsed.args as [bigint, string, string, bigint, bigint, bigint, bigint, bigint];
-                await upsertUser(db, creator);
-                await db.from("circles").upsert({
+        if (key === "CHAIN_CIRCLE_CORE") {
+            if (parsed.name === "CircleCreated") {
+                const [circleId, creator] = parsed.args as [bigint, string, bigint];
+                users.add(creator);
+                circleCreated.push({
                     circle_id: Number(circleId),
                     creator_address: lc(creator),
-                    name,
-                    goal_type: Number(goalType),
-                    contribution_amount: amount.toString(),
-                    duration_months: Number(duration),
-                    member_cap: Number(memberCap),
-                    frequency: Number(frequency),
-                    contract_address: log.transactionHash.slice(0, 42), // actual contract addr from log.address in prod
+                    contract_address: lc(log.address),
                     created_block: log.blockNumber,
-                }, { onConflict: "circle_id" });
-                return;
-            }
-            case "CircleJoined": {
-                const [circleId, member, position] = parsed.args as [bigint, string, bigint];
-                await upsertUser(db, member);
-                await db.from("circle_members").upsert({
+                });
+            } else if (parsed.name === "MemberJoined") {
+                const [circleId, member] = parsed.args as [bigint, string];
+                users.add(member);
+                members.push({
                     circle_id: Number(circleId),
                     user_address: lc(member),
-                    position: Number(position),
                     joined_block: log.blockNumber,
-                    joined_at: blockTs.toISOString(),
-                }, { onConflict: "circle_id,user_address" });
-                return;
+                    joined_at: tsIso,
+                });
+            } else if (parsed.name === "ContributionMade") {
+                const [circleId, member, amount] = parsed.args as [bigint, string, bigint, bigint];
+                users.add(member);
+                contributions.push({
+                    tx_hash: log.transactionHash, circle_id: Number(circleId),
+                    user_address: lc(member), amount: amount.toString(),
+                    block_number: log.blockNumber, block_timestamp: tsIso,
+                });
+            } else if (parsed.name === "PayoutProcessed" || parsed.name === "InterestDistributed") {
+                const [circleId, recipient, amount] = parsed.args as [bigint, string, bigint, bigint];
+                users.add(recipient);
+                payouts.push({
+                    tx_hash: log.transactionHash, circle_id: Number(circleId),
+                    recipient_address: lc(recipient), amount: amount.toString(),
+                    block_number: log.blockNumber, block_timestamp: tsIso,
+                });
+            } else if (parsed.name === "CircleCompleted") {
+                completions.push({ circle_id: Number(parsed.args[0]), completed_at: tsIso });
             }
-            case "Contributed": {
-                const [circleId, member, amount, round] = parsed.args as [bigint, string, bigint, bigint];
-                await upsertUser(db, member);
-                await db.from("contributions").upsert({
-                    ...common,
-                    circle_id: Number(circleId),
-                    user_address: lc(member),
-                    amount: amount.toString(),
-                    round: Number(round),
-                }, { onConflict: "tx_hash" });
-                return;
-            }
-            case "PayoutDistributed": {
-                const [circleId, recipient, amount, round] = parsed.args as [bigint, string, bigint, bigint];
-                await upsertUser(db, recipient);
-                await db.from("payouts").upsert({
-                    ...common,
-                    circle_id: Number(circleId),
-                    recipient_address: lc(recipient),
-                    amount: amount.toString(),
-                    round: Number(round),
-                }, { onConflict: "tx_hash" });
-                return;
-            }
-            case "CircleStarted":
-                await db.from("circles").update({
-                    status: 1,
-                    started_at: blockTs.toISOString(),
-                }).eq("circle_id", Number(parsed.args[0]));
-                return;
-            case "CircleCompleted":
-                await db.from("circles").update({
-                    status: 2,
-                    completed_at: blockTs.toISOString(),
-                }).eq("circle_id", Number(parsed.args[0]));
-                return;
+        } else if (key === "REPUTATION_MANAGER" && parsed.name === "ScoreChanged") {
+            const [user, oldScore, newScore, reason] = parsed.args as [string, bigint, bigint, string];
+            users.add(user);
+            reputation.push({
+                tx_hash: log.transactionHash, log_index: log.index,
+                user_address: lc(user), event_type: reason || "ScoreChanged",
+                delta: Number(newScore) - Number(oldScore), score_after: Number(newScore),
+                reason: reason || null,
+                block_number: log.blockNumber, block_timestamp: tsIso,
+            });
+        } else if (key === "BADGE_NFT" && parsed.name === "BadgeMinted") {
+            const [user, tokenId, tier] = parsed.args as [string, bigint, string];
+            users.add(user);
+            badges.push({
+                token_id: Number(tokenId), user_address: lc(user), badge_type: tier,
+                tx_hash: log.transactionHash, block_number: log.blockNumber, minted_at: tsIso,
+            });
+        } else if (key === "NAME_REGISTRY") {
+            const args = parsed.args as [string, ...string[]];
+            const name = parsed.name === "NameRegistered" ? args[1] : args[2];
+            nameUpserts.push({ address: lc(args[0]), display_name: name });
         }
     }
 
-    if (contract === "REPUTATION_MANAGER" && parsed.name === "ReputationUpdated") {
-        const [user, delta, scoreAfter, eventType, reason] = parsed.args as [
-            string, bigint, bigint, string, string,
-        ];
-        await upsertUser(db, user);
-        await db.from("reputation_events").upsert({
-            ...common,
-            log_index: log.index,
-            user_address: lc(user),
-            event_type: eventType,
-            delta: Number(delta),
-            score_after: Number(scoreAfter),
-            reason,
-        }, { onConflict: "tx_hash,log_index" });
-        return;
+    // Users first (FK)
+    for (const addr of users) {
+        await db.from("users").upsert({ address: lc(addr) }, { onConflict: "address", ignoreDuplicates: true });
+    }
+    for (const nu of nameUpserts) {
+        await db.from("users").upsert(nu, { onConflict: "address" });
     }
 
-    if (contract === "BADGE_NFT" && parsed.name === "BadgeMinted") {
-        const [user, tokenId, badgeType] = parsed.args as [string, bigint, string];
-        await upsertUser(db, user);
-        await db.from("badges").upsert({
-            token_id: Number(tokenId),
-            user_address: lc(user),
-            badge_type: badgeType,
-            tx_hash: log.transactionHash,
-            block_number: log.blockNumber,
-            minted_at: blockTs.toISOString(),
-        }, { onConflict: "token_id" });
-        return;
+    // Enrich circles
+    for (const row of circleCreated) {
+        try {
+            const c = await core.circles(row.circle_id);
+            row.name = c.name;
+            row.goal_type = Number(c.goalType);
+            row.contribution_amount = c.amount.toString();
+            row.duration_months = Number(c.duration);
+            row.member_cap = Number(c.maxMembers);
+            row.frequency = Number(c.frequency);
+            row.status = Number(c.status);
+            row.current_round = Number(c.currentRound);
+            row.total_pooled = c.vaultBalance.toString();
+            if (Number(c.startAt) > 0) row.started_at = new Date(Number(c.startAt) * 1000).toISOString();
+        } catch { /* leave fields null */ }
     }
 
-    if (contract === "NAME_REGISTRY") {
-        if (parsed.name === "NameRegistered" || parsed.name === "NameUpdated") {
-            const [user, ...rest] = parsed.args as [string, ...string[]];
-            const name = parsed.name === "NameRegistered" ? rest[0] : rest[1];
-            await upsertUser(db, user, name);
-            return;
-        }
+    if (circleCreated.length) await db.from("circles").upsert(circleCreated, { onConflict: "circle_id" });
+    if (members.length)       await db.from("circle_members").upsert(members, { onConflict: "circle_id,user_address" });
+    if (contributions.length) await db.from("contributions").upsert(contributions, { onConflict: "tx_hash" });
+    if (payouts.length)       await db.from("payouts").upsert(payouts, { onConflict: "tx_hash" });
+    if (reputation.length)    await db.from("reputation_events").upsert(reputation, { onConflict: "tx_hash,log_index" });
+    if (badges.length)        await db.from("badges").upsert(badges, { onConflict: "token_id" });
+
+    for (const c of completions) {
+        await db.from("circles").update({ status: 2, completed_at: c.completed_at }).eq("circle_id", c.circle_id);
     }
 
-    if (contract === "GOVERNANCE_MODULE") {
-        if (parsed.name === "ProposalCreated") {
-            const [proposalId, circleId, proposer, proposalType] = parsed.args as [
-                bigint, bigint, string, string,
-            ];
-            await upsertUser(db, proposer);
-            await db.from("governance_votes").upsert({
-                proposal_id: Number(proposalId),
-                circle_id: Number(circleId),
-                proposer_address: lc(proposer),
-                proposal_type: proposalType,
-                started_at: blockTs.toISOString(),
-                created_block: log.blockNumber,
-            }, { onConflict: "proposal_id" });
-            return;
-        }
-        if (parsed.name === "ProposalResolved") {
-            const [proposalId, outcome] = parsed.args as [bigint, string];
-            await db.from("governance_votes").update({
-                outcome,
-                ended_at: blockTs.toISOString(),
-            }).eq("proposal_id", Number(proposalId));
-            return;
-        }
-    }
-}
-
-async function upsertUser(
-    db: ReturnType<typeof supabaseAdmin>,
-    address: string,
-    displayName?: string,
-): Promise<void> {
-    const row: Record<string, unknown> = { address: lc(address) };
-    if (displayName) row.display_name = displayName;
-    await db.from("users").upsert(row, { onConflict: "address", ignoreDuplicates: !displayName });
+    return {
+        circles: circleCreated.length, members: members.length,
+        contributions: contributions.length, payouts: payouts.length,
+        reputation: reputation.length, badges: badges.length,
+        completions: completions.length,
+    };
 }
 
 function json(body: unknown, status = 200): Response {
     return new Response(JSON.stringify(body, null, 2), {
-        status,
-        headers: { "content-type": "application/json" },
+        status, headers: { "content-type": "application/json" },
     });
 }

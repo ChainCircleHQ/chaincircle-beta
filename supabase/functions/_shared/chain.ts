@@ -1,9 +1,7 @@
-// Shared chain helpers for Edge Functions. Uses ethers v6 via esm.sh.
-// We import ABIs as JSON strings at build time via Deno's JSR file loader —
-// but since Edge Functions don't import local JSON easily, ABIs live inline
-// below for the minimal event set the indexer needs.
+// Shared chain helpers for Edge Functions — event ABIs match the deployed
+// contracts (verified against frontend/src/abis/*.json 2026-04-17).
 
-import { JsonRpcProvider, Interface, Log } from "npm:ethers@6";
+import { JsonRpcProvider, Interface, Log, Contract } from "https://esm.sh/ethers@6.15.0";
 
 const RPC_URL =
     Deno.env.get("PUSH_CHAIN_RPC") ||
@@ -13,7 +11,6 @@ export function provider(): JsonRpcProvider {
     return new JsonRpcProvider(RPC_URL);
 }
 
-// Contract addresses mirror supabase/migrations/*.sql#indexer_state seed rows.
 export const CONTRACTS = {
     CHAIN_CIRCLE_CORE: "0x59D44aea45bd92E2798b7998e8E090586670f161",
     REPUTATION_MANAGER: "0xEaEa469279B89E7fF0BDd5903226483418AB37e4",
@@ -22,27 +19,25 @@ export const CONTRACTS = {
     NAME_REGISTRY: "0x1c8fCc121D52EAa6d4705fCcE95e34E2CEDced5E",
 } as const;
 
-// Event ABIs — narrow subset the indexer decodes. Full ABI lives in the repo.
-// If contract events change, update here AND in frontend/src/abis/*.json.
+// Real deployed event signatures
 export const EVENT_ABIS = {
     CHAIN_CIRCLE_CORE: [
-        "event CircleCreated(uint256 indexed circleId, address indexed creator, string name, uint8 goalType, uint256 contributionAmount, uint8 duration, uint8 memberCap, uint8 frequency)",
-        "event CircleJoined(uint256 indexed circleId, address indexed member, uint8 position)",
-        "event Contributed(uint256 indexed circleId, address indexed member, uint256 amount, uint8 round)",
-        "event PayoutDistributed(uint256 indexed circleId, address indexed recipient, uint256 amount, uint8 round)",
-        "event CircleStarted(uint256 indexed circleId)",
-        "event CircleCompleted(uint256 indexed circleId)",
+        "event CircleCreated(uint256 indexed circleId, address indexed creator, uint256 goalAmount)",
+        "event MemberJoined(uint256 indexed circleId, address indexed member)",
+        "event ContributionMade(uint256 indexed circleId, address indexed member, uint256 amount, uint256 timestamp)",
+        "event PayoutProcessed(uint256 indexed circleId, address indexed recipient, uint256 amount, uint256 timestamp)",
+        "event InterestDistributed(uint256 indexed circleId, address indexed recipient, uint256 amount, uint256 timestamp)",
+        "event EmergencyWithdrawal(uint256 indexed circleId, address indexed member, uint256 amount)",
+        "event CircleCompleted(uint256 indexed circleId, uint256 timestamp)",
     ],
     REPUTATION_MANAGER: [
-        "event ReputationUpdated(address indexed user, int256 delta, uint256 scoreAfter, string eventType, string reason)",
+        "event ScoreChanged(address indexed user, uint256 oldScore, uint256 newScore, string reason)",
+        "event TierChanged(address indexed user, string oldTier, string newTier)",
+        "event StreakUpdated(address indexed user, uint256 newStreak)",
     ],
     BADGE_NFT: [
-        "event BadgeMinted(address indexed user, uint256 indexed tokenId, string badgeType)",
-    ],
-    GOVERNANCE_MODULE: [
-        "event ProposalCreated(uint256 indexed proposalId, uint256 indexed circleId, address indexed proposer, string proposalType)",
-        "event Voted(uint256 indexed proposalId, address indexed voter, bool support)",
-        "event ProposalResolved(uint256 indexed proposalId, string outcome)",
+        "event BadgeMinted(address indexed user, uint256 indexed tokenId, string tier)",
+        "event BadgeUpgraded(address indexed user, uint256 indexed tokenId, string oldTier, string newTier)",
     ],
     NAME_REGISTRY: [
         "event NameRegistered(address indexed user, string name)",
@@ -50,9 +45,26 @@ export const EVENT_ABIS = {
     ],
 } as const;
 
+// Contract read ABI used to enrich CircleCreated rows (events only carry id/creator/goalAmount).
+export const CORE_READ_ABI = [
+    "function circles(uint256) view returns (string name, uint8 goalType, uint256 amount, uint8 duration, uint8 currentRound, uint8 maxMembers, uint8 frequency, bool isActive, uint8 status, uint256 createdAt, uint256 startAt, uint256 vaultBalance, address creator)",
+];
+
 export const IFACES = Object.fromEntries(
     Object.entries(EVENT_ABIS).map(([k, abi]) => [k, new Interface(abi as string[])]),
 ) as Record<keyof typeof EVENT_ABIS, Interface>;
+
+export const NAME_TO_KEY: Record<string, keyof typeof EVENT_ABIS> = {
+    ChainCircleCore: "CHAIN_CIRCLE_CORE",
+    ReputationManager: "REPUTATION_MANAGER",
+    BadgeNFT: "BADGE_NFT",
+    NameRegistry: "NAME_REGISTRY",
+    // GovernanceModule omitted — no committed ABI yet
+};
+
+export function coreContract(p: JsonRpcProvider): Contract {
+    return new Contract(CONTRACTS.CHAIN_CIRCLE_CORE, CORE_READ_ABI, p);
+}
 
 export async function fetchLogs(
     p: JsonRpcProvider,
@@ -60,11 +72,7 @@ export async function fetchLogs(
     fromBlock: number,
     toBlock: number,
 ): Promise<Log[]> {
-    return await p.getLogs({
-        address,
-        fromBlock,
-        toBlock,
-    });
+    return await p.getLogs({ address, fromBlock, toBlock });
 }
 
 export async function blockTimestamp(
