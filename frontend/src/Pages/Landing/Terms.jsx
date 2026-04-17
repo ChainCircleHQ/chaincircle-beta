@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router';
+import { CONTACT } from '../../config/contact';
 
 export default function Terms() {
   return (
@@ -209,9 +210,9 @@ export default function Terms() {
               For questions or concerns about these Terms and Conditions, please contact us:
             </p>
             <ul className="list-none space-y-2 text-[#CCCCCC] ml-4 mt-4">
-              <li>Email: support@chaincircle.org</li>
-              <li>Twitter: <a href="https://x.com/chaincircle_?s=21" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">@chaincircle_</a></li>
-              <li>GitHub: <a href="https://github.com/ChainCircleHQ" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">ChainCircleHQ</a></li>
+              <li>Email: <a href={`mailto:${CONTACT.email}`} className="text-[#D548EC] hover:underline">{CONTACT.email}</a></li>
+              <li>Twitter: <a href={CONTACT.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">{CONTACT.twitter}</a></li>
+              <li>GitHub: <a href={CONTACT.githubUrl} target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">{CONTACT.github}</a></li>
             </ul>
           </section>
 

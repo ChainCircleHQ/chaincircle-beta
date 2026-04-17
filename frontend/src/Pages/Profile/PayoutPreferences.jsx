@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { MdOutlineCreditCard } from "react-icons/md";
+import { toast } from 'sonner';
 import PurpleBtn from '../../Components/PurpleBtn';
 import { useWalletPreferences } from '../../hooks/useWalletPreferences';
 import { usePushChainClient } from '@pushchain/ui-kit';
@@ -49,7 +50,7 @@ export default function PayoutPreferences() {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      alert('Failed to set preferred wallet: ' + error.message);
+      toast.error('Failed to set preferred wallet', { description: error.message });
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { FiMinus, FiPlus } from 'react-icons/fi'
+import { CONTACT } from '../../config/contact'
 
 export default function About() {
   const [expandedSection, setExpandedSection] = useState('mission')
@@ -219,10 +220,10 @@ We're building for the long term. Join us on this journey.`
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <a
-                href="mailto:support@chaincircle.org"
+                href={`mailto:${CONTACT.email}`}
                 className="text-[#D548EC] hover:text-[#F4AEFF] transition-colors text-[14px] lg:text-[16px]"
               >
-                support@chaincircle.org
+                {CONTACT.email}
               </a>
             </div>
           </div>

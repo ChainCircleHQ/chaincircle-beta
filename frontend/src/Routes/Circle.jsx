@@ -11,6 +11,7 @@ import JoinByInviteCode from '../Pages/Circle/JoinByInviteCode';
 import { useUserCircles } from '../hooks/useCircleData';
 import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
 import { useEmergencyWithdraw } from '../hooks/useCircleActions';
+import { toast } from 'sonner';
 
 export default function Circle() {
   const { data } = useUserCircles();
@@ -78,7 +79,7 @@ export default function Circle() {
       setSelectedCircleForExit(null);
     } catch (error) {
       console.error('Emergency withdrawal failed:', error);
-      alert(`Emergency withdrawal failed: ${error.message}`);
+      toast.error('Emergency withdrawal failed', { description: error.message });
     }
   }
 

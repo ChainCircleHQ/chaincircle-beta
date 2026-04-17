@@ -48,13 +48,17 @@ Everything else on the product surface either doesn't exist or is broken.
 - **Consequence:** every badge-related UI path silently fails; `useUserBadges`, `useOwnsBadge`, `useUserBadgeCount`, `useMintBadge` are all non-functional.
 - **Fix:** rewrite `useBadgeNFT.js` against the real contract — one badge per user, tier upgrades in place. Remove `useMintBadge` entirely (contract mints automatically via ReputationManager; users can't mint directly).
 
-### 2.3 ReputationManager events produce nothing
-- **Symptom:** Phase 4 backfill processed all 11.6M blocks of ReputationManager deployments — 0 events decoded.
-- **Root cause:** ChainCircleCore calls ReputationManager via interface only if `reputationManager != address(0)` (guard at [`ChainCircleCore.sol:290`](backend/contracts/core/ChainCircleCore.sol)). Either:
-  1. `setReputationManager()` was never called post-deploy, or
-  2. It was called but the contribution → onDeposit → ScoreChanged path is silently failing (interface mismatch between what ChainCircleCore expects and what ReputationManager exposes).
-- **Fix:** verify via `hardhat run scripts/check-wiring.js` that `ChainCircleCore.reputationManager` is set to the deployed `ReputationManager` address, and that a test contribution triggers a `ScoreChanged` event. If not wired, run `setReputationManager(<addr>)` from the owner key. Same check for `setBadgeNFT` on ReputationManager.
-- **Until this is fixed, no reputation/badge data will ever flow to Supabase.**
+### 2.3 ReputationManager never called — deployed bytecode is a pre-integration version
+- **Symptom:** Phase 4 backfill processed all of ReputationManager's history — 0 events decoded. Tx receipt of a recent `contribute()` shows only ChainCircleCore + CUSD logs, nothing from ReputationManager. Heaviest contributor queries `getUserReputation()` → `score: 0, totalPayments: 0` across all fields.
+- **Diagnostic run (2026-04-17):** `backend/scripts/check-wiring.js` reports all cross-contract pointers are correctly set — `core.reputationManager`, `rep.circleCore`, `rep.badgeNFT`, `badge.reputationManager` all match. Same owner for all three. **Wiring is fine.**
+- **Real root cause:** the deployed `ChainCircleCore` bytecode **does not match the source in this repo.** Source at [`ChainCircleCore.sol:290-292`](backend/contracts/core/ChainCircleCore.sol) calls `reputationManager.onDeposit(...)` on every contribution. Deployed bytecode does not. An earlier version of the core contract (without reputation callbacks) was deployed and never replaced.
+- **Consequences:** no reputation ever accrues → no tier changes → `BadgeNFT.mintBadge()` never fires → `canVote()` always false → governance UI would be dead.
+- **Fix options:**
+  - **A. Redeploy ChainCircleCore.** Breaks all 1,233 existing testnet circles; users would need to recreate. Simplest code-wise.
+  - **B. Deploy a wrapper contract** that intercepts user calls, invokes `ReputationManager.onDeposit` directly, then forwards to ChainCircleCore. Non-destructive but complex, and requires the wrapper to be granted `circleCore` status on ReputationManager.
+  - **C. Compute reputation off-chain in Supabase.** We have all the contribution/payout events indexed. A Postgres view (or materialized view refreshed by the indexer) computes score + tier + streak from the event stream per user. Synthesize "virtual" badge rows. No contract change, ships today. **Caveat:** reputation is no longer on-chain-verifiable or portable — it's a ChainCircle-app-only concept.
+  - **D. Redeploy in Phase 6 as part of the payout-model rework.** The hybrid-payout decision (§2.1) already requires redeploy. Fix both at once on fresh contracts.
+- **Recommendation:** **C now, D for mainnet.** Phase 5.5 adds off-chain reputation; Phase 6's contract redeploy fixes it properly on-chain.
 
 ### 2.4 WalletPreferences is dead code
 - **Symptom:** UI exists at [`LinkedWallets.jsx`](frontend/src/Pages/Profile/LinkedWallets.jsx) and [`PayoutPreferences.jsx`](frontend/src/Pages/Profile/PayoutPreferences.jsx). `useWalletPreferences` hook is complete. **None of the settings pages actually call it** — hook is imported but never invoked. Even if they did, the value would be ignored — `ChainCircleCore._processPayout()` always sends to the pre-calculated `payoutOrder[circleId][round]`, never reads `WalletPreferences.getPreferredWallet()`.

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Wallet, Trash2, Crown, Star } from "lucide-react";
+import { toast } from 'sonner';
 import PurpleBtn from '../../Components/PurpleBtn';
 import { useWalletPreferences } from '../../hooks/useWalletPreferences';
 import { usePushChainClient, usePushWalletContext, PushUI } from '@pushchain/ui-kit';
@@ -39,7 +40,7 @@ export default function LinkedWallets() {
 
   const handleRemoveWallet = async (walletAddress) => {
     if (linkedWallets.length <= 1) {
-      alert('Cannot remove your last wallet');
+      toast.error('Cannot remove your last wallet');
       return;
     }
     
@@ -53,7 +54,7 @@ export default function LinkedWallets() {
       const wallets = await getAllWalletDetails(userAddress);
       setLinkedWallets(wallets);
     } catch (error) {
-      alert('Failed to remove wallet: ' + error.message);
+      toast.error('Failed to remove wallet', { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -68,7 +69,7 @@ export default function LinkedWallets() {
 
     // Basic validation
     if (!walletAddress.startsWith('0x') || walletAddress.length !== 42) {
-      alert('Invalid wallet address. Please enter a valid Ethereum address.');
+      toast.error('Invalid wallet address', { description: 'Must be a valid 0x… Ethereum-style address.' });
       return;
     }
 
@@ -78,7 +79,7 @@ export default function LinkedWallets() {
     );
 
     if (isAlreadyLinked) {
-      alert('This wallet is already linked!');
+      toast.info('This wallet is already linked');
       return;
     }
 
@@ -90,7 +91,7 @@ export default function LinkedWallets() {
     setLoading(true);
     try {
       if (connectionStatus !== PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED || !userAddress) {
-        alert('Please connect your wallet first');
+        toast.error('Please connect your wallet first');
         return;
       }
 
@@ -98,12 +99,12 @@ export default function LinkedWallets() {
       const updatedWallets = await getAllWalletDetails(userAddress);
       setLinkedWallets(updatedWallets);
       setLoading(false);
-      alert('Wallet linked successfully!');
+      toast.success('Wallet linked');
     } catch (error) {
       if (error.message.includes('already linked')) {
-        alert('This wallet is already linked!');
+        toast.info('This wallet is already linked');
       } else {
-        alert('Failed to link wallet: ' + error.message);
+        toast.error('Failed to link wallet', { description: error.message });
       }
       setLoading(false);
     }

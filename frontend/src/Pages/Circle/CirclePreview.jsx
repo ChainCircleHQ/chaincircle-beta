@@ -10,6 +10,7 @@ import PurpleBtn from '../../Components/PurpleBtn';
 import { IoClose, IoShareSocial, IoDownload } from "react-icons/io5";
 import { FaCopy } from "react-icons/fa";
 import * as htmlToImage from 'html-to-image';
+import { toast } from 'sonner';
 
 export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const navigate = useNavigate();
@@ -33,10 +34,11 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const handleJoin = async () => {
     try {
       await joinCircle.mutateAsync(circleId);
+      toast.success('Joined circle');
       if (onClose) onClose();
       navigate('/chain/circle');
     } catch (error) {
-      alert('Failed to join circle. Please try again.');
+      toast.error('Failed to join circle', { description: error.message || 'Please try again.' });
     }
   };
 
@@ -59,9 +61,9 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
     if (circle?.inviteCode) {
       try {
         await navigator.clipboard.writeText(circle.inviteCode);
-        alert('Invite code copied!');
-      } catch (error) {
-        alert('Failed to copy invite code');
+        toast.success('Invite code copied');
+      } catch {
+        toast.error('Failed to copy invite code');
       }
     }
   };
@@ -70,9 +72,9 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
     if (circle?.creator) {
       try {
         await navigator.clipboard.writeText(circle.creator);
-        alert('Creator address copied!');
-      } catch (error) {
-        alert('Failed to copy creator address');
+        toast.success('Creator address copied');
+      } catch {
+        toast.error('Failed to copy creator address');
       }
     }
   };
@@ -96,7 +98,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
       link.click();
 
     } catch (error) {
-      alert(`Failed to export image: ${error.message || 'Unknown error'}. Please try again.`);
+      toast.error('Failed to export image', { description: error.message || 'Unknown error' });
     }
   };
 

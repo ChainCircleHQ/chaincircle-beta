@@ -18,6 +18,7 @@ import General404 from './Pages/General404'
 import { PushUniversalWalletProvider, PushUI } from '@pushchain/ui-kit'
 import ProtectedRoute from './Components/ProtectedRoute'
 import { Analytics } from "@vercel/analytics/react"
+import { Toaster } from 'sonner'
 
 function App() {
   const queryClient = new QueryClient();
@@ -76,6 +77,19 @@ function App() {
             <Route path="*" element={<General404 />} />
           </Routes>
           <Analytics />
+          <Toaster
+            position="bottom-right"
+            theme="dark"
+            richColors
+            closeButton
+            toastOptions={{
+              style: {
+                background: '#111111',
+                border: '1px solid #F4AEFF',
+                color: '#fff',
+              },
+            }}
+          />
         </BrowserRouter>
       </PushUniversalWalletProvider>
     </QueryClientProvider>

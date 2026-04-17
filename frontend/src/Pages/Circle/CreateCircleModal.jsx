@@ -8,6 +8,7 @@ import { PiCaretDownBold } from "react-icons/pi";
 import { IoClose } from "react-icons/io5";
 import { useCreateCircle } from '../../hooks/useCircleActions';
 import { GOAL_TYPES } from '../../utils/constants';
+import { CONTACT } from '../../config/contact';
 import { Link } from 'react-router';
 const isTabletOrMobile = window.innerWidth <= 1014;
 
@@ -761,9 +762,9 @@ const TermsModal = ({ onClose }) => {
               For questions or concerns about these Terms and Conditions, please contact us:
             </p>
             <ul className="list-none space-y-2 text-[#CCCCCC] text-base lg:text-lg ml-4">
-              <li>Email: support@chaincircle.org</li>
-              <li>Twitter: <a href="https://x.com/chaincircle_?s=21" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">@chaincircle_</a></li>
-              <li>GitHub: <a href="https://github.com/ChainCircleHQ" target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">ChainCircleHQ</a></li>
+              <li>Email: <a href={`mailto:${CONTACT.email}`} className="text-[#D548EC] hover:underline">{CONTACT.email}</a></li>
+              <li>Twitter: <a href={CONTACT.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">{CONTACT.twitter}</a></li>
+              <li>GitHub: <a href={CONTACT.githubUrl} target="_blank" rel="noopener noreferrer" className="text-[#D548EC] hover:underline">{CONTACT.github}</a></li>
             </ul>
           </section>
 
