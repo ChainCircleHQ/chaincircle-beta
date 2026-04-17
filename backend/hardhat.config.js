@@ -2,6 +2,13 @@ require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-verify");
 require("dotenv").config();
 
+// Fallback to deployed pushDonut defaults if env not set — keeps the
+// clone-and-run experience working without forcing new devs to create
+// a .env first. Override in .env when staging/mainnet lands.
+const PUSH_RPC = process.env.PUSH_CHAIN_RPC || "https://evm.rpc-testnet-donut-node1.push.org/";
+const PUSH_CHAIN_ID = Number(process.env.PUSH_CHAIN_ID) || 42101;
+const PUSH_EXPLORER = process.env.PUSH_CHAIN_EXPLORER || "https://donut.push.network";
+
 module.exports = {
     solidity: {
         version: "0.8.22",
@@ -15,8 +22,8 @@ module.exports = {
     },
     networks: {
         pushDonut: {
-            url: "https://evm.rpc-testnet-donut-node1.push.org/",
-            chainId: 42101,
+            url: PUSH_RPC,
+            chainId: PUSH_CHAIN_ID,
             accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
         },
     },
@@ -27,10 +34,10 @@ module.exports = {
         customChains: [
             {
                 network: "pushDonut",
-                chainId: 42101,
+                chainId: PUSH_CHAIN_ID,
                 urls: {
-                    apiURL: "https://donut.push.network/api",
-                    browserURL: "https://donut.push.network/",
+                    apiURL: `${PUSH_EXPLORER}/api`,
+                    browserURL: `${PUSH_EXPLORER}/`,
                 },
             },
         ],

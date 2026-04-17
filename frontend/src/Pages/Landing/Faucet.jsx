@@ -3,6 +3,7 @@ import { useCircleContract } from '../../hooks/useCircleContract'
 import { useCUSDBalance, useTimeUntilNextClaim, useClaimFaucet } from '../../hooks/useFaucet'
 import PurpleBtn from '../../Components/PurpleBtn'
 import { FaFaucet, FaCheckCircle, FaClock, FaCopy, FaExternalLinkAlt } from 'react-icons/fa'
+import { CONTRACT_ADDRESSES } from '../../constants/contracts'
 
 export default function Faucet() {
   const { userAddress, isConnected } = useCircleContract()
@@ -15,11 +16,8 @@ export default function Faucet() {
   const [countdown, setCountdown] = useState(5)
   const [copied, setCopied] = useState(false)
 
-  // CUSD Contract Address
-  const CUSD_CONTRACT_ADDRESS = '0x7D5Dbda57E186f7e905e5E77224Cd60054fF41f3'
-
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(CUSD_CONTRACT_ADDRESS)
+    navigator.clipboard.writeText(CONTRACT_ADDRESSES.CUSD)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -269,7 +267,7 @@ export default function Faucet() {
           </p>
           <div className="flex items-center gap-3 bg-black/50 border border-gray-700 rounded-lg p-4">
             <code className="flex-1 text-[12px] lg:text-[14px] text-[#D548EC] break-all font-mono">
-              {CUSD_CONTRACT_ADDRESS}
+              {CONTRACT_ADDRESSES.CUSD}
             </code>
             <button
               onClick={handleCopyAddress}
