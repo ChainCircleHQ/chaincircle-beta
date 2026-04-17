@@ -161,33 +161,13 @@ export default function Notification() {
     return { Transactions: transactions, Reminders: reminders, Services: [] };
   }, [blockchainNotifications]);
 
-  // Mock Services data (kept as is)
-  const mockServices = [
-    {
-      id: 1,
-      icon: <BiDollarCircle className="text-white" size={20} />,
-      iconBg: 'bg-purple-600',
-      title: 'System maintenance scheduled',
-      time: '2 hours ago',
-      amount: '',
-      type: 'service'
-    },
-    {
-      id: 2,
-      icon: <TbArrowUpRight className="text-white" size={20} />,
-      iconBg: 'bg-purple-600',
-      title: 'New feature available',
-      time: '1 day ago',
-      amount: '',
-      type: 'service'
-    }
-  ];
-
-  // Combine real and mock data
+  // Services tab is a placeholder for future system announcements (e.g.
+  // maintenance windows, feature launches). No data source yet — a
+  // service_announcements Supabase table + admin UI would feed it.
   const notifications = {
     Transactions: transformedNotifications.Transactions,
     Reminders: transformedNotifications.Reminders,
-    Services: mockServices
+    Services: [],
   };
 
 

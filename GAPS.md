@@ -202,20 +202,22 @@ Inserting these into the existing phase plan from [`task_plan.md`](../task_plan.
 
 ---
 
-## 7. Decisions I need from you before building further
+## 7. Decisions (locked 2026-04-17)
 
-1. **§2.1 Payout model:** A (auto-push) / B (full pull) / C (hybrid auto-escrow + pull to preferred wallet).
-   - **My strong rec: C** — enables cross-chain payouts, which is the product's whole pitch. Requires contract redeploy.
+1. **§2.1 Payout model: HYBRID (C)** — auto-escrow on round completion, pull-to-preferred-wallet via Push UEA cross-chain delivery. Requires contract redeploy in Phase 6.
 
-2. **§2.5 Governance for v1:** ship it or defer?
-   - **My rec: defer.** It's not working correctly and not essential. Come back in v2 once there's user demand.
+2. **§2.5 Governance for v1: SHIP.** `execute()` must be fixed to actually enforce — add `onlyGovernance` on a new `ChainCircleCore.executeGovernanceAction()` and grant via `setGovernanceModule(addr)`. Build full voting UI in Phase 7.
 
-3. **§3.2 Public vs private circles:** is there a flag today, or is every circle effectively public (just invite-only by virtue of nobody knowing the code)?
+3. **§3.2 Public/private: TBD.** Treat all circles as effectively public for now; invite code is the sharing mechanism. Revisit if users ask for truly private circles.
 
-4. **§4.3 Mainnet yield source:** do we have a target partner (Aave, Compound, cooperative vault) or is mainnet itself deferred for now?
+4. **§4.3 Mainnet yield: AAVE.** Testnet stays on MockYield. Swap happens as part of Phase 9.
 
-5. **§4.4 Protocol fee:** keep the 20%-of-interest model (contract change) or drop it (README change)?
+5. **§4.4 Protocol fee: NO ONCHAIN FEE.** Remove the "20% of interest" claim from README. Fees abstracted at a non-contract layer (middleware/UI) when the time comes.
 
-6. **Phase 8 AI scope:** pick 2-3 features to lead with. Everything is feasible but doing all at once is a lot.
+6. **Phase 8 AI: ALL OF THE ABOVE.** Reputation insights + circle recommendations + chat assistant + activity summaries. Full scope via Supabase Edge Function proxy (keys server-side).
 
-Answer these and I can start Phase 5 + 5.5 in parallel. 5 is pure frontend work (Supabase hook swaps) while you're thinking on the bigger architectural decisions.
+---
+
+## 8. Narrative for the public repo
+
+Since GAPS.md is committed on `main`: frame ChainCircle prominently as **"Push Chain testnet build — production hardening in progress."** Add banner in README + SECURITY.md. This makes the gap analysis look like honest engineering instead of a vulnerability roadmap.

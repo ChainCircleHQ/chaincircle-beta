@@ -1,612 +1,453 @@
+// Phase 5: read path swapped from on-chain event scans to Supabase.
+// Writes still go on-chain via useCircleActions. Return shapes match the
+// pre-Phase-5 hooks so call sites don't need changes.
+//
+// Still on-chain (for now):
+//   - useUserStats — reputation data isn't indexed yet (ReputationManager
+//     callbacks aren't wired at the contract level; see GAPS.md §2.3)
+//   - useCircleByInviteCode — invite codes aren't in Supabase yet
+
 import { useQuery } from '@tanstack/react-query';
 import { useCircleContract } from './useCircleContract';
 import { ethers } from 'ethers';
+import { supabase } from '../lib/supabase';
 import { formatActivityType, getActivityIconType, calculateProgress } from '../utils/circleHelpers';
 import formatCurrency from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
 
-// Hook to fetch user's circles
+// ---- helpers -------------------------------------------------------------
+
+// contribution_amount is stored as raw base units (CUSD has 6 decimals).
+// Supabase returns it as a string (bigint → json string to avoid precision loss).
+const fmtUnits = (raw) => (raw == null ? '0' : ethers.formatUnits(String(raw), 6));
+const lc = (addr) => (addr ? String(addr).toLowerCase() : addr);
+
+// Maps a row from circles_with_counts view to the shape the UI expects.
+// Note: `vaultBalance` is approximated from total_pooled (set at circle
+// creation to contribution_amount * member_cap). Accurate live vault balance
+// requires summing contributions - payouts; revisit in Phase 5.5.
+function mapCircleRow(row) {
+    if (!row) return null;
+    const status = Number(row.status ?? 0);
+    const isActive = status === 1;
+    const calculatedProgress = calculateProgress(
+        Number(row.current_round ?? 0),
+        Number(row.duration_months ?? 0),
+        Number(row.member_count ?? 0),
+        Number(row.member_cap ?? 0),
+        isActive,
+        status,
+    );
+    return {
+        id: String(row.circle_id),
+        name: row.name ?? '',
+        goalType: Number(row.goal_type ?? 0),
+        amount: fmtUnits(row.contribution_amount),
+        duration: Number(row.duration_months ?? 0),
+        currentRound: Number(row.current_round ?? 0),
+        maxMembers: Number(row.member_cap ?? 0),
+        members: Number(row.member_count ?? 0),
+        frequency: Number(row.frequency ?? 0),
+        isActive,
+        status,
+        createdAt: Number(row.created_ts ?? 0),
+        startAt: Number(row.started_ts ?? 0),
+        vaultBalance: fmtUnits(row.total_pooled),
+        creator: row.creator_address,
+        progress: calculatedProgress,
+        contractProgress: calculatedProgress,
+        icon: null, // frontend can derive from goalType; contract's `getCircleProgress.icon` was never really used
+    };
+}
+
+async function fetchMemberAddresses(circleId) {
+    const { data, error } = await supabase
+        .from('circle_members')
+        .select('user_address, position')
+        .eq('circle_id', circleId)
+        .order('position', { ascending: true, nullsFirst: false });
+    if (error) throw error;
+    return (data ?? []).map((r) => r.user_address);
+}
+
+// ---- hooks ---------------------------------------------------------------
+
 export function useUserCircles() {
-  const { getContract, userAddress, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['userCircles', userAddress],
-    queryFn: async () => {
-      const contract = await getContract('core');
-      const circleIds = await contract.getUserCircles(userAddress);
-
-
-      // Fetch details for each circle
-      const circles = await Promise.all(
-        circleIds.map(async (id) => {
-          const details = await contract.getCircleDetails(id);
-          const progress = await contract.getCircleProgress(id);
-
-          // Get member count for progress calculation
-          const maxMembers = Number(details.maxMembers);
-          const memberAddresses = [];
-
-          for (let i = 0; i < maxMembers; i++) {
-            try {
-              const memberAddress = await contract.circleMembers(id, i);
-              if (memberAddress !== '0x0000000000000000000000000000000000000000') {
-                memberAddresses.push(memberAddress);
-              }
-            } catch (e) {
-              break;
-            }
-          }
-
-          // Calculate progress based on circle status
-          const calculatedProgress = calculateProgress(
-            Number(details.currentRound),
-            Number(details.duration),
-            memberAddresses.length,
-            maxMembers,
-            details.isActive,
-            Number(details.status)
-          );
-
-          return {
-            id: id.toString(),
-            name: details.name,
-            goalType: Number(details.goalType),
-            amount: ethers.formatUnits(details.amount, 6),
-            duration: Number(details.duration),
-            currentRound: Number(details.currentRound),
-            maxMembers: maxMembers,
-            members: memberAddresses.length,
-            frequency: Number(details.frequency),
-            isActive: details.isActive,
-            status: Number(details.status),
-            createdAt: Number(details.createdAt),
-            startAt: Number(details.startAt),
-            vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
-            creator: details.creator,
-            progress: calculatedProgress,
-            contractProgress: Number(progress.percentage), // Keep contract value for reference
-            icon: progress.icon
-          };
-        })
-      );
-
-
-      return circles;
-    },
-    enabled: isConnected && !!userAddress,
-    staleTime: 30000, // 30 seconds
-  });
+    const { userAddress, isConnected } = useCircleContract();
+    return useQuery({
+        queryKey: ['userCircles.db', userAddress],
+        queryFn: async () => {
+            const addr = lc(userAddress);
+            // Circles where user is a member (creator is auto-added as member 0).
+            const { data: memberRows, error: memberErr } = await supabase
+                .from('circle_members')
+                .select('circle_id')
+                .eq('user_address', addr);
+            if (memberErr) throw memberErr;
+            const ids = [...new Set((memberRows ?? []).map((r) => r.circle_id))];
+            if (!ids.length) return [];
+            const { data: circles, error } = await supabase
+                .from('circles_with_counts')
+                .select('*')
+                .in('circle_id', ids)
+                .order('created_block', { ascending: false });
+            if (error) throw error;
+            return (circles ?? []).map(mapCircleRow);
+        },
+        enabled: isConnected && !!userAddress,
+        staleTime: 20_000,
+    });
 }
 
-// Hook to fetch user's active circles
 export function useActiveCircles() {
-  const { data: allCircles, ...rest } = useUserCircles();
-
-  return {
-    ...rest,
-    data: allCircles?.filter(circle => circle.isActive) || []
-  };
+    const { data: all, ...rest } = useUserCircles();
+    return { ...rest, data: all?.filter((c) => c.isActive) ?? [] };
 }
 
-// Hook to fetch circle details by ID
 export function useCircleDetails(circleId) {
-  const { getContract, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['circleDetails', circleId],
-    queryFn: async () => {
-      try {
-        const contract = await getContract('core');
-        const details = await contract.getCircleDetails(circleId);
-        const progress = await contract.getCircleProgress(circleId);
-        const inviteCode = await contract.getCircleInviteCode(circleId);
-
-        // Fetch all members by looping through the array
-        // maxMembers tells us how many to check
-        const maxMembers = Number(details.maxMembers);
-        const memberAddresses = [];
-
-        for (let i = 0; i < maxMembers; i++) {
-          try {
-            const memberAddress = await contract.circleMembers(circleId, i);
-            // Check if address is not zero address (empty slot)
-            if (memberAddress !== '0x0000000000000000000000000000000000000000') {
-              memberAddresses.push(memberAddress);
-            }
-          } catch (e) {
-            // Stop when we hit an out of bounds error
-            break;
-          }
-        }
-
-        // Calculate progress based on circle status
-        const calculatedProgress = calculateProgress(
-          Number(details.currentRound),
-          Number(details.duration),
-          memberAddresses.length,
-          Number(details.maxMembers),
-          details.isActive,
-          Number(details.status)
-        );
-
-        return {
-          id: circleId,
-          name: details.name,
-          goalType: Number(details.goalType),
-          amount: ethers.formatUnits(details.amount, 6),
-          duration: Number(details.duration),
-          currentRound: Number(details.currentRound),
-          maxMembers: Number(details.maxMembers),
-          frequency: Number(details.frequency),
-          isActive: details.isActive,
-          status: Number(details.status),
-          createdAt: Number(details.createdAt),
-          startAt: Number(details.startAt),
-          vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
-          creator: details.creator,
-          progress: calculatedProgress,
-          contractProgress: Number(progress.percentage), // Keep contract value for reference
-          icon: progress.icon,
-          members: memberAddresses.length,
-          memberAddresses: memberAddresses,
-          inviteCode
-        };
-      } catch (error) {
-        console.error('Error fetching circle details:', error);
-        throw error;
-      }
-    },
-    enabled: isConnected && !!circleId,
-    staleTime: 20000,
-    retry: 1, // Only retry once to fail faster
-  });
-}
-
-// Hook to fetch circle by name
-export function useCircleByName(name) {
-  const { getContract, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['circleByName', name],
-    queryFn: async () => {
-      const contract = await getContract('core');
-      const circleId = await contract.getCircleByName(name);
-      if (circleId.toString() === '0') return null;
-
-      const details = await contract.getCircleDetails(circleId);
-      const progress = await contract.getCircleProgress(circleId);
-
-      return {
-        id: circleId.toString(),
-        name: details.name,
-        goalType: Number(details.goalType),
-        amount: ethers.formatUnits(details.amount, 6),
-        duration: Number(details.duration),
-        currentRound: Number(details.currentRound),
-        maxMembers: Number(details.maxMembers),
-        frequency: Number(details.frequency),
-        isActive: details.isActive,
-        status: Number(details.status),
-        vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
-        progress: Number(progress.percentage)
-      };
-    },
-    enabled: isConnected && !!name,
-  });
-}
-
-// Hook to fetch recent activities with transaction hashes and circle names
-export function useRecentActivities(limit = 10) {
-  const { getContract, userAddress, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['recentActivities', userAddress, limit],
-    queryFn: async () => {
-      try {
-        const contract = await getContract('core');
-        const activities = await contract.getRecentActivity(userAddress, limit);
-
-        // Fetch transaction hashes from ActivityLogged events (optional, non-blocking)
-        let txHashMap = {};
-        try {
-          const provider = contract.runner.provider;
-          const currentBlock = await provider.getBlockNumber();
-          // Increase search range to 50000 blocks to catch older activities
-          const fromBlock = Math.max(0, currentBlock - 50000);
-
-          const filter = contract.filters.ActivityLogged(userAddress);
-          const events = await contract.queryFilter(filter, fromBlock, currentBlock);
-
-          // Batch fetch all blocks to improve performance
-          const blockPromises = events.map(event => event.getBlock().catch(() => null));
-          const blocks = await Promise.all(blockPromises);
-
-          events.forEach((event, index) => {
-            const block = blocks[index];
-            if (!block) return; // Skip if block fetch failed
-
-            try {
-              // Normalize all values to strings for consistent key matching
-              const circleId = event.args.circleId.toString();
-              const activityType = event.args.activityType;
-              const amount = event.args.amount.toString();
-              const timestamp = block.timestamp.toString();
-
-              const compositeKey = `${circleId}-${activityType}-${amount}-${timestamp}`;
-              txHashMap[compositeKey] = event.transactionHash;
-            } catch (e) {
-              // Skip if we can't process this event
-              console.warn('Error processing event:', e);
-            }
-          });
-
-          console.log(`Mapped ${Object.keys(txHashMap).length} transaction hashes from ${events.length} events`);
-        } catch (eventError) {
-          console.warn('Could not fetch transaction hashes, continuing without them:', eventError);
-          // Continue without transaction hashes - not critical
-        }
-
-        // Fetch circle names and format activities with descriptive titles
-        const activitiesWithDetails = await Promise.all(
-          activities.map(async (activity) => {
-            const timestamp = Number(activity.timestamp);
-            let circleName = '';
-
-            // Fetch circle name if circleId exists
-            try {
-              if (activity.circleId && activity.circleId.toString() !== '0') {
-                const circleDetails = await contract.getCircleDetails(activity.circleId);
-                circleName = circleDetails.name;
-              }
-            } catch (e) {
-              // Circle might not exist anymore
-              circleName = 'a circle';
-            }
-
-            // Format title based on activity type and circle name
-            let title;
-            const activityType = activity.activityType;
-            if (activityType === 'CONTRIBUTE') {
-              title = `You contributed to ${circleName}`;
-            } else if (activityType === 'WITHDRAW') {
-              title = `You withdrew from ${circleName}`;
-            } else if (activityType === 'INTEREST') {
-              title = 'You earned interest';
-            } else if (activityType === 'JOINED') {
-              title = `You joined ${circleName}`;
-            } else if (activityType === 'COMPLETED') {
-              title = `${circleName} completed`;
-            } else if (activityType === 'CREATE') {
-              title = `You created ${circleName}`;
-            } else {
-              title = formatActivityType(activityType);
-            }
-
-            // Build same composite key to lookup transaction hash
-            // Ensure all values are normalized to strings for consistent matching
-            const compositeKey = `${activity.circleId.toString()}-${activityType}-${activity.amount.toString()}-${timestamp.toString()}`;
-
-            const txHash = txHashMap[compositeKey];
-            if (!txHash) {
-              console.warn('No transaction hash found for activity:', {
-                compositeKey,
-                circleId: activity.circleId.toString(),
-                activityType,
-                amount: activity.amount.toString(),
-                timestamp: timestamp.toString(),
-                availableKeys: Object.keys(txHashMap).slice(0, 3) // Log first 3 keys for debugging
-              });
-            }
-
+    const { isConnected } = useCircleContract();
+    return useQuery({
+        queryKey: ['circleDetails.db', circleId],
+        queryFn: async () => {
+            const id = Number(circleId);
+            const { data, error } = await supabase
+                .from('circles_with_counts')
+                .select('*')
+                .eq('circle_id', id)
+                .maybeSingle();
+            if (error) throw error;
+            if (!data) return null;
+            const memberAddresses = await fetchMemberAddresses(id);
             return {
-              id: `${activity.circleId}-${timestamp}`,
-              type: getActivityIconType(activityType),
-              title: title,
-              timeAgo: formatDate(timestamp),
-              amount: formatCurrency(ethers.formatUnits(activity.amount, 6)),
-              circleId: activity.circleId.toString(),
-              circleName: circleName,
-              timestamp: timestamp,
-              txHash: txHash || null
+                ...mapCircleRow(data),
+                memberAddresses,
+                // inviteCode is still fetched from chain in the UI where needed
+                // (useCircleByInviteCode) — not in Supabase yet.
+                inviteCode: null,
             };
-          })
-        );
-
-        return activitiesWithDetails;
-      } catch (error) {
-        console.error('Error fetching recent activities:', error);
-        // Return empty array instead of throwing to prevent UI errors
-        return [];
-      }
-    },
-    enabled: isConnected && !!userAddress,
-    staleTime: 15000,
-    retry: 2, // Retry twice on failure
-  });
+        },
+        enabled: isConnected && !!circleId,
+        staleTime: 15_000,
+        retry: 1,
+    });
 }
 
-// Hook to fetch user stats
+export function useCircleByName(name) {
+    const { isConnected } = useCircleContract();
+    return useQuery({
+        queryKey: ['circleByName.db', name],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('circles_with_counts')
+                .select('*')
+                .eq('name', name)
+                .maybeSingle();
+            if (error) throw error;
+            return mapCircleRow(data);
+        },
+        enabled: isConnected && !!name,
+        staleTime: 30_000,
+    });
+}
+
+export function useRecentActivities(limit = 10) {
+    const { userAddress, isConnected } = useCircleContract();
+    return useQuery({
+        queryKey: ['recentActivities.db', userAddress, limit],
+        queryFn: async () => {
+            const addr = lc(userAddress);
+            const { data, error } = await supabase
+                .from('activity_log')
+                .select('*')
+                .eq('actor_address', addr)
+                .order('ts', { ascending: false })
+                .limit(limit);
+            if (error) throw error;
+
+            // Enrich with circle names where circle_id is known (batch one query)
+            const ids = [...new Set((data ?? []).filter((r) => r.circle_id).map((r) => r.circle_id))];
+            let nameById = new Map();
+            if (ids.length) {
+                const { data: cRows } = await supabase
+                    .from('circles')
+                    .select('circle_id, name')
+                    .in('circle_id', ids);
+                nameById = new Map((cRows ?? []).map((c) => [c.circle_id, c.name]));
+            }
+
+            // Reshape to the UI's legacy activity format.
+            return (data ?? []).map((r) => {
+                const circleName = nameById.get(r.circle_id) || (r.circle_id ? 'a circle' : '');
+                const unix = r.ts ? Math.floor(new Date(r.ts).getTime() / 1000) : 0;
+                let title;
+                const typeMap = {
+                    contribution: `You contributed to ${circleName}`,
+                    payout: `You received a payout from ${circleName}`,
+                    reputation: 'Reputation changed',
+                    badge: 'Badge minted',
+                };
+                title = typeMap[r.kind] || formatActivityType(r.kind?.toUpperCase() || 'ACTIVITY');
+                return {
+                    id: `${r.circle_id ?? 'x'}-${unix}-${r.tx_hash?.slice(2, 10) ?? ''}`,
+                    type: getActivityIconType(
+                        r.kind === 'contribution' ? 'CONTRIBUTE' :
+                        r.kind === 'payout' ? 'WITHDRAW' :
+                        r.kind === 'reputation' ? 'INTEREST' :
+                        r.kind === 'badge' ? 'COMPLETED' : 'ACTIVITY',
+                    ),
+                    title,
+                    timeAgo: formatDate(unix),
+                    amount: formatCurrency(fmtUnits(r.amount)),
+                    circleId: r.circle_id ? String(r.circle_id) : null,
+                    circleName,
+                    timestamp: unix,
+                    txHash: r.tx_hash || null,
+                };
+            });
+        },
+        enabled: isConnected && !!userAddress,
+        staleTime: 10_000,
+        refetchInterval: 30_000,
+    });
+}
+
+// useUserStats — STILL ON-CHAIN.
+// ReputationManager callbacks aren't firing (ScoreChanged backfill returned
+// 0 events across 11.6M blocks), so Supabase has no reputation data. Falls
+// back to direct contract reads until GAPS.md §2.3 is fixed.
 export function useUserStats() {
-  const { getContract, userAddress, isConnected } = useCircleContract();
+    const { getContract, userAddress, isConnected } = useCircleContract();
+    return useQuery({
+        queryKey: ['userStats', userAddress],
+        queryFn: async () => {
+            const contract = await getContract('core');
+            const reputationContract = await getContract('reputation');
 
-  return useQuery({
-    queryKey: ['userStats', userAddress],
-    queryFn: async () => {
-      const contract = await getContract('core');
-      const reputationContract = await getContract('reputation');
-
-      const [
-        totalContributions,
-        totalInterest,
-        activeCircleCount,
-        userCircles,
-        reputation
-      ] = await Promise.all([
-        contract.getUserTotalContributions(userAddress),
-        contract.getUserTotalInterest(userAddress),
-        contract.getUserActiveCircleCount(userAddress),
-        contract.getUserCircles(userAddress),
-        reputationContract.getUserReputation(userAddress)
-      ]);
-
-      // If accountAge is 0 but user has circles, get the first circle's creation date
-      let accountAge = Number(reputation.accountAge);
-      if (accountAge === 0 && userCircles.length > 0) {
-        try {
-          const firstCircleDetails = await contract.getCircleDetails(userCircles[0]);
-          accountAge = Number(firstCircleDetails.createdAt);
-        } catch (error) {
-          console.error('Error fetching first circle creation date:', error);
-        }
-      }
-
-      return {
-        totalSaved: ethers.formatUnits(totalContributions, 6),
-        totalInterest: ethers.formatUnits(totalInterest, 6),
-        activeCircles: Number(activeCircleCount),
-        totalCircles: userCircles.length,
-        reputation: {
-          score: Number(reputation.score),
-          tier: reputation.tier,
-          completedCircles: Number(reputation.completedCircles),
-          onTimeRate: Number(reputation.onTimeRate),
-          totalSaved: ethers.formatUnits(reputation.totalSaved, 6),
-          accountAge: accountAge,
-          longestStreak: Number(reputation.longestStreak)
-        }
-      };
-    },
-    enabled: isConnected && !!userAddress,
-    staleTime: 30000,
-  });
-}
-
-// Hook to fetch global stats
-export function useGlobalStats() {
-  const { getContract } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['globalStats'],
-    queryFn: async () => {
-      const contract = await getContract('core');
-
-      const [totalPooled, activeCircleCount, circleCounter] = await Promise.all([
-        contract.getTotalPooled(),
-        contract.getActiveCircleCount(),
-        contract.circleCounter()
-      ]);
-
-
-      const stats = {
-        totalPooled: ethers.formatUnits(totalPooled, 6),
-        activeCircles: Number(activeCircleCount),
-        totalCircles: Number(circleCounter)
-      };
-
-
-      return stats;
-    },
-    enabled: true, // Global stats are public and don't require wallet connection
-    staleTime: 60000, // 1 minute
-  });
-}
-
-// Hook to fetch user's payout history
-export function usePayoutHistory() {
-  const { getContract, userAddress, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['payoutHistory', userAddress],
-    queryFn: async () => {
-      const contract = await getContract('core');
-      const history = await contract.getUserPayoutHistory(userAddress);
-
-      // Fetch circle details to get goalType for each payout
-      const payoutsWithDetails = await Promise.all(
-        history.circleIds.map(async (circleId, index) => {
-          const details = await contract.getCircleDetails(circleId);
-
-          return {
-            circleId: circleId.toString(),
-            circleName: history.circleNames[index],
-            goalType: Number(details.goalType),
-            amount: formatCurrency(ethers.formatUnits(history.amounts[index], 6)),
-            date: formatDate(Number(history.dates[index])),
-            claimed: history.claimed[index],
-            timestamp: Number(history.dates[index])
-          };
-        })
-      );
-
-      return payoutsWithDetails;
-    },
-    enabled: isConnected && !!userAddress,
-    staleTime: 30000,
-  });
-}
-
-// Hook to fetch upcoming payouts
-export function useUpcomingPayouts() {
-  const { getContract, userAddress, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['upcomingPayouts', userAddress],
-    queryFn: async () => {
-      const contract = await getContract('core');
-      const upcoming = await contract.getUserUpcomingPayouts(userAddress);
-
-      // Fetch circle details to get goalType for each payout
-      const upcomingWithDetails = await Promise.all(
-        upcoming.circleIds.map(async (circleId, index) => {
-          const details = await contract.getCircleDetails(circleId);
-
-          return {
-            circleId: circleId.toString(),
-            circleName: upcoming.circleNames[index],
-            goalType: Number(details.goalType),
-            estimatedDate: formatDate(Number(upcoming.estimatedDates[index])),
-            timestamp: Number(upcoming.estimatedDates[index])
-          };
-        })
-      );
-
-      return upcomingWithDetails;
-    },
-    enabled: isConnected && !!userAddress,
-    staleTime: 30000,
-  });
-}
-
-// Hook to search circles
-export function useSearchCircles(searchTerm) {
-  const { getContract, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['searchCircles', searchTerm],
-    queryFn: async () => {
-      const contract = await getContract('core');
-      const results = await contract.searchCircles(searchTerm);
-
-      return Promise.all(
-        results.map(async (id) => {
-          const details = await contract.getCircleDetails(id);
-          const progress = await contract.getCircleProgress(id);
-
-          return {
-            id: id.toString(),
-            name: details.name,
-            goalType: Number(details.goalType),
-            amount: ethers.formatUnits(details.amount, 6),
-            duration: Number(details.duration),
-            currentRound: Number(details.currentRound),
-            maxMembers: Number(details.maxMembers),
-            frequency: Number(details.frequency),
-            status: Number(details.status),
-            progress: Number(progress.percentage),
-            icon: progress.icon
-          };
-        })
-      );
-    },
-    enabled: isConnected && !!searchTerm && searchTerm.length >= 3,
-    staleTime: 20000,
-  });
-}
-
-// Hook to find circle by invite code
-export function useCircleByInviteCode(inviteCode) {
-  const { getContract, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['circleByInviteCode', inviteCode],
-    queryFn: async () => {
-      const contract = await getContract('core');
-
-      // Get total number of circles
-      const circleCounter = await contract.circleCounter();
-      const totalCircles = Number(circleCounter);
-
-      // Optimized: Check circles in parallel batches to reduce lookup time
-      // from O(n) sequential to parallel batch processing
-      const BATCH_SIZE = 100; // Check 100 circles at a time
-      const normalizedInviteCode = inviteCode.toLowerCase();
-
-      for (let start = 1; start <= totalCircles; start += BATCH_SIZE) {
-        const end = Math.min(start + BATCH_SIZE, totalCircles + 1);
-
-        // Create array of promises to check invite codes in parallel
-        const checkPromises = [];
-        for (let i = start; i < end; i++) {
-          checkPromises.push(
-            contract.getCircleInviteCode(i)
-              .then(code => ({ id: i, code: code.toLowerCase() }))
-              .catch(() => ({ id: i, code: null })) // Handle errors gracefully
-          );
-        }
-
-        // Wait for all checks in this batch to complete
-        const results = await Promise.all(checkPromises);
-
-        // Check if any match
-        const match = results.find(r => r.code === normalizedInviteCode);
-
-        if (match) {
-          // Found matching circle, fetch full details
-          const circleId = match.id;
-
-          try {
-            const [details, progress] = await Promise.all([
-              contract.getCircleDetails(circleId),
-              contract.getCircleProgress(circleId)
+            const [totalContributions, totalInterest, activeCircleCount, userCircles, reputation] = await Promise.all([
+                contract.getUserTotalContributions(userAddress),
+                contract.getUserTotalInterest(userAddress),
+                contract.getUserActiveCircleCount(userAddress),
+                contract.getUserCircles(userAddress),
+                reputationContract.getUserReputation(userAddress),
             ]);
 
-            // Fetch all members in parallel
-            const maxMembers = Number(details.maxMembers);
-            const memberPromises = [];
-
-            for (let j = 0; j < maxMembers; j++) {
-              memberPromises.push(
-                contract.circleMembers(circleId, j)
-                  .then(addr => addr !== '0x0000000000000000000000000000000000000000' ? addr : null)
-                  .catch(() => null)
-              );
+            let accountAge = Number(reputation.accountAge);
+            if (accountAge === 0 && userCircles.length > 0) {
+                try {
+                    const first = await contract.getCircleDetails(userCircles[0]);
+                    accountAge = Number(first.createdAt);
+                } catch { /* ignore */ }
             }
-
-            const memberResults = await Promise.all(memberPromises);
-            const memberAddresses = memberResults.filter(addr => addr !== null);
-
             return {
-              id: circleId.toString(),
-              name: details.name,
-              goalType: Number(details.goalType),
-              amount: ethers.formatUnits(details.amount, 6),
-              duration: Number(details.duration),
-              currentRound: Number(details.currentRound),
-              maxMembers: maxMembers,
-              members: memberAddresses.length,
-              frequency: Number(details.frequency),
-              isActive: details.isActive,
-              status: Number(details.status),
-              createdAt: Number(details.createdAt),
-              startAt: Number(details.startAt),
-              vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
-              creator: details.creator,
-              progress: Number(progress.percentage),
-              icon: progress.icon,
-              inviteCode: match.code,
-              memberAddresses: memberAddresses
+                totalSaved: ethers.formatUnits(totalContributions, 6),
+                totalInterest: ethers.formatUnits(totalInterest, 6),
+                activeCircles: Number(activeCircleCount),
+                totalCircles: userCircles.length,
+                reputation: {
+                    score: Number(reputation.score),
+                    tier: reputation.tier,
+                    completedCircles: Number(reputation.completedCircles),
+                    onTimeRate: Number(reputation.onTimeRate),
+                    totalSaved: ethers.formatUnits(reputation.totalSaved, 6),
+                    accountAge,
+                    longestStreak: Number(reputation.longestStreak),
+                },
             };
-          } catch (error) {
-            console.error('Error fetching circle details:', error);
-            throw error;
-          }
-        }
-      }
+        },
+        enabled: isConnected && !!userAddress,
+        staleTime: 30_000,
+    });
+}
 
-      // No circle found with this invite code
-      return null;
-    },
-    enabled: isConnected && !!inviteCode && inviteCode.length > 20, // Invite codes are hex strings
-    staleTime: 60000, // Cache for 1 minute
-  });
+export function useGlobalStats() {
+    return useQuery({
+        queryKey: ['globalStats.db'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('global_stats')
+                .select('*')
+                .maybeSingle();
+            if (error) throw error;
+            if (!data) return { totalPooled: '0', activeCircles: 0, totalCircles: 0 };
+            return {
+                totalPooled: fmtUnits(data.total_pooled_raw),
+                activeCircles: Number(data.active_circles ?? 0),
+                totalCircles: Number(data.total_circles ?? 0),
+            };
+        },
+        staleTime: 60_000,
+        refetchInterval: 60_000,
+    });
+}
+
+export function usePayoutHistory() {
+    const { userAddress, isConnected } = useCircleContract();
+    return useQuery({
+        queryKey: ['payoutHistory.db', userAddress],
+        queryFn: async () => {
+            const addr = lc(userAddress);
+            const { data: payouts, error } = await supabase
+                .from('payouts')
+                .select('*')
+                .eq('recipient_address', addr)
+                .order('block_number', { ascending: false });
+            if (error) throw error;
+            if (!payouts?.length) return [];
+            const ids = [...new Set(payouts.map((p) => p.circle_id))];
+            const { data: circles } = await supabase
+                .from('circles')
+                .select('circle_id, name, goal_type')
+                .in('circle_id', ids);
+            const byId = new Map((circles ?? []).map((c) => [c.circle_id, c]));
+            return payouts.map((p) => {
+                const c = byId.get(p.circle_id) || {};
+                const ts = Math.floor(new Date(p.block_timestamp).getTime() / 1000);
+                return {
+                    circleId: String(p.circle_id),
+                    circleName: c.name ?? 'a circle',
+                    goalType: Number(c.goal_type ?? 0),
+                    amount: formatCurrency(fmtUnits(p.amount)),
+                    date: formatDate(ts),
+                    claimed: true, // payouts in our DB are completed transfers
+                    timestamp: ts,
+                };
+            });
+        },
+        enabled: isConnected && !!userAddress,
+        staleTime: 30_000,
+    });
+}
+
+export function useUpcomingPayouts() {
+    const { userAddress, isConnected } = useCircleContract();
+    return useQuery({
+        queryKey: ['upcomingPayouts.db', userAddress],
+        queryFn: async () => {
+            const addr = lc(userAddress);
+            // Active circles where user is a member AND hasn't received payout yet.
+            const { data: memberships, error } = await supabase
+                .from('circle_members')
+                .select('circle_id, has_received_payout')
+                .eq('user_address', addr)
+                .eq('has_received_payout', false);
+            if (error) throw error;
+            if (!memberships?.length) return [];
+            const ids = memberships.map((m) => m.circle_id);
+            const { data: circles } = await supabase
+                .from('circles_with_counts')
+                .select('*')
+                .in('circle_id', ids)
+                .eq('status', 1); // Active only
+            return (circles ?? []).map((c) => {
+                // rough estimate: next payout = started_at + (currentRound+1) * frequency
+                const freqDays = c.frequency === 1 ? 7 : 30;
+                const startTs = Number(c.started_ts ?? 0);
+                const nextTs = startTs
+                    ? startTs + (Number(c.current_round ?? 0) + 1) * freqDays * 86400
+                    : Math.floor(Date.now() / 1000);
+                return {
+                    circleId: String(c.circle_id),
+                    circleName: c.name,
+                    goalType: Number(c.goal_type ?? 0),
+                    estimatedDate: formatDate(nextTs),
+                    timestamp: nextTs,
+                };
+            });
+        },
+        enabled: isConnected && !!userAddress,
+        staleTime: 30_000,
+    });
+}
+
+export function useSearchCircles(searchTerm) {
+    return useQuery({
+        queryKey: ['searchCircles.db', searchTerm],
+        queryFn: async () => {
+            if (!searchTerm || searchTerm.length < 3) return [];
+            const { data, error } = await supabase
+                .from('circles_with_counts')
+                .select('*')
+                .ilike('name', `%${searchTerm}%`)
+                .limit(50);
+            if (error) throw error;
+            return (data ?? []).map(mapCircleRow);
+        },
+        enabled: !!searchTerm && searchTerm.length >= 3,
+        staleTime: 20_000,
+    });
+}
+
+// useCircleByInviteCode — STILL ON-CHAIN.
+// Invite codes aren't in Supabase yet. To migrate, backfill needs to call
+// getCircleInviteCode(id) during circle enrichment and store in an
+// invite_code column on circles. Tracked as Phase 5 follow-up.
+export function useCircleByInviteCode(inviteCode) {
+    const { getContract, isConnected } = useCircleContract();
+    return useQuery({
+        queryKey: ['circleByInviteCode', inviteCode],
+        queryFn: async () => {
+            const contract = await getContract('core');
+            const circleCounter = await contract.circleCounter();
+            const totalCircles = Number(circleCounter);
+            const BATCH_SIZE = 100;
+            const normalizedInviteCode = inviteCode.toLowerCase();
+
+            for (let start = 1; start <= totalCircles; start += BATCH_SIZE) {
+                const end = Math.min(start + BATCH_SIZE, totalCircles + 1);
+                const checkPromises = [];
+                for (let i = start; i < end; i++) {
+                    checkPromises.push(
+                        contract
+                            .getCircleInviteCode(i)
+                            .then((code) => ({ id: i, code: code.toLowerCase() }))
+                            .catch(() => ({ id: i, code: null })),
+                    );
+                }
+                const results = await Promise.all(checkPromises);
+                const match = results.find((r) => r.code === normalizedInviteCode);
+                if (match) {
+                    const [details, progress] = await Promise.all([
+                        contract.getCircleDetails(match.id),
+                        contract.getCircleProgress(match.id),
+                    ]);
+                    const maxMembers = Number(details.maxMembers);
+                    const memberPromises = [];
+                    for (let j = 0; j < maxMembers; j++) {
+                        memberPromises.push(
+                            contract
+                                .circleMembers(match.id, j)
+                                .then((addr) => (addr !== '0x0000000000000000000000000000000000000000' ? addr : null))
+                                .catch(() => null),
+                        );
+                    }
+                    const memberResults = await Promise.all(memberPromises);
+                    const memberAddresses = memberResults.filter((a) => a !== null);
+                    return {
+                        id: match.id.toString(),
+                        name: details.name,
+                        goalType: Number(details.goalType),
+                        amount: ethers.formatUnits(details.amount, 6),
+                        duration: Number(details.duration),
+                        currentRound: Number(details.currentRound),
+                        maxMembers,
+                        members: memberAddresses.length,
+                        frequency: Number(details.frequency),
+                        isActive: details.isActive,
+                        status: Number(details.status),
+                        createdAt: Number(details.createdAt),
+                        startAt: Number(details.startAt),
+                        vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
+                        creator: details.creator,
+                        progress: Number(progress.percentage),
+                        icon: progress.icon,
+                        inviteCode: match.code,
+                        memberAddresses,
+                    };
+                }
+            }
+            return null;
+        },
+        enabled: isConnected && !!inviteCode && inviteCode.length > 20,
+        staleTime: 60_000,
+    });
 }
