@@ -743,6 +743,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
+### Contributors
+
+- **[Mayor Isaac](mailto:isaacogunyileka@gmail.com)** — initial frontend scaffold, Profile module, base components, Circle creation UI
+- **[winsznx](mailto:timjosh507@gmail.com)** — Web3 integration, smart contracts, Push Chain wiring, post-hackathon refactor
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for attribution details.
+
+### Built on
+
 - **Built for**: Push Chain Project G.U.D
 - **Powered by**: [Push Chain](https://push.org)
 - **Inspired by**: Traditional ROSCAs and community savings groups
