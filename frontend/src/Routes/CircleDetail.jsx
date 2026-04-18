@@ -12,8 +12,10 @@ import {
 } from 'react-icons/fa';
 import { useCircleDetails } from '../hooks/useCircleData';
 import { useCircleContract } from '../hooks/useCircleContract';
+import { useJoinCircle } from '../hooks/useCircleActions';
 import { formatAddressOrName } from '../hooks/useNameRegistry';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 import PurpleBtn from '../Components/PurpleBtn';
 import { getGoalIcon, getGoalColors, formatFrequency, calculateProgress } from '../utils/circleHelpers';
 import formatCurrency from '../utils/formatCurrency';
@@ -69,10 +71,37 @@ const STATUS_COLORS = {
 export default function CircleDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { userAddress } = useCircleContract();
+    const { userAddress, isConnected } = useCircleContract();
     const isTabletOrMobile = useIsTabletOrMobile();
-    const { data: circle, isLoading } = useCircleDetails(id);
-    const { data: roster } = useCircleRoster(id);
+    const { data: circle, isLoading, refetch } = useCircleDetails(id);
+    const { data: roster, refetch: refetchRoster } = useCircleRoster(id);
+    const joinCircle = useJoinCircle();
+
+    const handleJoin = async () => {
+        if (!isConnected) {
+            toast.error('Connect your wallet first');
+            return;
+        }
+        try {
+            await joinCircle.mutateAsync(id);
+            toast.success('Joined circle', {
+                description: 'Your first contribution has been sent on-chain.',
+            });
+            // Refetch the roster + circle state so the UI updates to "you"
+            // in the members list and hides the Join CTA.
+            await Promise.all([refetch(), refetchRoster()]);
+        } catch (err) {
+            const msg = err?.message || 'Please try again.';
+            if (msg.includes('user rejected') || msg.includes('User rejected')) return;
+            if (msg.toLowerCase().includes('insufficient')) {
+                toast.error('Insufficient CUSD', {
+                    description: 'Claim from the faucet first.',
+                });
+            } else {
+                toast.error('Failed to join circle', { description: msg });
+            }
+        }
+    };
 
     const GoalIcon = circle ? getGoalIcon(circle.goalType) : null;
     const goalColors = circle ? getGoalColors(circle.goalType) : null;
@@ -268,13 +297,14 @@ export default function CircleDetail() {
                         <p className="text-[15px] lg:text-[17px] font-semibold">Open for new members</p>
                         <p className="text-[12px] lg:text-[14px] text-[#AAA]">
                             {circle.maxMembers - circle.members} seat{circle.maxMembers - circle.members === 1 ? '' : 's'} left.
-                            First contribution is {formatCurrency(circle.amount)} CUSD.
+                            First contribution is {formatCurrency(circle.amount)} CUSD (auto-approved + sent).
                         </p>
                     </div>
                     <PurpleBtn
-                        text="Join this circle"
-                        icon="rightArrow"
-                        action={() => navigate(`/chain/circle?join=${circle.id}`)}
+                        text={joinCircle.isPending ? 'Joining…' : 'Join this circle'}
+                        icon={joinCircle.isPending ? null : 'rightArrow'}
+                        action={handleJoin}
+                        disabled={joinCircle.isPending}
                     />
                 </div>
             )}
