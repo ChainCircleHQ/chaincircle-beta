@@ -39,7 +39,22 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
       if (onClose) onClose();
       navigate('/chain/circle');
     } catch (error) {
-      toast.error('Failed to join circle', { description: error.message || 'Please try again.' });
+      const raw = error?.message || '';
+      const lower = raw.toLowerCase();
+      if (lower.includes('user rejected')) return;
+      if (lower.includes('not confirmed with') && lower.includes('ms')) {
+        toast.error('Transaction still pending', {
+          description: 'Your wallet chain took too long to confirm. Wait 30s and refresh — if you do not see yourself in the roster, try again.',
+          duration: 10_000,
+        });
+        return;
+      }
+      if (lower.includes('insufficient')) {
+        toast.error('Insufficient CUSD', { description: 'Claim from the faucet first.' });
+        return;
+      }
+      const short = raw.length > 180 ? raw.slice(0, 180) + '…' : raw;
+      toast.error('Failed to join circle', { description: short });
     }
   };
 

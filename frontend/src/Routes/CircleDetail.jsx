@@ -91,15 +91,26 @@ export default function CircleDetail() {
             // in the members list and hides the Join CTA.
             await Promise.all([refetch(), refetchRoster()]);
         } catch (err) {
-            const msg = err?.message || 'Please try again.';
-            if (msg.includes('user rejected') || msg.includes('User rejected')) return;
-            if (msg.toLowerCase().includes('insufficient')) {
-                toast.error('Insufficient CUSD', {
-                    description: 'Claim from the faucet first.',
+            const raw = err?.message || '';
+            const lower = raw.toLowerCase();
+            if (lower.includes('user rejected')) return; // silent on cancel
+            if (lower.includes('not confirmed with') && lower.includes('ms')) {
+                // Push UEA cross-chain relay timeout (typically Solana side congested).
+                // Contract may still have processed — tell the user to wait + retry.
+                toast.error('Transaction still pending', {
+                    description:
+                        'Your wallet chain took too long to confirm. Wait 30s and refresh — if you do not see yourself in the roster, try joining again.',
+                    duration: 10_000,
                 });
-            } else {
-                toast.error('Failed to join circle', { description: msg });
+                return;
             }
+            if (lower.includes('insufficient')) {
+                toast.error('Insufficient CUSD', { description: 'Claim from the faucet first.' });
+                return;
+            }
+            // Fallback — truncate the ugly hex/base58 hashes in error text
+            const short = raw.length > 180 ? raw.slice(0, 180) + '…' : raw;
+            toast.error('Failed to join circle', { description: short });
         }
     };
 
