@@ -46,10 +46,6 @@ function App() {
 
 
   const walletConfig = {
-    // Opt into v5 UEA behavior (ui-kit 4+ added `version` field on provider).
-    // Leaving it unset defaults to v5 on ui-kit 5.x but we pin explicitly so
-    // the contract is obvious.
-    version: 5,
     network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET,
     login: {
       email: true,
@@ -63,29 +59,6 @@ function App() {
       loginLayout: PushUI.CONSTANTS.LOGIN.LAYOUT.SPLIT,
       connectedLayout: PushUI.CONSTANTS.CONNECTED.LAYOUT.HOVER,
       appPreview: true,
-    },
-    // Brand-consistent palette for the wallet modal + connect button.
-    // Full variable list at push.org/agents/workflows/theme-variables.md.
-    // Top-level keys apply to both light/dark; nested `dark` overrides.
-    themeOverrides: {
-      '--pw-core-font-family': '"DM Sans", "Space Grotesk", sans-serif',
-      '--pw-core-modal-border-radius': '20px',
-      '--pw-core-btn-border-radius': '999px',
-      '--pwauth-btn-connect-border-radius': '999px',
-      dark: {
-        '--pw-core-bg-primary-color': '#000000',
-        '--pw-core-bg-secondary-color': '#111111',
-        '--pw-core-bg-tertiary-color': '#1a1a1a',
-        '--pw-core-brand-primary-color': '#D548EC',
-        '--pw-core-modal-border-color': '#F4AEFF',
-        '--pw-core-text-primary-color': '#FFFFFF',
-        '--pw-core-text-secondary-color': '#AAAAAA',
-        '--pw-core-text-tertiary-color': '#707070',
-        '--pw-core-text-link-color': '#F4AEFF',
-        '--pw-core-btn-primary-bg-color': '#D548EC',
-        '--pwauth-btn-connect-bg-color': '#D548EC',
-        '--pwauth-btn-connected-bg-color': '#111111',
-      },
     },
   };
 
