@@ -1,13 +1,16 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router';
 import { IoEyeOutline } from "react-icons/io5";
 import { IoEyeOffOutline } from "react-icons/io5";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaCompass, FaKey, FaHandHoldingUsd } from "react-icons/fa";
 import DashboardTable from '../Pages/Dashboard/DashboardTable';
 import RemindersBanner from '../Pages/Dashboard/RemindersBanner';
 import DiscoverSection from '../Pages/Dashboard/DiscoverSection';
 import ActivityFeed from '../Pages/Dashboard/ActivityFeed';
 import CreateCircleModal from '../Pages/Circle/CreateCircleModal';
 import CirclePreview from '../Pages/Circle/CirclePreview';
+import PurpleBtn from '../Components/PurpleBtn';
+import TransBtn from '../Components/TransBtn';
 import { useUserStats, useUserCircles } from '../hooks/useCircleData';
 import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
 import { PiCirclesThreeBold } from "react-icons/pi";
@@ -117,17 +120,74 @@ export default function Dashboard() {
                 </div>
               );
             })
-          ) : (
-            <div className="flex items-center justify-center w-full">
-              <p className="text-[#AAAAAA]">No active circles. Create one to get started!</p>
-            </div>
-          )}
+          ) : null}
         </div>
+
+        {/* First-time user onboarding — shows only when the user has no circles yet. */}
+        {!circlesLoading && (!userCircles || userCircles.length === 0) && (
+          <div className="rounded-[16px] border border-[#F4AEFF]/30 bg-gradient-to-br from-[#D548EC]/10 via-[#111111] to-[#111111] p-6 lg:p-8 flex flex-col gap-5 font-dm">
+            <div>
+              <p className="text-[#F4AEFF] text-[13px] lg:text-[14px] uppercase tracking-wider">Welcome to ChainCircle</p>
+              <h4 className="text-[20px] lg:text-[26px] font-bold mt-1">Pick how you want to start saving</h4>
+              <p className="text-[#AAA] text-[13px] lg:text-[15px] mt-2 max-w-2xl">
+                A circle is a group of friends who save together — each month one person receives the pot plus
+                4% APR yield. Three paths to get going:
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="group text-left rounded-[12px] border border-[#333] hover:border-[#D548EC] bg-[#111111] p-4 flex flex-col gap-2 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#D548EC]/20 flex items-center justify-center">
+                  <FaPlus className="text-[#D548EC]" size={16} />
+                </div>
+                <p className="font-semibold text-[15px] lg:text-[16px] group-hover:text-[#F4AEFF]">Create your first circle</p>
+                <p className="text-[12px] lg:text-[13px] text-[#707070] leading-relaxed">
+                  Set a goal, amount, duration, and members. You'll get a shareable invite code.
+                </p>
+              </button>
+              <Link
+                to="/chain/circle"
+                className="group text-left rounded-[12px] border border-[#333] hover:border-[#D548EC] bg-[#111111] p-4 flex flex-col gap-2 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#F4AEFF]/20 flex items-center justify-center">
+                  <FaKey className="text-[#F4AEFF]" size={16} />
+                </div>
+                <p className="font-semibold text-[15px] lg:text-[16px] group-hover:text-[#F4AEFF]">Join with an invite code</p>
+                <p className="text-[12px] lg:text-[13px] text-[#707070] leading-relaxed">
+                  A friend sent you a code? Paste it on the Circle page and join their savings.
+                </p>
+              </Link>
+              <button
+                onClick={() => {
+                  const el = document.getElementById('discover-section');
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="group text-left rounded-[12px] border border-[#333] hover:border-[#D548EC] bg-[#111111] p-4 flex flex-col gap-2 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#FDA318]/20 flex items-center justify-center">
+                  <FaCompass className="text-[#FDA318]" size={16} />
+                </div>
+                <p className="font-semibold text-[15px] lg:text-[16px] group-hover:text-[#F4AEFF]">Browse open circles</p>
+                <p className="text-[12px] lg:text-[13px] text-[#707070] leading-relaxed">
+                  Scroll down to Discover — find public circles looking for new members.
+                </p>
+              </button>
+            </div>
+            <div className="flex items-center gap-3 pt-2 border-t border-[#333] text-[12px] lg:text-[13px] text-[#707070]">
+              <FaHandHoldingUsd className="text-[#D548EC]" />
+              <span>Need testnet CUSD? <Link to="/faucet" className="text-[#D548EC] hover:text-[#F4AEFF] underline underline-offset-4">Claim from the faucet</Link>.</span>
+            </div>
+          </div>
+        )}
       </section>
 
       <DashboardTable />
 
-      <DiscoverSection />
+      <div id="discover-section">
+        <DiscoverSection />
+      </div>
 
       <ActivityFeed />
 
