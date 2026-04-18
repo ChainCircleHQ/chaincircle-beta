@@ -7,6 +7,8 @@ import DashboardTable from '../Pages/Dashboard/DashboardTable';
 import RemindersBanner from '../Pages/Dashboard/RemindersBanner';
 import DiscoverSection from '../Pages/Dashboard/DiscoverSection';
 import ActivityFeed from '../Pages/Dashboard/ActivityFeed';
+import AiRecommendations from '../Pages/Dashboard/AiRecommendations';
+import WeeklySummary from '../Pages/Dashboard/WeeklySummary';
 import CreateCircleModal from '../Pages/Circle/CreateCircleModal';
 import CirclePreview from '../Pages/Circle/CirclePreview';
 import PurpleBtn from '../Components/PurpleBtn';
@@ -189,7 +191,11 @@ export default function Dashboard() {
         )}
       </section>
 
+      <WeeklySummary />
+
       <DashboardTable />
+
+      <AiRecommendations />
 
       <div id="discover-section">
         <DiscoverSection />

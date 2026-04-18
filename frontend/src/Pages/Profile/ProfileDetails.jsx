@@ -3,6 +3,7 @@ import { FiSearch } from "react-icons/fi";
 import { TbArrowRightFromArc } from "react-icons/tb";
 import { useNavigate } from 'react-router';
 import { usePushWalletContext } from '@pushchain/ui-kit';
+import ReputationInsights from './ReputationInsights';
 import DisplayName from './DisplayName';
 import LinkedWallets from './LinkedWallets';
 import PayoutPreferences from './PayoutPreferences';
@@ -43,6 +44,9 @@ export default function ProfileDetails() {
       </header>
 
       <div className="flex flex-col gap-5 ">
+        <ReputationInsights />
+        {/* Stroke */}
+        <div className="w-full h-[1px] bg-white "></div>
         <DisplayName />
         {/* Stroke */}
         <div className="w-full h-[1px] bg-white "></div>
