@@ -11,14 +11,25 @@ const PUSH_EXPLORER = process.env.PUSH_CHAIN_EXPLORER || "https://donut.push.net
 
 module.exports = {
     solidity: {
-        version: "0.8.22",
-        settings: {
-            optimizer: {
-                enabled: true,
-                runs: 200,
+        compilers: [
+            {
+                version: "0.8.24",
+                settings: {
+                    optimizer: { enabled: true, runs: 200 },
+                    viaIR: true,
+                    evmVersion: "cancun",
+                },
             },
-            viaIR: true,
-        },
+            {
+                // Keep v1 contracts compilable on their original pragma.
+                version: "0.8.22",
+                settings: {
+                    optimizer: { enabled: true, runs: 200 },
+                    viaIR: true,
+                    evmVersion: "cancun",
+                },
+            },
+        ],
     },
     networks: {
         pushDonut: {
