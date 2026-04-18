@@ -9,6 +9,8 @@ import { PushUniversalAccountButton, usePushWalletContext } from '@pushchain/ui-
 
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import useIsTabletOrMobile from './hooks/useIsTabletOrMobile';
+import UeaUpgradeBanner from './Components/UeaUpgradeBanner';
+import TxProgressBanner from './Components/TxProgressBanner';
 
 export default function chain() {
   const location = useLocation();
@@ -163,6 +165,8 @@ export default function chain() {
             </div>
           </div>
         </div>
+        <TxProgressBanner />
+        <UeaUpgradeBanner />
         <div className="flex-1 pb-4 lg:pb-0">
           <Outlet />
         </div>

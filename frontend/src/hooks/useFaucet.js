@@ -65,7 +65,7 @@ export function useClaimFaucet() {
       // Send tx with trackTransaction fallback for origin-chain timeouts
       return await sendUniversalTx(pushChainClient, {
         to: cusdAddress, data: claimData, value: 0n,
-      });
+      }, { label: 'Claiming CUSD' });
     },
     onSuccess: () => {
       // Invalidate and refetch balance and time queries
