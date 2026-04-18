@@ -13,10 +13,11 @@ export function provider(): JsonRpcProvider {
 
 export const CONTRACTS = {
     CHAIN_CIRCLE_CORE: "0x59D44aea45bd92E2798b7998e8E090586670f161",
-    REPUTATION_MANAGER: "0xEaEa469279B89E7fF0BDd5903226483418AB37e4",
-    BADGE_NFT: "0x9171F3AE9Cb9EBBa0826ad31971647DceB52Bd50",
-    GOVERNANCE_MODULE: "0xA3c786088a6D3EB9216B5647a4149a7dF0149b49",
-    NAME_REGISTRY: "0x1c8fCc121D52EAa6d4705fCcE95e34E2CEDced5E",
+    // Other modules (ReputationManager, BadgeNFT, GovernanceModule, NameRegistry)
+    // are deployed but not wired at the contract level — current ChainCircleCore
+    // bytecode doesn't call them, so they emit nothing. Indexer ignores them
+    // until Phase 6 redeploy. Off-chain reputation covers the UX gap in the
+    // meantime (see user_reputation view + useUserStats).
 } as const;
 
 // Real deployed event signatures
@@ -29,19 +30,6 @@ export const EVENT_ABIS = {
         "event InterestDistributed(uint256 indexed circleId, address indexed recipient, uint256 amount, uint256 timestamp)",
         "event EmergencyWithdrawal(uint256 indexed circleId, address indexed member, uint256 amount)",
         "event CircleCompleted(uint256 indexed circleId, uint256 timestamp)",
-    ],
-    REPUTATION_MANAGER: [
-        "event ScoreChanged(address indexed user, uint256 oldScore, uint256 newScore, string reason)",
-        "event TierChanged(address indexed user, string oldTier, string newTier)",
-        "event StreakUpdated(address indexed user, uint256 newStreak)",
-    ],
-    BADGE_NFT: [
-        "event BadgeMinted(address indexed user, uint256 indexed tokenId, string tier)",
-        "event BadgeUpgraded(address indexed user, uint256 indexed tokenId, string oldTier, string newTier)",
-    ],
-    NAME_REGISTRY: [
-        "event NameRegistered(address indexed user, string name)",
-        "event NameUpdated(address indexed user, string oldName, string newName)",
     ],
 } as const;
 
@@ -56,10 +44,9 @@ export const IFACES = Object.fromEntries(
 
 export const NAME_TO_KEY: Record<string, keyof typeof EVENT_ABIS> = {
     ChainCircleCore: "CHAIN_CIRCLE_CORE",
-    ReputationManager: "REPUTATION_MANAGER",
-    BadgeNFT: "BADGE_NFT",
-    NameRegistry: "NAME_REGISTRY",
-    // GovernanceModule omitted — no committed ABI yet
+    // ReputationManager/BadgeNFT/NameRegistry/GovernanceModule are deliberately
+    // not indexed — the deployed ChainCircleCore bytecode never calls into them,
+    // so they emit no events worth capturing.
 };
 
 export function coreContract(p: JsonRpcProvider): Contract {
