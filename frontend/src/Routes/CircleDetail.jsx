@@ -23,6 +23,7 @@ import ChainBadge from '../Components/ChainBadge';
 import { getGoalIcon, getGoalColors, formatFrequency, calculateProgress } from '../utils/circleHelpers';
 import formatCurrency from '../utils/formatCurrency';
 import Skeleton, { SkeletonRow } from '../Components/Skeleton';
+import CircleEventsTimeline from '../Pages/Circle/CircleEventsTimeline';
 import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
 
 const TIER_STYLES = {
@@ -406,6 +407,9 @@ export default function CircleDetail() {
                     />
                 </div>
             )}
+
+            {/* Event timeline (history of state transitions) */}
+            <CircleEventsTimeline circleId={id} />
 
             {/* Creator identity footnote */}
             <div className="rounded-[12px] border border-[#333] bg-[#111111] p-4 flex items-center gap-3 text-[12px] lg:text-[13px] text-[#AAA]">
