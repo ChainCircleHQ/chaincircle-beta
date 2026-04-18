@@ -83,14 +83,25 @@ export default function CircleDetail() {
             return;
         }
         try {
-            await joinCircle.mutateAsync(id);
-            toast.success('Joined circle', {
-                description: 'Your first contribution has been sent on-chain.',
-            });
+            const result = await joinCircle.mutateAsync(id);
+            if (result?.status === 'pending') {
+                toast.info('Still pending on origin chain', {
+                    description: 'Your signature is submitted but confirmations are slow. Refresh in a minute — if you are in the roster the join landed.',
+                    duration: 10_000,
+                });
+            } else {
+                toast.success('Joined circle', {
+                    description: 'Your first contribution has been sent on-chain.',
+                });
+            }
             // Refetch the roster + circle state so the UI updates to "you"
             // in the members list and hides the Join CTA.
             await Promise.all([refetch(), refetchRoster()]);
         } catch (err) {
+            if (err?.pending) {
+                toast.info('Approval still pending', { description: err.message, duration: 10_000 });
+                return;
+            }
             const raw = err?.message || '';
             const lower = raw.toLowerCase();
             if (lower.includes('user rejected')) return; // silent on cancel

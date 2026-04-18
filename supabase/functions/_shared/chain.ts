@@ -5,7 +5,7 @@ import { JsonRpcProvider, Interface, Log, Contract } from "https://esm.sh/ethers
 
 const RPC_URL =
     Deno.env.get("PUSH_CHAIN_RPC") ||
-    "https://evm.rpc-testnet-donut-node1.push.org/";
+    "https://evm.donut.rpc.push.org/";
 
 export function provider(): JsonRpcProvider {
     return new JsonRpcProvider(RPC_URL);

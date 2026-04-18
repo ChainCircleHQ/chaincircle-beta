@@ -46,6 +46,10 @@ function App() {
 
 
   const walletConfig = {
+    // Opt into v5 UEA behavior (ui-kit 4+ added `version` field on provider).
+    // Leaving it unset defaults to v5 on ui-kit 5.x but we pin explicitly so
+    // the contract is obvious.
+    version: 5,
     network: PushUI.CONSTANTS.PUSH_NETWORK.TESTNET,
     login: {
       email: true,

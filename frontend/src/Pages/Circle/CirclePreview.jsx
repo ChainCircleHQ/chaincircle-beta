@@ -34,11 +34,22 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
 
   const handleJoin = async () => {
     try {
-      await joinCircle.mutateAsync(circleId);
-      toast.success('Joined circle');
+      const result = await joinCircle.mutateAsync(circleId);
+      if (result?.status === 'pending') {
+        toast.info('Still pending on origin chain', {
+          description: 'Signature submitted, confirmations are slow. Refresh in a minute.',
+          duration: 10_000,
+        });
+      } else {
+        toast.success('Joined circle');
+      }
       if (onClose) onClose();
       navigate('/chain/circle');
     } catch (error) {
+      if (error?.pending) {
+        toast.info('Approval still pending', { description: error.message, duration: 10_000 });
+        return;
+      }
       const raw = error?.message || '';
       const lower = raw.toLowerCase();
       if (lower.includes('user rejected')) return;

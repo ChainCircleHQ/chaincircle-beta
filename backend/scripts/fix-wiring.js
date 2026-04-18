@@ -7,7 +7,7 @@
 require("dotenv").config();
 const { JsonRpcProvider, Wallet, Contract, ZeroAddress } = require("ethers");
 
-const RPC = process.env.PUSH_CHAIN_RPC || "https://evm.rpc-testnet-donut-node1.push.org/";
+const RPC = process.env.PUSH_CHAIN_RPC || "https://evm.donut.rpc.push.org/";
 
 if (!process.env.PRIVATE_KEY) {
     console.error("PRIVATE_KEY missing in backend/.env — need owner key to run setters");

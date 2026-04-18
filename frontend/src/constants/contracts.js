@@ -19,8 +19,8 @@ export const CONTRACT_ADDRESSES = {
 export const NETWORK_CONFIG = {
   chainId: Number(env.VITE_PUSH_CHAIN_ID) || 42101,
   name: "Push Chain Donut Testnet",
-  rpcUrl: env.VITE_PUSH_CHAIN_RPC || "https://evm.rpc-testnet-donut-node1.push.org/",
-  rpcUrlAlt: env.VITE_PUSH_CHAIN_RPC_FALLBACK || "https://evm.rpc-testnet-donut-node2.push.org/",
+  rpcUrl: env.VITE_PUSH_CHAIN_RPC || "https://evm.donut.rpc.push.org/",
+  rpcUrlAlt: env.VITE_PUSH_CHAIN_RPC_FALLBACK || "https://evm.donut.rpc.push.org/",
   explorerUrl: env.VITE_PUSH_CHAIN_EXPLORER || "https://donut.push.network",
   faucetUrl: env.VITE_PUSH_CHAIN_FAUCET || "https://faucet.push.org",
   currency: {

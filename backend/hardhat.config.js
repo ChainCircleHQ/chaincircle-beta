@@ -5,7 +5,7 @@ require("dotenv").config();
 // Fallback to deployed pushDonut defaults if env not set — keeps the
 // clone-and-run experience working without forcing new devs to create
 // a .env first. Override in .env when staging/mainnet lands.
-const PUSH_RPC = process.env.PUSH_CHAIN_RPC || "https://evm.rpc-testnet-donut-node1.push.org/";
+const PUSH_RPC = process.env.PUSH_CHAIN_RPC || "https://evm.donut.rpc.push.org/";
 const PUSH_CHAIN_ID = Number(process.env.PUSH_CHAIN_ID) || 42101;
 const PUSH_EXPLORER = process.env.PUSH_CHAIN_EXPLORER || "https://donut.push.network";
 

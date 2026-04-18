@@ -3,6 +3,7 @@ import { useCircleContract } from './useCircleContract';
 import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../constants/contracts';
 import CUSDABI from '../abis/CUSD.json';
+import { sendUniversalTx } from '../lib/pushchainTx';
 
 // Hook to get CUSD balance
 export function useCUSDBalance() {
@@ -61,18 +62,10 @@ export function useClaimFaucet() {
       const claimData = ethers.Interface.from(CUSDABI.abi).encodeFunctionData('claimFromFaucet', []);
 
 
-      // Send transaction using Push Chain universal client
-      const tx = await pushChainClient.universal.sendTransaction({
-        to: cusdAddress,
-        data: claimData,
-        value: 0n
+      // Send tx with trackTransaction fallback for origin-chain timeouts
+      return await sendUniversalTx(pushChainClient, {
+        to: cusdAddress, data: claimData, value: 0n,
       });
-
-
-      await tx.wait();
-
-
-      return tx;
     },
     onSuccess: () => {
       // Invalidate and refetch balance and time queries

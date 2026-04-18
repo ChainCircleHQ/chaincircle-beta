@@ -6,7 +6,7 @@
 require("dotenv").config();
 const { JsonRpcProvider, Contract, ZeroAddress } = require("ethers");
 
-const RPC = process.env.PUSH_CHAIN_RPC || "https://evm.rpc-testnet-donut-node1.push.org/";
+const RPC = process.env.PUSH_CHAIN_RPC || "https://evm.donut.rpc.push.org/";
 
 const ADDRS = {
     ChainCircleCore:   "0x59D44aea45bd92E2798b7998e8E090586670f161",

@@ -12,8 +12,8 @@ const { JsonRpcProvider, Interface, Contract, FallbackProvider } = require("ethe
 const {
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
-    PUSH_CHAIN_RPC = "https://evm.rpc-testnet-donut-node1.push.org/",
-    PUSH_CHAIN_RPC_FALLBACK = "https://evm.rpc-testnet-donut-node2.push.org/",
+    PUSH_CHAIN_RPC = "https://evm.donut.rpc.push.org/",
+    PUSH_CHAIN_RPC_FALLBACK = "https://evm.donut.rpc.push.org/",
 } = process.env;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {

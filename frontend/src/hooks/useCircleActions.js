@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../constants/contracts';
 import ChainCircleCoreABI from '../abis/ChainCircleCore.json';
 import CUSDABI from '../abis/CUSD.json';
+import { sendUniversalTx } from '../lib/pushchainTx';
 
 // Hook for creating a circle
 export function useCreateCircle() {
@@ -37,36 +38,28 @@ export function useCreateCircle() {
         [coreAddress, amountInWei]
       );
 
-      const approveTx = await pushChainClient.universal.sendTransaction({
-        to: cusdAddress,
-        data: approveData,
-        value: 0n
+      const approveResult = await sendUniversalTx(pushChainClient, {
+        to: cusdAddress, data: approveData, value: 0n,
       });
-
-      await approveTx.wait();
+      if (approveResult.status === 'pending') {
+        // Approve is still in flight — trying to submit the create before the
+        // approve is mined will revert. Surface as still-pending so the UI
+        // tells the user to wait + retry.
+        const e = new Error('Approval still pending on origin chain — wait a minute and retry.');
+        e.pending = true;
+        throw e;
+      }
 
       // Step 2: Create Circle using Push Chain universal transaction
       const createData = ethers.Interface.from(ChainCircleCoreABI.abi).encodeFunctionData(
         'createCircle',
-        [
-          name,
-          goalType,
-          amountInWei,
-          duration,
-          maxMembers,
-          frequency
-        ]
+        [name, goalType, amountInWei, duration, maxMembers, frequency]
       );
 
-      const createTx = await pushChainClient.universal.sendTransaction({
-        to: coreAddress,
-        data: createData,
-        value: 0n
+      const createResult = await sendUniversalTx(pushChainClient, {
+        to: coreAddress, data: createData, value: 0n,
       });
-
-      const receipt = await createTx.wait();
-
-      return receipt;
+      return createResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userCircles'] });
@@ -101,13 +94,14 @@ export function useJoinCircle() {
         [coreAddress, amountNeeded]
       );
 
-      const approveTx = await pushChainClient.universal.sendTransaction({
-        to: cusdAddress,
-        data: approveData,
-        value: 0n
+      const approveResult = await sendUniversalTx(pushChainClient, {
+        to: cusdAddress, data: approveData, value: 0n,
       });
-
-      await approveTx.wait();
+      if (approveResult.status === 'pending') {
+        const e = new Error('Approval still pending on origin chain — wait a minute and retry.');
+        e.pending = true;
+        throw e;
+      }
 
       // Step 2: Join circle
       const joinData = ethers.Interface.from(ChainCircleCoreABI.abi).encodeFunctionData(
@@ -115,13 +109,9 @@ export function useJoinCircle() {
         [circleId]
       );
 
-      const tx = await pushChainClient.universal.sendTransaction({
-        to: coreAddress,
-        data: joinData,
-        value: 0n
+      return await sendUniversalTx(pushChainClient, {
+        to: coreAddress, data: joinData, value: 0n,
       });
-
-      return await tx.wait();
     },
     onSuccess: (_, circleId) => {
       queryClient.invalidateQueries({ queryKey: ['userCircles'] });
@@ -156,13 +146,14 @@ export function useContribute() {
         [coreAddress, contributionAmount]
       );
 
-      const approveTx = await pushChainClient.universal.sendTransaction({
-        to: cusdAddress,
-        data: approveData,
-        value: 0n
+      const approveResult = await sendUniversalTx(pushChainClient, {
+        to: cusdAddress, data: approveData, value: 0n,
       });
-
-      await approveTx.wait();
+      if (approveResult.status === 'pending') {
+        const e = new Error('Approval still pending on origin chain — wait a minute and retry.');
+        e.pending = true;
+        throw e;
+      }
 
       // Step 2: Make contribution
       const contributeData = ethers.Interface.from(ChainCircleCoreABI.abi).encodeFunctionData(
@@ -170,13 +161,9 @@ export function useContribute() {
         [circleId]
       );
 
-      const tx = await pushChainClient.universal.sendTransaction({
-        to: coreAddress,
-        data: contributeData,
-        value: 0n
+      return await sendUniversalTx(pushChainClient, {
+        to: coreAddress, data: contributeData, value: 0n,
       });
-
-      return await tx.wait();
     },
     onSuccess: (_, circleId) => {
       queryClient.invalidateQueries({ queryKey: ['userCircles'] });
@@ -206,13 +193,9 @@ export function useWithdrawPayout() {
         [circleId]
       );
 
-      const tx = await pushChainClient.universal.sendTransaction({
-        to: coreAddress,
-        data: withdrawData,
-        value: 0n
+      return await sendUniversalTx(pushChainClient, {
+        to: coreAddress, data: withdrawData, value: 0n,
       });
-
-      return await tx.wait();
     },
     onSuccess: (_, circleId) => {
       queryClient.invalidateQueries({ queryKey: ['userCircles'] });
@@ -242,13 +225,9 @@ export function useEmergencyWithdraw() {
         [circleId]
       );
 
-      const tx = await pushChainClient.universal.sendTransaction({
-        to: coreAddress,
-        data: emergencyData,
-        value: 0n
+      return await sendUniversalTx(pushChainClient, {
+        to: coreAddress, data: emergencyData, value: 0n,
       });
-
-      return await tx.wait();
     },
     onSuccess: (_, circleId) => {
       queryClient.invalidateQueries({ queryKey: ['userCircles'] });

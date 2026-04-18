@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@pushchain/ui-kit": "~2.1.5",
+    "@pushchain/core": "^5.1.4",
+    "@pushchain/ui-kit": "~5.2.2",
     "@supabase/supabase-js": "^2.103.3",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-query": "^5.99.0",
