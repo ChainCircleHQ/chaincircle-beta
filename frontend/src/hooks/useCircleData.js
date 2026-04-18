@@ -211,51 +211,79 @@ export function useRecentActivities(limit = 10) {
     });
 }
 
-// useUserStats — STILL ON-CHAIN.
-// ReputationManager callbacks aren't firing (ScoreChanged backfill returned
-// 0 events across 11.6M blocks), so Supabase has no reputation data. Falls
-// back to direct contract reads until GAPS.md §2.3 is fixed.
+// useUserStats — OFF-CHAIN reputation computation.
+// On-chain ReputationManager isn't wired to the deployed ChainCircleCore
+// bytecode (see GAPS.md §2.3), so getUserReputation() returns zeros.
+// We compute score/tier/etc. from indexed contribution+payout+membership
+// events via the user_reputation Supabase view. When ChainCircleCore is
+// redeployed in Phase 6, switch this back to on-chain reads — at that
+// point this view becomes a historical-estimate mirror.
+//
+// `reputation.source` in the return surfaces this so UI can show "off-chain"
+// indicator where appropriate.
 export function useUserStats() {
-    const { getContract, userAddress, isConnected } = useCircleContract();
+    const { userAddress, isConnected } = useCircleContract();
     return useQuery({
-        queryKey: ['userStats', userAddress],
+        queryKey: ['userStats.db', userAddress],
         queryFn: async () => {
-            const contract = await getContract('core');
-            const reputationContract = await getContract('reputation');
+            const addr = lc(userAddress);
+            const { data, error } = await supabase
+                .from('user_reputation')
+                .select('*')
+                .eq('address', addr)
+                .maybeSingle();
+            if (error) throw error;
 
-            const [totalContributions, totalInterest, activeCircleCount, userCircles, reputation] = await Promise.all([
-                contract.getUserTotalContributions(userAddress),
-                contract.getUserTotalInterest(userAddress),
-                contract.getUserActiveCircleCount(userAddress),
-                contract.getUserCircles(userAddress),
-                reputationContract.getUserReputation(userAddress),
-            ]);
+            // Also pull the active-circle count (status = 1 among memberships)
+            const { data: activeMembers } = await supabase
+                .from('circle_members')
+                .select('circles!inner(status)')
+                .eq('user_address', addr);
+            const activeCircles = (activeMembers ?? []).filter(
+                (m) => m.circles?.status === 1,
+            ).length;
 
-            let accountAge = Number(reputation.accountAge);
-            if (accountAge === 0 && userCircles.length > 0) {
-                try {
-                    const first = await contract.getCircleDetails(userCircles[0]);
-                    accountAge = Number(first.createdAt);
-                } catch { /* ignore */ }
+            if (!data) {
+                return {
+                    totalSaved: '0',
+                    totalInterest: '0',
+                    activeCircles,
+                    totalCircles: 0,
+                    reputation: {
+                        source: 'off-chain',
+                        score: 0,
+                        tier: 'None',
+                        completedCircles: 0,
+                        onTimeRate: 100,
+                        totalSaved: '0',
+                        accountAge: 0,
+                        longestStreak: 0,
+                    },
+                };
             }
+
             return {
-                totalSaved: ethers.formatUnits(totalContributions, 6),
-                totalInterest: ethers.formatUnits(totalInterest, 6),
-                activeCircles: Number(activeCircleCount),
-                totalCircles: userCircles.length,
+                totalSaved: fmtUnits(data.total_contributions_amount),
+                totalInterest: fmtUnits(data.total_payouts_amount),
+                activeCircles,
+                totalCircles: Number(data.circles_joined ?? 0),
                 reputation: {
-                    score: Number(reputation.score),
-                    tier: reputation.tier,
-                    completedCircles: Number(reputation.completedCircles),
-                    onTimeRate: Number(reputation.onTimeRate),
-                    totalSaved: ethers.formatUnits(reputation.totalSaved, 6),
-                    accountAge,
-                    longestStreak: Number(reputation.longestStreak),
+                    source: 'off-chain',
+                    score: Number(data.score ?? 0),
+                    tier: data.tier ?? 'None',
+                    completedCircles: Number(data.circles_completed ?? 0),
+                    // On-time rate isn't computable yet (ContributionMade event
+                    // doesn't carry an onTime flag). Defaulting to 100 until we
+                    // wire deadline comparisons against circle.startAt + round interval.
+                    onTimeRate: 100,
+                    totalSaved: fmtUnits(data.total_contributions_amount),
+                    accountAge: Number(data.first_action_ts ?? 0),
+                    longestStreak: 0, // Streak computation deferred — requires window fn
                 },
             };
         },
         enabled: isConnected && !!userAddress,
-        staleTime: 30_000,
+        staleTime: 20_000,
     });
 }
 

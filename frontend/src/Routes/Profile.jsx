@@ -14,7 +14,7 @@ const getTierBadge = (tier, totalCircles) => {
   if (tierLower.includes('gold')) {
     return {
       image: '/assets/Gold-Badge.png',
-      bg: 'bg-[rgba(253, 170, 27, 0.77)]',
+      bg: 'bg-[rgba(253,170,27,0.77)]',
       border: 'border-[#FDA318]',
       text: 'text-[#FFC24C]',
       name: 'Gold Tier'
@@ -22,7 +22,7 @@ const getTierBadge = (tier, totalCircles) => {
   } else if (tierLower.includes('silver')) {
     return {
       image: '/assets/Silver-Badge.png',
-      bg: 'bg-[rgba(192, 192, 192, 0.77)]',
+      bg: 'bg-[rgba(192,192,192,0.77)]',
       border: 'border-[#C0C0C0]',
       text: 'text-[#E8E8E8]',
       name: 'Silver Tier'
@@ -30,7 +30,7 @@ const getTierBadge = (tier, totalCircles) => {
   } else if (tierLower.includes('bronze')) {
     return {
       image: '/assets/Bronze-Badge.png',
-      bg: 'bg-[rgba(205, 127, 50, 0.77)]',
+      bg: 'bg-[rgba(205,127,50,0.77)]',
       border: 'border-[#CD7F32]',
       text: 'text-[#E5A76F]',
       name: 'Bronze Tier'
@@ -39,7 +39,7 @@ const getTierBadge = (tier, totalCircles) => {
     // Welcome badge for first-time users who created at least one circle
     return {
       image: '/assets/icons8-welcome-96.png',
-      bg: 'bg-[rgba(212, 72, 236, 0.77)]',
+      bg: 'bg-[rgba(212,72,236,0.77)]',
       border: 'border-[#D548EC]',
       text: 'text-[#F4AEFF]',
       name: 'Welcome Badge'
@@ -48,7 +48,7 @@ const getTierBadge = (tier, totalCircles) => {
     // No badge for users with no circles
     return {
       image: '/assets/Badge.png',
-      bg: 'bg-[rgba(128, 128, 128, 0.77)]',
+      bg: 'bg-[rgba(128,128,128,0.77)]',
       border: 'border-[#808080]',
       text: 'text-[#AAAAAA]',
       name: 'No Badge'
@@ -97,6 +97,14 @@ export default function Profile() {
             >
               {tierInfo.name}
             </div>
+            {reputation.source === 'off-chain' && (
+              <span
+                className="mt-1 self-start text-[10px] lg:text-[11px] font-dm px-2 py-0.5 rounded-full border border-[#F4AEFF]/40 bg-black/40 text-[#F4AEFF]/70"
+                title="Computed from indexed on-chain events. Will migrate on-chain after the next ChainCircleCore redeploy."
+              >
+                off-chain · testnet
+              </span>
+            )}
           </div>
         </div>
 

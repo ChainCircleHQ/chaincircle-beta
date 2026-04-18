@@ -1,156 +1,173 @@
-import React, { useState, useEffect } from 'react'
-import { MdOutlineCreditCard } from "react-icons/md";
+import React, { useEffect, useState } from 'react';
+import { FaRegCreditCard, FaInfoCircle, FaCheckCircle } from 'react-icons/fa';
 import { toast } from 'sonner';
-import PurpleBtn from '../../Components/PurpleBtn';
+import { Link } from 'react-router';
 import { useWalletPreferences } from '../../hooks/useWalletPreferences';
 import { usePushChainClient } from '@pushchain/ui-kit';
 
 const isTabletOrMobile = window.innerWidth <= 1014;
-  
-export default function PayoutPreferences() {
-  const [linkedWallets, setLinkedWallets] = useState([]);
-  const [preferredWallet, setPreferredWalletState] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-  
-  const { pushChainClient } = usePushChainClient();
-  const { getAllWalletDetails, getPreferredWallet, setPreferredWallet } = useWalletPreferences();
-  const currentWallet = pushChainClient?.universal?.account;
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (!currentWallet) return;
-      
-      try {
-        const wallets = await getAllWalletDetails(currentWallet);
-        setLinkedWallets(wallets);
-        
-        const preferred = await getPreferredWallet(currentWallet);
-        setPreferredWalletState(preferred);
-      } catch (error) {
-        // Failed to load - will show empty state
-      }
+const truncate = (addr) => {
+    if (!addr) return '';
+    if (addr.length <= 10) return addr;
+    return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+};
+
+export default function PayoutPreferences() {
+    const { pushChainClient } = usePushChainClient();
+    const { getAllWalletDetails, getPreferredWallet, setPreferredWallet } = useWalletPreferences();
+    const currentWallet = pushChainClient?.universal?.account;
+
+    const [wallets, setWallets] = useState([]);
+    const [preferred, setPreferred] = useState(null);
+    const [initialized, setInitialized] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const refresh = async () => {
+        if (!currentWallet) return;
+        try {
+            const [rows, pref] = await Promise.all([
+                getAllWalletDetails(currentWallet),
+                getPreferredWallet(currentWallet),
+            ]);
+            setWallets(rows ?? []);
+            setPreferred(pref);
+        } catch {
+            setWallets([]);
+            setPreferred(null);
+        }
     };
 
-    loadData();
-  }, [currentWallet, getAllWalletDetails, getPreferredWallet]);
+    useEffect(() => {
+        if (!currentWallet || initialized) return;
+        (async () => {
+            await refresh();
+            setInitialized(true);
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentWallet, initialized]);
 
-  const handleSelectPreferredWallet = async (walletAddress) => {
-    if (!currentWallet) return;
-    
-    setLoading(true);
-    try {
-      await setPreferredWallet(walletAddress);
-      setPreferredWalletState(walletAddress);
-      
-      // Reload all wallets to update isPreferred flags
-      const wallets = await getAllWalletDetails(currentWallet);
-      setLinkedWallets(wallets);
-      
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
-      toast.error('Failed to set preferred wallet', { description: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
+    const pick = async (address) => {
+        if (!currentWallet || preferred?.toLowerCase() === address.toLowerCase()) return;
+        setLoading(true);
+        try {
+            await setPreferredWallet(address);
+            await refresh();
+            toast.success('Preferred wallet updated');
+        } catch (err) {
+            toast.error('Failed to update preference', { description: err.message });
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleSavePreferences = () => {
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
-
-  const truncateAddress = (address) => {
-    if (!address) return '';
-    if (address.length <= 10) return address;
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
-  return (
-    <div className="flex flex-col gap-4 ">
-      <header className="flex items-center text-[16px] lg:text-[24px] gap-3">
-        <div className="p-3 rounded-full border border-[#333] bg-[rgba(34, 34, 34, 0.702)] flex items-center justify-center ">
-          <MdOutlineCreditCard
-            color="#87698C"
-            size={isTabletOrMobile ? 24 : 30}
-          />
-        </div>
-        <p>Payout Preferences</p>
-      </header>
-
-      {showSuccess && (
-        <div className="p-3 bg-[#D548EC]/20 border border-[#D548EC] rounded-[8px] text-[14px]">
-          ✅ Preferences updated successfully!
-        </div>
-      )}
-
-      {/* Preferred Receiving Wallet */}
-      <div className="flex flex-col gap-3">
-        <p className="text-[#F4AEFF] text-[14px] lg:text-[16px] font-semibold">
-          Preferred Receiving Wallet
-        </p>
-        {linkedWallets.length === 0 ? (
-          <p className="text-[#707070] text-[14px]">No wallets available. Link a wallet first.</p>
-        ) : (
-          <ul className="flex flex-col gap-2 text-[14px] lg:text-[18px]">
-            {linkedWallets.map((wallet) => (
-              <li 
-                key={wallet.address}
-                onClick={() => handleSelectPreferredWallet(wallet.address)}
-                className={`flex items-center justify-between p-3 border rounded-[8px] cursor-pointer transition-all ${
-                  preferredWallet?.toLowerCase() === wallet.address.toLowerCase()
-                    ? 'border-[#D548EC] bg-[#D548EC]/10'
-                    : 'border-[#333] hover:border-[#D548EC]/50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full border-2 ${
-                    preferredWallet?.toLowerCase() === wallet.address.toLowerCase()
-                      ? 'border-[#D548EC] bg-[#D548EC]'
-                      : 'border-[#707070]'
-                  }`}>
-                    {preferredWallet?.toLowerCase() === wallet.address.toLowerCase() && (
-                      <div className="w-full h-full rounded-full bg-white scale-50" />
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-[#F4AEFF] font-mono">
-                      {truncateAddress(wallet.address)}
-                    </span>
-                    <p className="text-[#707070] text-[12px] lg:text-[14px]">
-                      {wallet.chainName}
-                    </p>
-                  </div>
+    return (
+        <div className="flex flex-col gap-6 font-dm">
+            {/* Header */}
+            <header className="flex items-start gap-4">
+                <div className="p-3 lg:p-4 rounded-full border border-[#F4AEFF]/40 bg-[#111111] flex items-center justify-center shrink-0">
+                    <FaRegCreditCard className="text-[#D548EC]" size={isTabletOrMobile ? 22 : 28} />
                 </div>
-                {preferredWallet?.toLowerCase() === wallet.address.toLowerCase() && (
-                  <span className="text-[#D548EC] text-[12px]">⭐ Preferred</span>
+                <div className="flex flex-col gap-1">
+                    <h2 className="text-[20px] lg:text-[28px] font-bold">Payout preferences</h2>
+                    <p className="text-[#707070] text-[12px] lg:text-[14px]">
+                        Pick which linked wallet should receive your circle payouts.
+                    </p>
+                </div>
+            </header>
+
+            {/* Testnet disclaimer */}
+            <div className="rounded-[12px] border border-[#F4AEFF]/30 bg-[#D548EC]/10 p-4 flex gap-3 text-[12px] lg:text-[14px]">
+                <FaInfoCircle className="text-[#D548EC] mt-0.5 shrink-0" size={16} />
+                <div className="text-[#AAA] leading-relaxed">
+                    Your preference is stored on-chain, but payouts from the current
+                    ChainCircleCore still land at the address that created/joined the circle.
+                    Cross-chain delivery to your preferred wallet ships with the Phase 6
+                    redeploy (Push UEA routing).
+                </div>
+            </div>
+
+            {/* Preferred receiving wallet picker */}
+            <section className="flex flex-col gap-3">
+                <h3 className="text-[#F4AEFF] font-semibold text-[14px] lg:text-[16px]">
+                    Preferred receiving wallet
+                </h3>
+
+                {!initialized ? (
+                    <div className="rounded-[12px] border border-[#333] bg-[#111111] p-6 text-center text-[#707070] text-[14px]">
+                        Loading wallets…
+                    </div>
+                ) : wallets.length === 0 ? (
+                    <div className="rounded-[12px] border border-dashed border-[#F4AEFF]/40 bg-[#111111]/60 p-8 flex flex-col items-center gap-3 text-center">
+                        <p className="text-[#AAA] text-[14px]">No linked wallets yet.</p>
+                        <Link
+                            to="/chain/profile"
+                            className="text-[#D548EC] hover:text-[#F4AEFF] text-[13px] lg:text-[14px] underline underline-offset-4"
+                        >
+                            Link one from the Linked Wallets tab →
+                        </Link>
+                    </div>
+                ) : (
+                    <ul className="flex flex-col gap-2">
+                        {wallets.map((w) => {
+                            const isActive = preferred?.toLowerCase() === w.address?.toLowerCase();
+                            return (
+                                <li key={w.address}>
+                                    <button
+                                        type="button"
+                                        disabled={loading || isActive}
+                                        onClick={() => pick(w.address)}
+                                        className={`w-full flex items-center justify-between p-4 rounded-[12px] border transition-colors bg-[#111111] text-left ${
+                                            isActive
+                                                ? 'border-[#D548EC] bg-[#D548EC]/10'
+                                                : 'border-[#333] hover:border-[#F4AEFF]/60 disabled:opacity-50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <span
+                                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                                    isActive ? 'border-[#D548EC] bg-[#D548EC]' : 'border-[#707070]'
+                                                }`}
+                                            >
+                                                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                            </span>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="font-mono text-[#F4AEFF] text-[13px] lg:text-[15px] truncate">
+                                                    {truncate(w.address)}
+                                                </span>
+                                                <span className="text-[#707070] text-[11px] lg:text-[12px]">
+                                                    {w.chainName || 'Push Chain'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {isActive && (
+                                            <span className="flex items-center gap-1.5 text-[#D548EC] text-[12px] lg:text-[13px] font-semibold shrink-0 ml-2">
+                                                <FaCheckCircle size={14} /> Preferred
+                                            </span>
+                                        )}
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ul>
                 )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+            </section>
 
-      {/* Preferred Token */}
-      <div className="flex flex-col gap-3 pt-4 border-t border-[#333]">
-        <p className="text-[#F4AEFF] text-[14px] lg:text-[16px] font-semibold">
-          Preferred Token
-        </p>
-        <div className="p-3 border border-[#333] rounded-[8px]">
-          <span className="text-[#AAAAAA]">CUSD (Circle USD)</span>
-          <p className="text-[#707070] text-[12px] lg:text-[14px]">
-            Default savings currency
-          </p>
+            {/* Preferred token */}
+            <section className="flex flex-col gap-3 pt-2">
+                <h3 className="text-[#F4AEFF] font-semibold text-[14px] lg:text-[16px]">Preferred token</h3>
+                <div className="rounded-[12px] border border-[#333] bg-[#111111] p-4 flex items-center justify-between">
+                    <div>
+                        <p className="text-[#AAA] text-[14px] lg:text-[16px]">CUSD (Circle USD)</p>
+                        <p className="text-[#707070] text-[11px] lg:text-[12px]">
+                            Testnet savings currency — only option today
+                        </p>
+                    </div>
+                    <span className="text-[#707070] text-[11px] px-2 py-0.5 rounded-full border border-[#333]">
+                        default
+                    </span>
+                </div>
+            </section>
         </div>
-      </div>
-
-      <div className="w-fit ml-auto pt-2">
-        <PurpleBtn
-          text={showSuccess ? "✓ Saved" : "Save preferences"}
-          action={handleSavePreferences}
-        />
-      </div>
-    </div>
-  );
+    );
 }

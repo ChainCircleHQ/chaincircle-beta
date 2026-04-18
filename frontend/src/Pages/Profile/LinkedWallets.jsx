@@ -1,254 +1,335 @@
-import React, { useState, useEffect } from 'react'
-import { Wallet, Trash2, Crown, Star } from "lucide-react";
+import React, { useEffect, useState } from 'react';
+import { FaWallet, FaCrown, FaStar, FaRegTrashAlt, FaPlus, FaInfoCircle } from 'react-icons/fa';
+import { IoClose } from 'react-icons/io5';
 import { toast } from 'sonner';
 import PurpleBtn from '../../Components/PurpleBtn';
+import TransBtn from '../../Components/TransBtn';
 import { useWalletPreferences } from '../../hooks/useWalletPreferences';
 import { usePushChainClient, usePushWalletContext, PushUI } from '@pushchain/ui-kit';
 
 const isTabletOrMobile = window.innerWidth <= 1014;
 
+const truncate = (addr) => {
+    if (!addr) return '';
+    if (addr.length <= 10) return addr;
+    return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+};
+
+const isValidEvmAddress = (addr) => /^0x[a-fA-F0-9]{40}$/.test(addr?.trim() || '');
+
 export default function LinkedWallets() {
-  const [linkedWallets, setLinkedWallets] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  const { pushChainClient } = usePushChainClient();
-  const { handleConnectToPushWallet, connectionStatus } = usePushWalletContext();
-  const { getAllWalletDetails, removeWallet: removeWalletOnChain, addWallet } = useWalletPreferences();
-  const currentWallet = pushChainClient?.universal?.account;
-  
-  // Use currentWallet as the master account (your login wallet)
-  const userAddress = currentWallet;
+    const { pushChainClient } = usePushChainClient();
+    const { connectionStatus } = usePushWalletContext();
+    const { getAllWalletDetails, removeWallet: removeWalletOnChain, addWallet } = useWalletPreferences();
+    const masterAccount = pushChainClient?.universal?.account;
 
-  // Load wallets from smart contract using userAddress (master account)
-  useEffect(() => {
-    const loadWallets = async () => {
-      if (!userAddress || initialized) return;
-      
-      try {
-        const wallets = await getAllWalletDetails(userAddress);
-        setLinkedWallets(wallets);
-        setInitialized(true);
-      } catch (error) {
-        // Fallback to empty array if contract call fails
-        setLinkedWallets([]);
-        setInitialized(true);
-      }
-    };
+    const [wallets, setWallets] = useState([]);
+    const [initialized, setInitialized] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [removingAddr, setRemovingAddr] = useState(null); // inline confirm state
 
-    loadWallets();
-  }, [userAddress, initialized, getAllWalletDetails]);
-
-  const handleRemoveWallet = async (walletAddress) => {
-    if (linkedWallets.length <= 1) {
-      toast.error('Cannot remove your last wallet');
-      return;
-    }
-    
-    const confirmRemove = window.confirm('Are you sure you want to remove this wallet?');
-    if (!confirmRemove) return;
-    
-    setLoading(true);
-    try {
-      await removeWalletOnChain(walletAddress);
-      // Reload wallets
-      const wallets = await getAllWalletDetails(userAddress);
-      setLinkedWallets(wallets);
-    } catch (error) {
-      toast.error('Failed to remove wallet', { description: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLinkWallet = () => {
-    const walletAddress = prompt('Enter the wallet address you want to link:');
-    
-    if (!walletAddress) {
-      return; // User cancelled
-    }
-
-    // Basic validation
-    if (!walletAddress.startsWith('0x') || walletAddress.length !== 42) {
-      toast.error('Invalid wallet address', { description: 'Must be a valid 0x… Ethereum-style address.' });
-      return;
-    }
-
-    // Check if already linked
-    const isAlreadyLinked = linkedWallets.some(
-      w => w.address.toLowerCase() === walletAddress.toLowerCase()
-    );
-
-    if (isAlreadyLinked) {
-      toast.info('This wallet is already linked');
-      return;
-    }
-
-    // Add the wallet
-    addWalletManually(walletAddress);
-  };
-
-  const addWalletManually = async (walletAddress) => {
-    setLoading(true);
-    try {
-      if (connectionStatus !== PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED || !userAddress) {
-        toast.error('Please connect your wallet first');
-        return;
-      }
-
-      await addWallet(walletAddress, 'Push Chain');
-      const updatedWallets = await getAllWalletDetails(userAddress);
-      setLinkedWallets(updatedWallets);
-      setLoading(false);
-      toast.success('Wallet linked');
-    } catch (error) {
-      if (error.message.includes('already linked')) {
-        toast.info('This wallet is already linked');
-      } else {
-        toast.error('Failed to link wallet', { description: error.message });
-      }
-      setLoading(false);
-    }
-  };
-
-  // Auto-add current wallet if none are linked (first time setup)
-  const [hasTriedAutoAdd, setHasTriedAutoAdd] = useState(false);
-  
-  useEffect(() => {
-    const autoAddCurrentWallet = async () => {
-      // Only auto-add if:
-      // 1. We have a userAddress (master account) and currentWallet
-      // 2. We're initialized and loaded
-      // 3. We haven't tried auto-add yet
-      // 4. The linkedWallets list is empty (first time)
-      // 5. The wallet is fully connected
-      if (!userAddress || !currentWallet || !initialized || hasTriedAutoAdd || linkedWallets.length > 0 || loading) return;
-      
-      if (connectionStatus !== PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED) return;
-
-      // Only auto-add if current wallet is the same as userAddress (first login)
-      if (currentWallet.toLowerCase() !== userAddress.toLowerCase()) return;
-
-      // Mark that we've tried, even if it fails
-      setHasTriedAutoAdd(true);
-
-      try {
-        // Check if this wallet is already in the contract
-        const wallets = await getAllWalletDetails(userAddress);
-        
-        if (wallets.length === 0) {
-          // No wallets in contract yet - add current wallet
-          setLoading(true);
-          await addWallet(currentWallet, 'Push Chain');
-          const updatedWallets = await getAllWalletDetails(userAddress);
-          setLinkedWallets(updatedWallets);
-          setLoading(false);
-        } else {
-          // Wallets exist in contract, load them
-          setLinkedWallets(wallets);
+    const refreshWallets = async () => {
+        if (!masterAccount) return;
+        try {
+            const rows = await getAllWalletDetails(masterAccount);
+            setWallets(rows ?? []);
+        } catch {
+            setWallets([]);
         }
-      } catch (error) {
-        // Silently fail - user can manually link
-        setLoading(false);
-      }
     };
 
-    // Small delay to ensure everything is initialized
-    const timer = setTimeout(() => {
-      autoAddCurrentWallet();
-    }, 500);
+    useEffect(() => {
+        if (!masterAccount || initialized) return;
+        (async () => {
+            await refreshWallets();
+            setInitialized(true);
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [masterAccount, initialized]);
 
-    return () => clearTimeout(timer);
-  }, [userAddress, currentWallet, initialized, hasTriedAutoAdd, connectionStatus, linkedWallets.length, loading, getAllWalletDetails, addWallet]);
-  
-  // Reset hasTriedAutoAdd when wallet changes
-  useEffect(() => {
-    setHasTriedAutoAdd(false);
-  }, [currentWallet]);
+    const handleAdd = async (address, chainName) => {
+        if (connectionStatus !== PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED || !masterAccount) {
+            toast.error('Connect your wallet first');
+            return false;
+        }
+        setLoading(true);
+        try {
+            await addWallet(address, chainName);
+            await refreshWallets();
+            toast.success('Wallet linked');
+            return true;
+        } catch (err) {
+            if (err.message?.includes('already linked')) {
+                toast.info('This wallet is already linked');
+            } else {
+                toast.error('Failed to link wallet', { description: err.message });
+            }
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const truncateAddress = (address) => {
-    if (!address) return '';
-    if (address.length <= 10) return address;
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
+    const handleRemove = async (address) => {
+        if (wallets.length <= 1) {
+            toast.error("Can't remove your last wallet");
+            return;
+        }
+        setLoading(true);
+        try {
+            await removeWalletOnChain(address);
+            await refreshWallets();
+            toast.success('Wallet removed');
+        } catch (err) {
+            toast.error('Failed to remove wallet', { description: err.message });
+        } finally {
+            setLoading(false);
+            setRemovingAddr(null);
+        }
+    };
 
-  return (
-    <div className="flex flex-col gap-4 ">
-      <header className="flex items-center text-[18px] lg:text-[28px] gap-3">
-        <div className="p-3 rounded-full border  border-[#333] bg-[rgba(34, 34, 34, 0.702)] flex items-center justify-center ">
-          <Wallet color="#87698C" size={isTabletOrMobile ? 28 : 36} />
-        </div>
-        <div>
-          <p className="text-[18px] lg:text-[28px]">Linked Wallets</p>
-          <p className="text-[#707070] text-[12px] lg:text-[14px] mt-1">
-            Master Account: {userAddress ? truncateAddress(userAddress) : 'Loading...'}
-          </p>
-        </div>
-      </header>
-
-      {/* List */}
-      {linkedWallets.length === 0 ? (
-        <p className="text-[#707070] text-[16px] lg:text-[20px]">No wallets linked yet</p>
-      ) : (
-        <ul className="flex flex-col text-[#AAAAAA] gap-3 text-[16px] lg:text-[20px]">
-          {linkedWallets.map((wallet, index) => {
-            const isMasterAccount = wallet.address.toLowerCase() === userAddress?.toLowerCase();
-            return (
-              <li key={wallet.address} className="flex items-center justify-between p-4 border border-[#333] rounded-[8px] hover:border-[#D548EC] transition-colors bg-[rgba(34, 34, 34, 0.5)]">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="flex items-center gap-2">
-                    {wallet.isPreferred && <Star className="text-[#D548EC]" size={20} />}
-                    {isMasterAccount && <Crown className="text-[#F4AEFF]" size={18} />}
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[#F4AEFF] flex items-center gap-2">
-                      {isMasterAccount ? 'Master Account' : `Wallet ${index + 1}`}
-                    </span>
-                    <span className="text-[13px] lg:text-[15px] font-mono">
-                      {truncateAddress(wallet.address)}
-                    </span>
-                    <span className="text-[#707070] text-[12px] lg:text-[14px]">
-                      {wallet.chainName}
-                    </span>
-                  </div>
+    return (
+        <div className="flex flex-col gap-6 font-dm">
+            {/* Header */}
+            <header className="flex items-start gap-4">
+                <div className="p-3 lg:p-4 rounded-full border border-[#F4AEFF]/40 bg-[#111111] flex items-center justify-center shrink-0">
+                    <FaWallet className="text-[#D548EC]" size={isTabletOrMobile ? 22 : 28} />
                 </div>
-                {linkedWallets.length > 1 && !isMasterAccount && (
-                  <button
-                    onClick={() => handleRemoveWallet(wallet.address)}
-                    className="p-2 hover:bg-[#D548EC]/20 rounded-full transition-colors text-[#aaa] hover:text-[#D548EC] ml-2"
-                    title="Remove wallet"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                <div className="flex flex-col gap-1">
+                    <h2 className="text-[20px] lg:text-[28px] font-bold">Linked wallets</h2>
+                    <p className="text-[#707070] text-[12px] lg:text-[14px]">
+                        Master account: <span className="font-mono text-[#AAA]">{masterAccount ? truncate(masterAccount) : '…'}</span>
+                    </p>
+                </div>
+            </header>
 
-      <div className="w-fit ml-auto ">
-        <PurpleBtn 
-          text={loading ? "Loading..." : "Link New Wallet"} 
-          action={handleLinkWallet}
-          disabled={loading}
-        />
-      </div>
-      
-      <div className="bg-[rgba(213, 72, 236, 0.1)] border border-[rgba(213, 72, 236, 0.3)] rounded-[8px] p-4 text-[13px] lg:text-[15px]">
-        <p className="text-[#D548EC] font-semibold mb-3 text-[15px] lg:text-[18px]">What are Linked Wallets?</p>
-        <p className="text-[#AAAAAA] mb-3 leading-relaxed">
-          <strong className="text-[#D548EC]">Purpose:</strong> These are wallet addresses where you want to <span className="text-[#D548EC]">receive payouts</span> from your savings circles.
-        </p>
-        <p className="text-[#AAAAAA] mb-3 leading-relaxed">
-          <strong className="text-[#D548EC]">Important:</strong> These are <span className="text-red-400">NOT for logging in</span>. They're just addresses stored on-chain for payouts.
-        </p>
-        <p className="text-[#AAAAAA] leading-relaxed text-[12px] lg:text-[13px]">
-          <strong>Any EVM Address Works:</strong> You can add any Ethereum-compatible address (0x...). It doesn't need to be a UEA. These are just destination addresses for payouts.
-        </p>
-        <p className="text-[#AAAAAA] text-[11px] lg:text-[12px] mt-3 pt-3 border-t border-[rgba(213, 72, 236, 0.2)]">
-          Your Master Account ({userAddress ? truncateAddress(userAddress) : '...'}) controls all linked wallets. Only you (the logged-in wallet) can add/remove them.
-        </p>
-      </div>
-    </div>
-  );
+            {/* Testnet + not-yet-wired disclaimer */}
+            <div className="rounded-[12px] border border-[#F4AEFF]/30 bg-[#D548EC]/10 p-4 flex gap-3 text-[12px] lg:text-[14px]">
+                <FaInfoCircle className="text-[#D548EC] mt-0.5 shrink-0" size={16} />
+                <div className="text-[#AAA] leading-relaxed">
+                    Linked wallets are stored on-chain, but the current ChainCircleCore doesn't
+                    yet route payouts through your preferred wallet — this ships with the
+                    Phase 6 redeploy. For now, this list is <span className="text-[#F4AEFF]">informational</span>.
+                </div>
+            </div>
+
+            {/* Wallet list */}
+            {!initialized ? (
+                <div className="rounded-[12px] border border-[#333] bg-[#111111] p-8 text-center text-[#707070] text-[14px]">
+                    Loading wallets…
+                </div>
+            ) : wallets.length === 0 ? (
+                <div className="rounded-[12px] border border-dashed border-[#F4AEFF]/40 bg-[#111111]/60 p-10 flex flex-col items-center gap-3 text-center">
+                    <FaWallet className="text-[#F4AEFF]/60" size={32} />
+                    <p className="text-[#AAA] text-[14px] lg:text-[16px]">No linked wallets yet.</p>
+                    <p className="text-[#707070] text-[12px] lg:text-[13px] max-w-md">
+                        Link any EVM address to mark it as a payout destination. Your master
+                        account always controls the list.
+                    </p>
+                    <div className="mt-2">
+                        <PurpleBtn text="Link your first wallet" action={() => setShowAddModal(true)} />
+                    </div>
+                </div>
+            ) : (
+                <ul className="flex flex-col gap-3">
+                    {wallets.map((w) => {
+                        const isMaster = w.address?.toLowerCase() === masterAccount?.toLowerCase();
+                        const isRemoving = removingAddr === w.address;
+                        return (
+                            <li
+                                key={w.address}
+                                className={`rounded-[12px] border p-4 lg:p-5 flex items-center gap-4 transition-colors bg-[#111111] ${
+                                    w.isPreferred
+                                        ? 'border-[#D548EC]'
+                                        : 'border-[#333] hover:border-[#F4AEFF]/60'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {isMaster && <FaCrown className="text-[#F4AEFF]" size={18} title="Master account" />}
+                                    {w.isPreferred && <FaStar className="text-[#D548EC]" size={18} title="Preferred payout wallet" />}
+                                    {!isMaster && !w.isPreferred && (
+                                        <FaWallet className="text-[#707070]" size={18} />
+                                    )}
+                                </div>
+
+                                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-[#F4AEFF] text-[13px] lg:text-[15px] font-semibold">
+                                            {isMaster ? 'Master account' : w.isPreferred ? 'Preferred payout' : 'Linked wallet'}
+                                        </span>
+                                        <span className="text-[#707070] text-[11px] lg:text-[12px] font-mono bg-black/40 px-2 py-0.5 rounded-full">
+                                            {w.chainName || 'Push Chain'}
+                                        </span>
+                                    </div>
+                                    <span className="font-mono text-[#AAA] text-[12px] lg:text-[14px] truncate">
+                                        {w.address}
+                                    </span>
+                                </div>
+
+                                {wallets.length > 1 && !isMaster && (
+                                    isRemoving ? (
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <button
+                                                onClick={() => handleRemove(w.address)}
+                                                disabled={loading}
+                                                className="px-3 py-1.5 rounded-full bg-red-500/80 hover:bg-red-500 text-white text-[12px] lg:text-[13px] font-semibold disabled:opacity-50"
+                                            >
+                                                {loading ? 'Removing…' : 'Confirm'}
+                                            </button>
+                                            <button
+                                                onClick={() => setRemovingAddr(null)}
+                                                disabled={loading}
+                                                className="px-3 py-1.5 rounded-full border border-[#333] text-[#AAA] text-[12px] lg:text-[13px] hover:border-[#F4AEFF]/60"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setRemovingAddr(w.address)}
+                                            className="p-2 rounded-full text-[#707070] hover:text-[#D548EC] hover:bg-[#D548EC]/10 transition-colors shrink-0"
+                                            title="Remove wallet"
+                                        >
+                                            <FaRegTrashAlt size={16} />
+                                        </button>
+                                    )
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+
+            {/* Add CTA (hidden when empty state renders its own) */}
+            {wallets.length > 0 && (
+                <div className="flex justify-end">
+                    <PurpleBtn
+                        text="Link new wallet"
+                        icon="rightArrow"
+                        action={() => setShowAddModal(true)}
+                        disabled={loading}
+                    />
+                </div>
+            )}
+
+            {/* Info panel */}
+            <section className="rounded-[12px] border border-[#333] bg-[#111111] p-5 flex flex-col gap-3 text-[13px] lg:text-[14px] text-[#AAA] leading-relaxed">
+                <h3 className="text-[#F4AEFF] font-semibold text-[15px] lg:text-[17px] flex items-center gap-2">
+                    <FaInfoCircle size={16} />
+                    What linked wallets are for
+                </h3>
+                <p>
+                    These are destination addresses where you'd like circle payouts to land.
+                    They are <span className="text-[#F4AEFF]">not</span> login credentials —
+                    your master account stays in control.
+                </p>
+                <p>
+                    Any EVM-compatible address works (must start with <span className="font-mono text-[#AAA]">0x</span>
+                    and be 42 characters). When Phase 6 ships, the <span className="text-[#D548EC]">preferred
+                    wallet</span> is the one payouts arrive in, resolved cross-chain via Push UEA.
+                </p>
+            </section>
+
+            {/* Add wallet modal */}
+            {showAddModal && (
+                <AddWalletModal
+                    onClose={() => setShowAddModal(false)}
+                    onSubmit={handleAdd}
+                    existing={wallets.map((w) => w.address?.toLowerCase())}
+                    loading={loading}
+                />
+            )}
+        </div>
+    );
+}
+
+function AddWalletModal({ onClose, onSubmit, existing, loading }) {
+    const [address, setAddress] = useState('');
+    const [chainName, setChainName] = useState('Push Chain');
+    const [error, setError] = useState('');
+
+    const submit = async (e) => {
+        e?.preventDefault();
+        const trimmed = address.trim();
+        if (!isValidEvmAddress(trimmed)) {
+            setError('Must be a valid 0x… address (42 characters).');
+            return;
+        }
+        if (existing.includes(trimmed.toLowerCase())) {
+            setError('This wallet is already linked.');
+            return;
+        }
+        setError('');
+        const ok = await onSubmit(trimmed, chainName);
+        if (ok) onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-dm">
+            <div className="relative w-full max-w-[480px] bg-[#111111] rounded-[20px] border border-[#F4AEFF] overflow-hidden">
+                <button
+                    onClick={onClose}
+                    className="absolute top-3 right-3 p-2 rounded-full hover:bg-[#D548EC]/20 text-[#AAA] hover:text-white"
+                >
+                    <IoClose size={22} />
+                </button>
+
+                <div className="px-6 pt-6 pb-4 border-b border-[#F4AEFF]/30">
+                    <h2 className="text-[20px] lg:text-[24px] font-bold">Link a new wallet</h2>
+                    <p className="text-[#707070] text-[12px] lg:text-[13px] mt-1">
+                        Add an EVM-compatible address to receive payouts.
+                    </p>
+                </div>
+
+                <form onSubmit={submit} className="px-6 py-5 flex flex-col gap-4">
+                    <label className="flex flex-col gap-2">
+                        <span className="text-[13px] lg:text-[14px] text-[#AAA]">Wallet address</span>
+                        <input
+                            autoFocus
+                            type="text"
+                            value={address}
+                            onChange={(e) => { setAddress(e.target.value); setError(''); }}
+                            placeholder="0x…"
+                            className="w-full bg-black/40 border border-[#333] focus:border-[#D548EC] rounded-[10px] px-4 py-3 font-mono text-[13px] lg:text-[14px] text-white placeholder-[#555] outline-none transition-colors"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-2">
+                        <span className="text-[13px] lg:text-[14px] text-[#AAA]">Source chain</span>
+                        <select
+                            value={chainName}
+                            onChange={(e) => setChainName(e.target.value)}
+                            className="w-full bg-black/40 border border-[#333] focus:border-[#D548EC] rounded-[10px] px-4 py-3 text-[13px] lg:text-[14px] text-white outline-none transition-colors"
+                        >
+                            <option value="Push Chain">Push Chain</option>
+                            <option value="Ethereum">Ethereum</option>
+                            <option value="Base">Base</option>
+                            <option value="Arbitrum">Arbitrum</option>
+                            <option value="Optimism">Optimism</option>
+                            <option value="Polygon">Polygon</option>
+                            <option value="BSC">BSC</option>
+                            <option value="Solana">Solana</option>
+                        </select>
+                    </label>
+
+                    {error && (
+                        <div className="text-red-400 text-[12px] lg:text-[13px] bg-red-500/10 border border-red-500/30 rounded-[8px] px-3 py-2">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-end gap-3 pt-2">
+                        <TransBtn text="Cancel" action={onClose} />
+                        <PurpleBtn
+                            text={loading ? 'Linking…' : 'Link wallet'}
+                            icon="rightArrow"
+                            action={submit}
+                            disabled={loading || !address.trim()}
+                        />
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
 }
