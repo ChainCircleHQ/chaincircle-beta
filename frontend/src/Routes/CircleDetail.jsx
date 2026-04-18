@@ -109,7 +109,11 @@ export default function CircleDetail() {
             const raw = err?.message || '';
             const lower = raw.toLowerCase();
             if (lower.includes('user rejected')) return; // silent on cancel
-            if (lower.includes('not confirmed with') && lower.includes('ms')) {
+            if (
+                (lower.includes('not confirmed with') && lower.includes('ms')) ||
+                lower.includes('failed to retrieve push chain') ||
+                lower.includes('not been indexed yet')
+            ) {
                 // Push UEA cross-chain relay timeout (typically Solana side congested).
                 // Contract may still have processed — tell the user to wait + retry.
                 toast.error('Transaction still pending', {

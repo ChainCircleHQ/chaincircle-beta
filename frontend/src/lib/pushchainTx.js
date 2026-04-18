@@ -20,10 +20,20 @@
 
 import { setProgress, clearProgress, normalizeEvent } from './txProgressBus';
 
-const TIMEOUT_SUBSTR = 'not confirmed with';
+// Error-message patterns the SDK emits that mean "tx probably landed, keep
+// polling" rather than "tx definitely failed." trackTransaction(hash) can
+// recover from all of these by asking Push Chain's gateway directly.
+const RETRYABLE_SUBSTRINGS = [
+    'not confirmed with',                    // tx.wait() timeout
+    'failed to retrieve push chain',         // gateway indexer lag (v5+)
+    'transaction may have failed',           // gateway uncertainty
+    'not been indexed yet',                  // indexer behind
+    'gateway tx',                            // any gateway-scoped failure
+];
 
-function isTimeoutError(err) {
-    return typeof err?.message === 'string' && err.message.toLowerCase().includes(TIMEOUT_SUBSTR);
+function isRetryableError(err) {
+    const msg = (err?.message || err?.shortMessage || '').toLowerCase();
+    return RETRYABLE_SUBSTRINGS.some((s) => msg.includes(s));
 }
 
 function buildProgressHook(label, userHook) {
@@ -50,7 +60,23 @@ export async function sendUniversalTx(pushChainClient, txParams, options = {}) {
     try {
         tx = await pushChainClient.universal.sendTransaction({ ...txParams, progressHook });
     } catch (err) {
-        // User rejection / insufficient funds — clear banner and re-throw.
+        // If the error is a retryable gateway-lag case AND carries a tx hash
+        // somewhere in the message, we can still track it. Otherwise it's a
+        // hard failure (user rejected, insufficient funds, revert).
+        const hashMatch = (err?.message || '').match(/0x[0-9a-fA-F]{64,130}/);
+        if (isRetryableError(err) && hashMatch) {
+            const maybeHash = hashMatch[0];
+            setProgress({ stage: 'tracking', message: label ? `${label}: tracking…` : 'Tracking on-chain…', txHash: maybeHash });
+            const tracked = await tryTrack(pushChainClient, maybeHash, options, progressHook);
+            if (tracked) {
+                setProgress({ stage: 'confirmed', message: label ? `${label}: confirmed` : 'Confirmed', txHash: maybeHash });
+                setTimeout(() => { clearProgress(); }, 2500);
+                return { status: 'confirmed', tx: tracked, receipt: tracked };
+            }
+            setProgress({ stage: 'failed', message: label ? `${label}: still pending` : 'Still pending — check later', txHash: maybeHash });
+            setTimeout(() => { clearProgress(); }, 4000);
+            return { status: 'pending', tx: null, hash: maybeHash };
+        }
         clearProgress();
         throw err;
     }
@@ -61,11 +87,10 @@ export async function sendUniversalTx(pushChainClient, txParams, options = {}) {
     try {
         const receipt = await tx.wait();
         setProgress({ stage: 'confirmed', message: label ? `${label}: confirmed` : 'Confirmed', txHash: hash });
-        // Auto-clear after a moment so the banner fades out on success.
         setTimeout(() => { clearProgress(); }, 2500);
         return { status: 'confirmed', tx, receipt };
     } catch (err) {
-        if (!isTimeoutError(err)) {
+        if (!isRetryableError(err)) {
             setProgress({ stage: 'failed', message: label ? `${label}: failed` : 'Failed', txHash: hash });
             setTimeout(() => { clearProgress(); }, 4000);
             throw err;
@@ -76,26 +101,32 @@ export async function sendUniversalTx(pushChainClient, txParams, options = {}) {
             return { status: 'pending', tx, hash: null };
         }
 
-        // Origin-chain confirmations slow; fall back to tracking by hash.
         setProgress({ stage: 'tracking', message: label ? `${label}: tracking…` : 'Tracking on-chain…', txHash: hash });
-        try {
-            const tracked = await pushChainClient.universal.trackTransaction(hash, {
-                waitForCompletion: true,
-                advanced: { pollingIntervalMs: 3_000, timeout: 180_000, ...(options.trackAdvanced || {}) },
-                progressHook,
-            });
+        const tracked = await tryTrack(pushChainClient, hash, options, progressHook);
+        if (tracked) {
             setProgress({ stage: 'confirmed', message: label ? `${label}: confirmed` : 'Confirmed', txHash: hash });
             setTimeout(() => { clearProgress(); }, 2500);
             return { status: 'confirmed', tx: tracked, receipt: tracked };
-        } catch (trackErr) {
-            if (isTimeoutError(trackErr)) {
-                setProgress({ stage: 'failed', message: label ? `${label}: still pending` : 'Still pending — check later', txHash: hash });
-                setTimeout(() => { clearProgress(); }, 4000);
-                return { status: 'pending', tx, hash };
-            }
-            setProgress({ stage: 'failed', message: label ? `${label}: reverted` : 'Transaction reverted', txHash: hash });
-            setTimeout(() => { clearProgress(); }, 4000);
-            throw trackErr;
         }
+        setProgress({ stage: 'failed', message: label ? `${label}: still pending` : 'Still pending — check later', txHash: hash });
+        setTimeout(() => { clearProgress(); }, 4000);
+        return { status: 'pending', tx, hash };
+    }
+}
+
+// trackTransaction with a generous timeout. Returns the tracked response on
+// success, or null if it too errors / times out — caller treats null as
+// "pending, not definitively failed."
+async function tryTrack(pushChainClient, hash, options, progressHook) {
+    try {
+        return await pushChainClient.universal.trackTransaction(hash, {
+            waitForCompletion: true,
+            advanced: { pollingIntervalMs: 3_000, timeout: 240_000, ...(options.trackAdvanced || {}) },
+            progressHook,
+        });
+    } catch (trackErr) {
+        // Revert-type errors re-throw; retryable-looking errors = still pending.
+        if (!isRetryableError(trackErr)) throw trackErr;
+        return null;
     }
 }

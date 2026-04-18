@@ -53,7 +53,11 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
       const raw = error?.message || '';
       const lower = raw.toLowerCase();
       if (lower.includes('user rejected')) return;
-      if (lower.includes('not confirmed with') && lower.includes('ms')) {
+      if (
+        (lower.includes('not confirmed with') && lower.includes('ms')) ||
+        lower.includes('failed to retrieve push chain') ||
+        lower.includes('not been indexed yet')
+      ) {
         toast.error('Transaction still pending', {
           description: 'Your wallet chain took too long to confirm. Wait 30s and refresh — if you do not see yourself in the roster, try again.',
           duration: 10_000,

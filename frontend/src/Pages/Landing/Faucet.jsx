@@ -41,10 +41,23 @@ export default function Faucet() {
     if (claimMutation.isError) {
       const err = claimMutation.error
       console.error('Claim error:', err)
-      if (err.message.includes('Claim cooldown') || err.message.includes('too early')) {
+      const msg = err?.message || ''
+      const lower = msg.toLowerCase()
+      if (lower.includes('user rejected')) {
+        setError('') // silent cancel
+      } else if (msg.includes('Claim cooldown') || msg.includes('too early')) {
         setError('You must wait 24 hours between claims')
+      } else if (
+        lower.includes('failed to retrieve push chain') ||
+        lower.includes('not been indexed yet') ||
+        lower.includes('not confirmed with')
+      ) {
+        setError('Push Chain is slow to index right now. Your tx may have landed — refresh your balance in a minute.')
+      } else if (lower.includes('insufficient')) {
+        setError('Insufficient funds for gas.')
       } else {
-        setError(err.message || 'Failed to claim tokens. Please try again.')
+        const short = msg.length > 160 ? msg.slice(0, 160) + '…' : msg
+        setError(short || 'Failed to claim tokens. Please try again.')
       }
     }
   }, [claimMutation.isError, claimMutation.error])
