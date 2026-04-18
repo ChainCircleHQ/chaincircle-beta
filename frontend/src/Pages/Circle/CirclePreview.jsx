@@ -8,8 +8,10 @@
 
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as htmlToImage from 'html-to-image';
+import { supabase } from '../../lib/supabase';
 import {
     IoClose, IoShareSocial, IoDownload,
 } from 'react-icons/io5';
@@ -55,25 +57,49 @@ function avatarColor(addr) {
     return { bg: `hsl(${hue}, 50%, 25%)`, fg: `hsl(${hue}, 80%, 75%)` };
 }
 
-function MemberAvatar({ address, isCreator, size = 36 }) {
+function MemberAvatar({ address, isCreator, isYou, size = 36 }) {
     const { bg, fg } = avatarColor(address);
     const initials = (address || '').slice(2, 4).toUpperCase();
     return (
         <div
-            className="relative rounded-full flex items-center justify-center shrink-0 font-mono font-semibold"
+            className="relative rounded-full flex items-center justify-center shrink-0 font-mono font-semibold border-2 border-[#111111]"
             style={{ width: size, height: size, backgroundColor: bg, color: fg, fontSize: size * 0.36 }}
             title={address}
         >
             {initials}
             {isCreator && (
                 <FaCrown
-                    className="absolute -top-1 -right-1 text-[#FDA318]"
-                    size={size * 0.35}
+                    className="absolute -top-1.5 -right-1.5 text-[#FDA318] drop-shadow"
+                    size={size * 0.36}
                     title="Creator"
                 />
             )}
+            {isYou && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-bold bg-[#D548EC] text-white px-1.5 py-0 rounded-full border border-[#111111]">
+                    you
+                </span>
+            )}
         </div>
     );
+}
+
+// Fetch display names for a batch of addresses (Supabase users table).
+function useDisplayNames(addresses) {
+    const key = (addresses ?? []).map((a) => a?.toLowerCase()).sort().join(',');
+    return useQuery({
+        queryKey: ['displayNames.batch', key],
+        queryFn: async () => {
+            const addrs = (addresses ?? []).map((a) => a?.toLowerCase()).filter(Boolean);
+            if (!addrs.length) return new Map();
+            const { data } = await supabase
+                .from('users')
+                .select('address, display_name')
+                .in('address', addrs);
+            return new Map((data ?? []).map((r) => [r.address, r.display_name]));
+        },
+        enabled: (addresses ?? []).length > 0,
+        staleTime: 60_000,
+    });
 }
 
 export default function CirclePreview({ circleId, onClose }) {
@@ -97,6 +123,7 @@ export default function CirclePreview({ circleId, onClose }) {
         && (circle?.members ?? 0) < (circle?.maxMembers ?? 0);
 
     const members = circle?.memberAddresses ?? [];
+    const { data: nameMap } = useDisplayNames(members);
 
     const handleJoin = async () => {
         try {
@@ -309,30 +336,51 @@ export default function CirclePreview({ circleId, onClose }) {
                                 No members yet.
                             </div>
                         ) : (
-                            <div className="flex items-center -space-x-2">
-                                {members.slice(0, 6).map((addr) => (
-                                    <MemberAvatar
-                                        key={addr}
-                                        address={addr}
-                                        isCreator={addr?.toLowerCase() === circle.creator?.toLowerCase()}
-                                        size={isTabletOrMobile ? 34 : 40}
-                                    />
-                                ))}
-                                {members.length > 6 && (
-                                    <div
-                                        className="rounded-full border border-[#333] bg-[#111111] flex items-center justify-center text-[#AAA] text-[12px] ml-2"
-                                        style={{ width: isTabletOrMobile ? 34 : 40, height: isTabletOrMobile ? 34 : 40 }}
+                            <>
+                                <ul className="flex flex-col gap-1.5">
+                                    {members.slice(0, 5).map((addr) => {
+                                        const isCreatorRow = addr?.toLowerCase() === circle.creator?.toLowerCase();
+                                        const isYou = addr?.toLowerCase() === lcUser;
+                                        const name = nameMap?.get(addr?.toLowerCase());
+                                        return (
+                                            <li
+                                                key={addr}
+                                                className="flex items-center gap-2.5 rounded-[8px] bg-[#0a0a0a] border border-[#222] px-2.5 py-1.5"
+                                            >
+                                                <MemberAvatar
+                                                    address={addr}
+                                                    isCreator={isCreatorRow}
+                                                    isYou={isYou}
+                                                    size={isTabletOrMobile ? 28 : 32}
+                                                />
+                                                <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                                                    <span className="text-[13px] lg:text-[14px] text-white truncate">
+                                                        {name || truncateAddr(addr)}
+                                                    </span>
+                                                    {name && (
+                                                        <span className="font-mono text-[10px] lg:text-[11px] text-[#707070]">
+                                                            {truncateAddr(addr)}
+                                                        </span>
+                                                    )}
+                                                    {isCreatorRow && (
+                                                        <span className="text-[10px] px-1.5 py-0 rounded-full bg-[#FDA318]/20 text-[#FDA318] border border-[#FDA318]/40">
+                                                            creator
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                                {members.length > 5 && (
+                                    <button
+                                        onClick={() => { onClose?.(); navigate(`/chain/circle/${circle.id}`); }}
+                                        className="text-[#F4AEFF] text-[12px] lg:text-[13px] hover:text-white underline underline-offset-4 self-start"
                                     >
-                                        +{members.length - 6}
-                                    </div>
+                                        + {members.length - 5} more — view full roster →
+                                    </button>
                                 )}
-                                <button
-                                    onClick={() => { onClose?.(); navigate(`/chain/circle/${circle.id}`); }}
-                                    className="ml-3 text-[#F4AEFF] text-[12px] lg:text-[13px] hover:text-white underline underline-offset-4"
-                                >
-                                    View full roster →
-                                </button>
-                            </div>
+                            </>
                         )}
                     </div>
 

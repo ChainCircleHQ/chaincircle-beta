@@ -167,6 +167,9 @@ async function handleCoreEvent(
             frequency: Number(frequency),
             status: 0,
             current_round: 0,
+            // Reset cumulative counters — prevents v1 row leftovers from
+            // showing stale totals when an on-conflict overwrite happens.
+            total_pooled: "0",
             core_version: 2,
         }, { onConflict: "circle_id" });
         counts.circles++;

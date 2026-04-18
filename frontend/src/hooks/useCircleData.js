@@ -492,7 +492,10 @@ export function useCircleByInviteCode(inviteCode) {
             }
             return null;
         },
-        enabled: isConnected && !!inviteCode && inviteCode.length > 20,
+        // v2 invite codes are short alphanumerics (~8 chars). Gate at 6 so
+        // the query only runs once the user has pasted something plausible
+        // but doesn't require them to type past the actual code length.
+        enabled: isConnected && !!inviteCode && inviteCode.trim().length >= 6,
         staleTime: 60_000,
     });
 }

@@ -17,7 +17,10 @@ export default function JoinByInviteCode({ onClose }) {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (inviteCode.length > 20) {
+    // v2 invite codes are short alphanumerics (~8 chars). Accept anything
+    // with at least 6 non-whitespace chars — the hook will return null
+    // cleanly if no circle matches.
+    if (inviteCode.trim().length >= 6) {
       setSearchTriggered(true);
     }
   };
@@ -62,7 +65,7 @@ export default function JoinByInviteCode({ onClose }) {
                 setInviteCode(e.target.value);
                 setSearchTriggered(false); // Reset search when typing
               }}
-              placeholder="ab2532341da33ed9d093ed90f00f8183..."
+              placeholder="e.g. E2QQ66A6"
               className="w-full px-4 lg:px-6 py-3 lg:py-4 bg-[#222] border border-[#F4AEFF] rounded-lg outline-none text-sm lg:text-lg font-mono"
             />
             <p className="text-xs lg:text-base text-[#AAAAAA] mt-1 lg:mt-2">
@@ -72,7 +75,7 @@ export default function JoinByInviteCode({ onClose }) {
 
           <button
             type="submit"
-            disabled={inviteCode.length < 20 || isLoading}
+            disabled={inviteCode.trim().length < 6 || isLoading}
             className="w-full px-6 lg:px-8 py-3 lg:py-4 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold text-base lg:text-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Searching...' : 'Search Circle'}
