@@ -28,14 +28,16 @@ function useCirclesById(ids) {
 
 export default function AiRecommendations() {
     const { data, isLoading } = useAiInsights('recommendations');
-
-    if (data?.configured === false) return null;
-
     const recs = data?.recommendations ?? [];
     const ids = recs.map((r) => Number(r.circle_id)).filter(Number.isFinite);
     const { data: circles } = useCirclesById(ids);
     const circleById = new Map((circles ?? []).map((c) => [c.circle_id, c]));
 
+    // Early returns only AFTER every hook has been called, or we violate
+    // rules-of-hooks: on the render that exits via `configured === false`,
+    // useCirclesById wasn't yet called, so a later render that reaches it
+    // sees a different hook count → React error #300.
+    if (data?.configured === false) return null;
     if (!isLoading && !recs.length) return null;
 
     return (

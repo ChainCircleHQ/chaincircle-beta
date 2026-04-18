@@ -22,6 +22,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const joinCircle = useJoinCircle();
   const contribute = useContribute();
   const { data: memberStatus } = useMemberStatus(circleId);
+  const isTabletOrMobile = useIsTabletOrMobile();
   const previewRef = useRef(null);
 
   const isCreator = circle?.creator?.toLowerCase() === userAddress?.toLowerCase();
@@ -202,7 +203,6 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
 
   const IconComponent = getGoalIcon(circle.goalType || 0);
   const colors = getGoalColors(circle.goalType || 0);
-  const isTabletOrMobile = useIsTabletOrMobile();
   return (
     <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
       <div className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">
