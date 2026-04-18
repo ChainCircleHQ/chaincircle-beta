@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router';
 import { useWalletPreferences } from '../../hooks/useWalletPreferences';
 import { usePushChainClient } from '@pushchain/ui-kit';
+import { SkeletonRow } from '../../Components/Skeleton';
 
 const isTabletOrMobile = window.innerWidth <= 1014;
 
@@ -94,9 +95,9 @@ export default function PayoutPreferences() {
                 </h3>
 
                 {!initialized ? (
-                    <div className="rounded-[12px] border border-[#333] bg-[#111111] p-6 text-center text-[#707070] text-[14px]">
-                        Loading wallets…
-                    </div>
+                    <ul className="flex flex-col gap-2">
+                        {Array.from({ length: 2 }).map((_, i) => <SkeletonRow key={i} />)}
+                    </ul>
                 ) : wallets.length === 0 ? (
                     <div className="rounded-[12px] border border-dashed border-[#F4AEFF]/40 bg-[#111111]/60 p-8 flex flex-col items-center gap-3 text-center">
                         <p className="text-[#AAA] text-[14px]">No linked wallets yet.</p>

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useCircleContract } from '../hooks/useCircleContract';
 import { formatAddressOrName } from '../hooks/useNameRegistry';
 import CountUp from '../Components/CountUp';
+import { SkeletonRow } from '../Components/Skeleton';
 
 const isTabletOrMobile = window.innerWidth <= 1014;
 
@@ -114,9 +115,9 @@ export default function Leaderboard() {
 
             {/* Rows */}
             {isLoading ? (
-                <div className="rounded-[12px] border border-[#333] bg-[#111111] p-8 text-center text-[#707070]">
-                    Loading…
-                </div>
+                <ul className="flex flex-col gap-2">
+                    {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
+                </ul>
             ) : !rows?.length ? (
                 <div className="rounded-[12px] border border-dashed border-[#F4AEFF]/40 bg-[#111111]/60 p-10 text-center text-[#AAA]">
                     No users match.

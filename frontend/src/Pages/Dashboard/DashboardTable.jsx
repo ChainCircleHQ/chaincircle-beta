@@ -5,7 +5,7 @@ import { FiArrowDownLeft } from "react-icons/fi";
 import { FaSackDollar } from "react-icons/fa6";
 import { NETWORK_CONFIG } from '../../constants/contracts';
 import { useCircleContract } from '../../hooks/useCircleContract';
-import Spinner from '../../Components/Spinner';
+import { SkeletonRow } from '../../Components/Skeleton';
 
 export default function DashboardTable() {
   const { data, isLoading, error } = useRecentActivities(10);
@@ -25,8 +25,9 @@ export default function DashboardTable() {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex items-center justify-center">
-        <Spinner />
+      <div className="p-6 flex flex-col gap-3 text-[16px] lg:text-[24px] font-dm">
+        <p>Recent Activity</p>
+        {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
       </div>
     );
   }

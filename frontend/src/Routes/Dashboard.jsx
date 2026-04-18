@@ -11,6 +11,7 @@ import CreateCircleModal from '../Pages/Circle/CreateCircleModal';
 import CirclePreview from '../Pages/Circle/CirclePreview';
 import PurpleBtn from '../Components/PurpleBtn';
 import TransBtn from '../Components/TransBtn';
+import Skeleton from '../Components/Skeleton';
 import { useUserStats, useUserCircles } from '../hooks/useCircleData';
 import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
 import { PiCirclesThreeBold } from "react-icons/pi";
@@ -94,9 +95,14 @@ export default function Dashboard() {
 
           {/* User Circles from Blockchain */}
           {circlesLoading ? (
-            <div className="flex items-center justify-center w-full">
-              <p className="text-[#AAAAAA]">Loading circles...</p>
-            </div>
+            <>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-[11px] justify-center items-center">
+                  <Skeleton className="lg:w-[102px] lg:h-[102px] w-[80px] h-[80px] rounded-full" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              ))}
+            </>
           ) : userCircles && userCircles.length > 0 ? (
             userCircles.map((circle) => {
               const IconComponent = getGoalIcon(circle.goalType);

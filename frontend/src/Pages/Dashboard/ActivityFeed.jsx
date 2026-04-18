@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { formatAddressOrName } from '../../hooks/useNameRegistry';
 import formatCurrency from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
+import { SkeletonRow } from '../../Components/Skeleton';
 
 // Live global activity from activity_log materialized view + name join.
 function useGlobalActivity({ limit = 10 }) {
@@ -74,9 +75,9 @@ export default function ActivityFeed() {
             </header>
 
             {isLoading ? (
-                <div className="rounded-[12px] border border-[#333] bg-[#111111] p-6 text-center text-[#707070] text-[13px]">
-                    Loading…
-                </div>
+                <ul className="flex flex-col gap-2">
+                    {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
+                </ul>
             ) : !events?.length ? (
                 <div className="rounded-[12px] border border-dashed border-[#F4AEFF]/30 bg-[#111111]/60 p-6 text-center text-[#707070] text-[13px]">
                     Nothing yet.

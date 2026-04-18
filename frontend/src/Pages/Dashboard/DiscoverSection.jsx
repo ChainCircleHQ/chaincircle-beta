@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { useCircleContract } from '../../hooks/useCircleContract';
 import { getGoalIcon, getGoalColors, formatFrequency } from '../../utils/circleHelpers';
 import formatCurrency from '../../utils/formatCurrency';
+import { SkeletonCard } from '../../Components/Skeleton';
 
 const isTabletOrMobile = window.innerWidth <= 1014;
 
@@ -57,8 +58,8 @@ export default function DiscoverSection() {
             </header>
 
             {isLoading ? (
-                <div className="rounded-[12px] border border-[#333] bg-[#111111] p-6 text-center text-[#707070] text-[13px]">
-                    Loading…
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
                 </div>
             ) : !circles?.length ? (
                 <div className="rounded-[12px] border border-dashed border-[#F4AEFF]/30 bg-[#111111]/60 p-6 text-center text-[#707070] text-[13px]">

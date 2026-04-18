@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabase';
 import PurpleBtn from '../Components/PurpleBtn';
 import { getGoalIcon, getGoalColors, formatFrequency, calculateProgress } from '../utils/circleHelpers';
 import formatCurrency from '../utils/formatCurrency';
+import Skeleton, { SkeletonRow } from '../Components/Skeleton';
 
 const isTabletOrMobile = window.innerWidth <= 1014;
 
@@ -78,14 +79,49 @@ export default function CircleDetail() {
     const isMember = roster?.some((m) => m.user_address === userAddress?.toLowerCase());
     const canJoin = circle && !isMember && circle.status === 0 && (circle.members ?? 0) < (circle.maxMembers ?? 0);
 
-    if (isLoading || !circle) {
+    if (isLoading) {
+        return (
+            <div className="flex flex-col gap-6 font-dm">
+                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#AAA] hover:text-white w-fit">
+                    <FaArrowLeft size={14} /> Back
+                </button>
+                {/* Hero skeleton */}
+                <div className="rounded-[16px] border border-[#333] bg-[#111111] p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:items-center">
+                    <div className="flex items-center gap-4 shrink-0">
+                        <Skeleton className="w-16 h-16 lg:w-20 lg:h-20 rounded-full" />
+                        <div className="flex flex-col gap-2">
+                            <Skeleton className="h-6 lg:h-8 w-48" />
+                            <Skeleton className="h-4 w-24" />
+                        </div>
+                    </div>
+                    <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="flex flex-col gap-2">
+                                <Skeleton className="h-3 w-16" />
+                                <Skeleton className="h-5 w-20" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                {/* Progress + roster skeleton */}
+                <div className="rounded-[12px] border border-[#333] bg-[#111111] p-4 lg:p-5 flex flex-col gap-2">
+                    <Skeleton className="h-3 w-1/3" />
+                    <Skeleton className="h-2 w-full rounded-full" />
+                </div>
+                <ul className="flex flex-col gap-2">
+                    {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
+                </ul>
+            </div>
+        );
+    }
+    if (!circle) {
         return (
             <div className="flex flex-col gap-6 font-dm">
                 <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#AAA] hover:text-white w-fit">
                     <FaArrowLeft size={14} /> Back
                 </button>
                 <div className="rounded-[12px] border border-[#333] bg-[#111111] p-12 text-center text-[#707070]">
-                    {isLoading ? 'Loading circle…' : 'Circle not found.'}
+                    Circle not found.
                 </div>
             </div>
         );

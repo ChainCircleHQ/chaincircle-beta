@@ -4,6 +4,7 @@ import { IoClose } from 'react-icons/io5';
 import { toast } from 'sonner';
 import PurpleBtn from '../../Components/PurpleBtn';
 import TransBtn from '../../Components/TransBtn';
+import { SkeletonRow } from '../../Components/Skeleton';
 import { useWalletPreferences } from '../../hooks/useWalletPreferences';
 import { usePushChainClient, usePushWalletContext, PushUI } from '@pushchain/ui-kit';
 
@@ -116,9 +117,9 @@ export default function LinkedWallets() {
 
             {/* Wallet list */}
             {!initialized ? (
-                <div className="rounded-[12px] border border-[#333] bg-[#111111] p-8 text-center text-[#707070] text-[14px]">
-                    Loading wallets…
-                </div>
+                <ul className="flex flex-col gap-3">
+                    {Array.from({ length: 2 }).map((_, i) => <SkeletonRow key={i} />)}
+                </ul>
             ) : wallets.length === 0 ? (
                 <div className="rounded-[12px] border border-dashed border-[#F4AEFF]/40 bg-[#111111]/60 p-10 flex flex-col items-center gap-3 text-center">
                     <FaWallet className="text-[#F4AEFF]/60" size={32} />
