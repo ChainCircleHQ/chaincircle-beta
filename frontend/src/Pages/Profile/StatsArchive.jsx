@@ -4,9 +4,10 @@ import { Link } from 'react-router';
 import CountUp from '../../Components/CountUp';
 import { useUserStats } from '../../hooks/useCircleData';
 
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 
 export default function StatsArchive() {
+  const isTabletOrMobile = useIsTabletOrMobile();
   const { data: stats } = useUserStats();
   const reputation = stats?.reputation || {};
 

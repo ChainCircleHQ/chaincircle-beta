@@ -18,8 +18,7 @@ import PurpleBtn from '../Components/PurpleBtn';
 import { getGoalIcon, getGoalColors, formatFrequency, calculateProgress } from '../utils/circleHelpers';
 import formatCurrency from '../utils/formatCurrency';
 import Skeleton, { SkeletonRow } from '../Components/Skeleton';
-
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
 
 const TIER_STYLES = {
     Gold:   { icon: FaCrown,  color: 'text-[#FDA318]' },
@@ -71,6 +70,7 @@ export default function CircleDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { userAddress } = useCircleContract();
+    const isTabletOrMobile = useIsTabletOrMobile();
     const { data: circle, isLoading } = useCircleDetails(id);
     const { data: roster } = useCircleRoster(id);
 

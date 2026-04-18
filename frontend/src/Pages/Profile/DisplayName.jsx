@@ -2,13 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { FaUserEdit, FaCheck, FaTimes, FaInfoCircle } from 'react-icons/fa';
 import { toast } from 'sonner';
 import PurpleBtn from '../../Components/PurpleBtn';
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 import {
     useMyDisplayName,
     useIsNameAvailable,
     useSetName,
 } from '../../hooks/useNameRegistry';
-
-const isTabletOrMobile = window.innerWidth <= 1014;
 
 // Debounce hook — keeps the "is this name available?" query from firing on every keystroke.
 function useDebounced(value, delay = 300) {
@@ -24,6 +23,7 @@ const MIN = 1;
 const MAX = 32;
 
 export default function DisplayName() {
+  const isTabletOrMobile = useIsTabletOrMobile();
     const { data: currentName } = useMyDisplayName();
     const [input, setInput] = useState('');
     const [editing, setEditing] = useState(false);

@@ -8,7 +8,7 @@ import { getGoalIcon, getGoalColors, formatFrequency } from '../../utils/circleH
 import formatCurrency from '../../utils/formatCurrency';
 import { SkeletonCard } from '../../Components/Skeleton';
 
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 
 // Discover open circles (status = 0, not full). Orders by created_block desc.
 // When search is empty, returns most recent; with a term, ilike name match.
@@ -33,6 +33,7 @@ function useOpenCircles({ search, limit = 12 }) {
 }
 
 export default function DiscoverSection() {
+  const isTabletOrMobile = useIsTabletOrMobile();
     const { userAddress } = useCircleContract();
     const [search, setSearch] = useState('');
     const { data: circles, isLoading } = useOpenCircles({ search });

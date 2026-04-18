@@ -4,8 +4,7 @@ import ProfileDetails from "../Pages/Profile/ProfileDetails";
 import CountUp from "../Components/CountUp";
 import { useUserStats } from "../hooks/useCircleData";
 import { formatDate } from "../utils/formatDate";
-
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from "../hooks/useIsTabletOrMobile";
 
 // Tier badge mapping
 const getTierBadge = (tier, totalCircles) => {
@@ -58,6 +57,7 @@ const getTierBadge = (tier, totalCircles) => {
 
 export default function Profile() {
   const { data: stats } = useUserStats();
+  const isTabletOrMobile = useIsTabletOrMobile();
 
   const reputation = stats?.reputation || {};
   const totalCircles = stats?.totalCircles || 0;

@@ -3,8 +3,10 @@ import { PiCirclesThreeBold } from "react-icons/pi";
 import { RxCaretRight } from "react-icons/rx";
 import { Link } from 'react-router';
 
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 export default function CircleHistory() {
-const isTabletOrMobile = window.innerWidth <= 1014;
+  const isTabletOrMobile = useIsTabletOrMobile();
+
   return (
     <div className="flex flex-col gap-4 ">
       <header className="flex items-center text-[16px] lg:text-[24px] gap-3">

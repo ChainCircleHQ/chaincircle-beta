@@ -12,9 +12,10 @@ import CircleHistory from './CircleHistory';
 import StatsArchive from './StatsArchive';
 import AccountAction from './AccountAction';
 
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 
 export default function ProfileDetails() {
+  const isTabletOrMobile = useIsTabletOrMobile();
   const navigate = useNavigate();
   const { handleUserLogOutEvent } = usePushWalletContext();
 

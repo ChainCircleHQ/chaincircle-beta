@@ -6,7 +6,7 @@ import { useWalletPreferences } from '../../hooks/useWalletPreferences';
 import { usePushChainClient } from '@pushchain/ui-kit';
 import { SkeletonRow } from '../../Components/Skeleton';
 
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 
 const truncate = (addr) => {
     if (!addr) return '';
@@ -15,6 +15,7 @@ const truncate = (addr) => {
 };
 
 export default function PayoutPreferences() {
+  const isTabletOrMobile = useIsTabletOrMobile();
     const { pushChainClient } = usePushChainClient();
     const { getAllWalletDetails, getPreferredWallet, setPreferredWallet } = useWalletPreferences();
     const currentWallet = pushChainClient?.universal?.account;

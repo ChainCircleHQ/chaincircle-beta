@@ -12,6 +12,7 @@ import { FaCopy } from "react-icons/fa";
 import * as htmlToImage from 'html-to-image';
 import { toast } from 'sonner';
 
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -140,8 +141,7 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
 
   const IconComponent = getGoalIcon(circle.goalType || 0);
   const colors = getGoalColors(circle.goalType || 0);
-  const isTabletOrMobile = window.innerWidth <= 1014;
-
+  const isTabletOrMobile = useIsTabletOrMobile();
   return (
     <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
       <div className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">

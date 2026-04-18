@@ -13,6 +13,7 @@ import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
 import { useEmergencyWithdraw } from '../hooks/useCircleActions';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import { toast } from 'sonner';
+import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
 
 export default function Circle() {
   const { data } = useUserCircles();
@@ -24,7 +25,7 @@ export default function Circle() {
   const [selectedCircleForExit, setSelectedCircleForExit] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { pinned: pinnedCircles, muted: mutedCircles, togglePin, toggleMute } = useUserPreferences();
-  const isTabletOrMobile = window.innerWidth <= 1014;
+  const isTabletOrMobile = useIsTabletOrMobile();
 
   const handleAction = (index, event) => {
     event.stopPropagation();
@@ -297,7 +298,7 @@ const ActionModal = ({ onClose, circle, isPinned, isMuted, onPin, onMute, onExit
 }
 
 const EmergencyWithdrawModal = ({ onClose, onConfirm, isLoading }) => {
-  const isTabletOrMobile = window.innerWidth <= 1014;
+  const isTabletOrMobile = useIsTabletOrMobile();
 
   return (
     <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">

@@ -8,7 +8,7 @@ import { SkeletonRow } from '../../Components/Skeleton';
 import { useWalletPreferences } from '../../hooks/useWalletPreferences';
 import { usePushChainClient, usePushWalletContext, PushUI } from '@pushchain/ui-kit';
 
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 
 const truncate = (addr) => {
     if (!addr) return '';
@@ -19,6 +19,7 @@ const truncate = (addr) => {
 const isValidEvmAddress = (addr) => /^0x[a-fA-F0-9]{40}$/.test(addr?.trim() || '');
 
 export default function LinkedWallets() {
+  const isTabletOrMobile = useIsTabletOrMobile();
     const { pushChainClient } = usePushChainClient();
     const { connectionStatus } = usePushWalletContext();
     const { getAllWalletDetails, removeWallet: removeWalletOnChain, addWallet } = useWalletPreferences();

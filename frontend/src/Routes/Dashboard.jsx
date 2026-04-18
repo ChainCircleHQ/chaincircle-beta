@@ -14,6 +14,7 @@ import CirclePreview from '../Pages/Circle/CirclePreview';
 import PurpleBtn from '../Components/PurpleBtn';
 import TransBtn from '../Components/TransBtn';
 import Skeleton from '../Components/Skeleton';
+import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
 import { useUserStats, useUserCircles } from '../hooks/useCircleData';
 import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
 import { PiCirclesThreeBold } from "react-icons/pi";
@@ -26,7 +27,7 @@ export default function Dashboard() {
   const { data: stats } = useUserStats();
   const { data: userCircles, isLoading: circlesLoading } = useUserCircles();
 
-  const isTabletOrMobile = window.innerWidth <= 1014;
+  const isTabletOrMobile = useIsTabletOrMobile();
 
   const totalSaved = stats?.totalSaved ? parseFloat(stats.totalSaved) : 0;
   const totalCircleCount = userCircles?.length || 0;

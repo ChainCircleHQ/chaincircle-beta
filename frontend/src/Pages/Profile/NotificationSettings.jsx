@@ -1,7 +1,9 @@
 import React from 'react'
 import { FaRegBell } from "react-icons/fa";
 
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 export default function NotificationSettings() {
+  const isTabletOrMobile = useIsTabletOrMobile();
     const [emailNotifications, setEmailNotifications] = React.useState(true);
     const [pushNotifications, setPushNotifications] = React.useState(false);
     const [paymentReminders, setPaymentReminders] = React.useState(false);
@@ -9,7 +11,6 @@ export default function NotificationSettings() {
     const [circleUpdates, setCircleUpdates] = React.useState(false);
   const [marketing, setMarketing] = React.useState(false);
   
-const isTabletOrMobile = window.innerWidth <= 1014;
 
   return (
     <div className="flex flex-col gap-4 ">

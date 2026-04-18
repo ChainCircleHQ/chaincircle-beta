@@ -10,7 +10,8 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!url || !anonKey) {
     throw new Error(
-        'Supabase env missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env.local',
+        'Supabase env missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY — ' +
+        'locally in frontend/.env.local, on Vercel under Project Settings → Environment Variables → Production, then redeploy.',
     );
 }
 

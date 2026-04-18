@@ -3,10 +3,10 @@ import { TbShieldStar } from "react-icons/tb";
 import { RxCaretRight } from "react-icons/rx";
 import { Link } from 'react-router';
 
-
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 
 export default function AccountAction() {
+  const isTabletOrMobile = useIsTabletOrMobile();
   return (
     <div className="flex flex-col gap-4 ">
       <header className="flex items-center text-[16px] lg:text-[24px] gap-3">

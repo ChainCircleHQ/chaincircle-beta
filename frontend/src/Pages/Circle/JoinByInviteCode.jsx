@@ -7,6 +7,7 @@ import formatCurrency from '../../utils/formatCurrency';
 import PurpleBtn from '../../Components/PurpleBtn';
 import { IoClose, IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 export default function JoinByInviteCode({ onClose }) {
   const [inviteCode, setInviteCode] = useState('');
   const [searchTriggered, setSearchTriggered] = useState(false);
@@ -37,8 +38,7 @@ export default function JoinByInviteCode({ onClose }) {
 
   const IconComponent = circle ? getGoalIcon(circle.goalType) : null;
   const colors = circle ? getGoalColors(circle.goalType) : {};
-  const isTabletOrMobile = window.innerWidth <= 1014;
-
+  const isTabletOrMobile = useIsTabletOrMobile();
   return (
     <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
       <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] max-w-md lg:max-w-2xl w-full p-6 lg:p-10 relative">

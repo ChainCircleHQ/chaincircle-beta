@@ -7,6 +7,7 @@ import { useGlobalStats } from '../hooks/useCircleData';
 import { IoClose, IoArrowUp } from 'react-icons/io5';
 import { FaCoins, FaGasPump, FaBook } from 'react-icons/fa';
 import { FiSearch, FiMinus, FiPlus } from 'react-icons/fi';
+import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
 
 export default function Home() {
   const stepsRef = useRef(null);
@@ -326,7 +327,7 @@ export default function Home() {
     }
   };
 
-  const isTabletOrMobile = window.innerWidth <= 1014;
+  const isTabletOrMobile = useIsTabletOrMobile();
 
   return (
     <div className="flex flex-col gap-4 max-w-dvw">

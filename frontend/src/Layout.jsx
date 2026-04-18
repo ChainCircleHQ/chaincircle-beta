@@ -8,15 +8,14 @@ import { FaRegBell } from "react-icons/fa6";
 import { PushUniversalAccountButton, usePushWalletContext } from '@pushchain/ui-kit';
 
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
+import useIsTabletOrMobile from './hooks/useIsTabletOrMobile';
 
 export default function chain() {
   const location = useLocation();
   const navigate = useNavigate();
   const { handleUserLogOutEvent } = usePushWalletContext();
   const [sidebarVisible, setSidebarVisible] = React.useState(true);
-
-
-  const isTabletOrMobile = window.innerWidth <= 1014;
+  const isTabletOrMobile = useIsTabletOrMobile();
   const isOnNotificationPage = location.pathname === '/chain/notification';
 
   return (

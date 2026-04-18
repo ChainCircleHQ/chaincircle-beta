@@ -6,8 +6,7 @@ import { useCircleContract } from '../hooks/useCircleContract';
 import { formatAddressOrName } from '../hooks/useNameRegistry';
 import CountUp from '../Components/CountUp';
 import { SkeletonRow } from '../Components/Skeleton';
-
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
 
 const TIER_STYLES = {
     Gold:   { icon: FaCrown, color: 'text-[#FDA318]',  bg: 'bg-[rgba(253,170,27,0.15)]',  border: 'border-[#FDA318]/40' },
@@ -41,6 +40,7 @@ function useLeaderboard({ tier, search, limit = 100 }) {
 
 export default function Leaderboard() {
     const { userAddress } = useCircleContract();
+    const isTabletOrMobile = useIsTabletOrMobile();
     const [tier, setTier] = useState('All');
     const [search, setSearch] = useState('');
     const { data: rows, isLoading } = useLeaderboard({ tier, search });

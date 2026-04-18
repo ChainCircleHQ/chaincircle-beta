@@ -10,9 +10,10 @@ import { useCreateCircle } from '../../hooks/useCircleActions';
 import { GOAL_TYPES } from '../../utils/constants';
 import { CONTACT } from '../../config/contact';
 import { Link } from 'react-router';
-const isTabletOrMobile = window.innerWidth <= 1014;
+import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
 
 export default function CreateCircleModal({ onClose }) {
+  const isTabletOrMobile = useIsTabletOrMobile();
 
    useEffect(() => {
      // Scroll to top when component mounts

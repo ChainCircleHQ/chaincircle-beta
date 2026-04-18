@@ -4,9 +4,10 @@ import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
 import { IoEllipsisHorizontalSharp } from "react-icons/io5";
 import { BsPin } from "react-icons/bs";
 import { FiBellOff } from "react-icons/fi";
+import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
 
 export default function Payout() {
-  const isTabletOrMobile = window.innerWidth <= 1014;
+  const isTabletOrMobile = useIsTabletOrMobile();
   const { data: payoutHistory } = usePayoutHistory();
   const { data: upcomingPayouts } = useUpcomingPayouts();
 
