@@ -6,6 +6,8 @@ import { useCircleContract } from '../hooks/useCircleContract';
 import { formatAddressOrName } from '../hooks/useNameRegistry';
 import CountUp from '../Components/CountUp';
 import { SkeletonRow } from '../Components/Skeleton';
+import ChainBadge from '../Components/ChainBadge';
+import { useChainOrigins } from '../hooks/useChainOrigin';
 import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
 
 const TIER_STYLES = {
@@ -44,6 +46,7 @@ export default function Leaderboard() {
     const [tier, setTier] = useState('All');
     const [search, setSearch] = useState('');
     const { data: rows, isLoading } = useLeaderboard({ tier, search });
+    const { map: originMap } = useChainOrigins((rows ?? []).map((r) => r.address));
 
     // Separate your row for a "you are here" pin, if outside top N.
     const youRow = rows?.find((r) => r.address === userAddress?.toLowerCase());
@@ -145,10 +148,13 @@ export default function Leaderboard() {
                                 </div>
                                 <Icon className={`${style.color} shrink-0`} size={18} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[14px] lg:text-[16px] font-semibold truncate">
-                                        {formatAddressOrName(r.address, r.display_name)}
-                                        {isMe && <span className="ml-2 text-[#D548EC] text-[11px]">(you)</span>}
-                                    </p>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="text-[14px] lg:text-[16px] font-semibold truncate">
+                                            {formatAddressOrName(r.address, r.display_name)}
+                                            {isMe && <span className="ml-2 text-[#D548EC] text-[11px]">(you)</span>}
+                                        </p>
+                                        <ChainBadge origin={originMap.get(r.address)} />
+                                    </div>
                                     <p className="text-[11px] lg:text-[12px] text-[#707070]">
                                         {r.circles_joined} circle{r.circles_joined === 1 ? '' : 's'} · {r.total_contributions_count} contribution{r.total_contributions_count === 1 ? '' : 's'}
                                         {r.circles_completed > 0 && ` · ${r.circles_completed} completed`}

@@ -14,9 +14,11 @@ import { useCircleDetails } from '../hooks/useCircleData';
 import { useCircleContract } from '../hooks/useCircleContract';
 import { useJoinCircle } from '../hooks/useCircleActions';
 import { formatAddressOrName } from '../hooks/useNameRegistry';
+import { useChainOrigins } from '../hooks/useChainOrigin';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import PurpleBtn from '../Components/PurpleBtn';
+import ChainBadge from '../Components/ChainBadge';
 import { getGoalIcon, getGoalColors, formatFrequency, calculateProgress } from '../utils/circleHelpers';
 import formatCurrency from '../utils/formatCurrency';
 import Skeleton, { SkeletonRow } from '../Components/Skeleton';
@@ -75,6 +77,8 @@ export default function CircleDetail() {
     const isTabletOrMobile = useIsTabletOrMobile();
     const { data: circle, isLoading, refetch } = useCircleDetails(id);
     const { data: roster, refetch: refetchRoster } = useCircleRoster(id);
+    const rosterAddresses = (roster ?? []).map((m) => m.user_address);
+    const { map: originMap } = useChainOrigins(rosterAddresses);
     const joinCircle = useJoinCircle();
 
     const handleJoin = async () => {
@@ -286,6 +290,7 @@ export default function CircleDetail() {
                                             </Link>
                                             {isCreator && <span className="text-[10px] lg:text-[11px] px-2 py-0.5 rounded-full bg-[#F4AEFF]/20 text-[#F4AEFF]">creator</span>}
                                             {isYou && <span className="text-[10px] lg:text-[11px] px-2 py-0.5 rounded-full bg-[#D548EC]/20 text-[#D548EC]">you</span>}
+                                            <ChainBadge origin={originMap.get(m.user_address)} />
                                         </div>
                                         <div className="flex items-center gap-3 text-[11px] lg:text-[12px] text-[#707070] mt-0.5">
                                             <span className={style.color}>{rep?.score ?? 0} pts</span>
