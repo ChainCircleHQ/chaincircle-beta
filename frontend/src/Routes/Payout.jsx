@@ -6,6 +6,7 @@ import { BsPin } from "react-icons/bs";
 import { FiBellOff } from "react-icons/fi";
 import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
 import PendingPayoutsBanner from '../Pages/Dashboard/PendingPayoutsBanner';
+import CrossChainRelaysSection from '../Pages/Dashboard/CrossChainRelaysSection';
 
 export default function Payout() {
   const isTabletOrMobile = useIsTabletOrMobile();
@@ -39,6 +40,7 @@ export default function Payout() {
   return (
     <div className="flex flex-col gap-10 relative ">
       <PendingPayoutsBanner />
+      <CrossChainRelaysSection />
 
       <div className="flex items-center justify-between ">
         <h3 className="text-[21px] lg:text-[30px] font-bold ">Your Payouts</h3>
