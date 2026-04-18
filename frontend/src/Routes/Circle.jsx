@@ -11,6 +11,7 @@ import JoinByInviteCode from '../Pages/Circle/JoinByInviteCode';
 import { useUserCircles } from '../hooks/useCircleData';
 import { getGoalIcon, getGoalColors } from '../utils/circleHelpers';
 import { useEmergencyWithdraw } from '../hooks/useCircleActions';
+import { useUserPreferences } from '../hooks/useUserPreferences';
 import { toast } from 'sonner';
 
 export default function Circle() {
@@ -22,14 +23,7 @@ export default function Circle() {
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [selectedCircleForExit, setSelectedCircleForExit] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [pinnedCircles, setPinnedCircles] = useState(() => {
-    const saved = localStorage.getItem('pinnedCircles');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [mutedCircles, setMutedCircles] = useState(() => {
-    const saved = localStorage.getItem('mutedCircles');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { pinned: pinnedCircles, muted: mutedCircles, togglePin, toggleMute } = useUserPreferences();
   const isTabletOrMobile = window.innerWidth <= 1014;
 
   const handleAction = (index, event) => {
@@ -47,20 +41,12 @@ export default function Circle() {
   }
 
   const handlePinCircle = (circleId) => {
-    const newPinned = pinnedCircles.includes(circleId)
-      ? pinnedCircles.filter(id => id !== circleId)
-      : [...pinnedCircles, circleId];
-    setPinnedCircles(newPinned);
-    localStorage.setItem('pinnedCircles', JSON.stringify(newPinned));
+    togglePin(circleId);
     setActiveModal(null);
   }
 
   const handleMuteCircle = (circleId) => {
-    const newMuted = mutedCircles.includes(circleId)
-      ? mutedCircles.filter(id => id !== circleId)
-      : [...mutedCircles, circleId];
-    setMutedCircles(newMuted);
-    localStorage.setItem('mutedCircles', JSON.stringify(newMuted));
+    toggleMute(circleId);
     setActiveModal(null);
   }
 
