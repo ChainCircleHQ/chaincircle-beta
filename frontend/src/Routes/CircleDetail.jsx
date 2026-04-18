@@ -12,7 +12,8 @@ import {
 } from 'react-icons/fa';
 import { useCircleDetails } from '../hooks/useCircleData';
 import { useCircleContract } from '../hooks/useCircleContract';
-import { useJoinCircle } from '../hooks/useCircleActions';
+import { useJoinCircle, useContribute } from '../hooks/useCircleActions';
+import { useMemberStatus } from '../hooks/useMemberStatus';
 import { formatAddressOrName } from '../hooks/useNameRegistry';
 import { useChainOrigins } from '../hooks/useChainOrigin';
 import { supabase } from '../lib/supabase';
@@ -80,6 +81,41 @@ export default function CircleDetail() {
     const rosterAddresses = (roster ?? []).map((m) => m.user_address);
     const { map: originMap } = useChainOrigins(rosterAddresses);
     const joinCircle = useJoinCircle();
+    const contribute = useContribute();
+    const { data: memberStatus } = useMemberStatus(id);
+
+    const handleContribute = async () => {
+        if (!isConnected) {
+            toast.error('Connect your wallet first');
+            return;
+        }
+        try {
+            const result = await contribute.mutateAsync(Number(id));
+            if (result?.status === 'pending') {
+                toast.info('Contribution pending', {
+                    description: 'Signature submitted, confirmations are slow. Refresh in a minute.',
+                    duration: 10_000,
+                });
+            } else {
+                toast.success('Contribution sent');
+            }
+            await Promise.all([refetch(), refetchRoster()]);
+        } catch (err) {
+            if (err?.pending) {
+                toast.info('Approval still pending', { description: err.message, duration: 10_000 });
+                return;
+            }
+            const raw = err?.message || '';
+            const lower = raw.toLowerCase();
+            if (lower.includes('user rejected')) return;
+            if (lower.includes('insufficient')) {
+                toast.error('Insufficient CUSD', { description: 'Claim from the faucet first.' });
+                return;
+            }
+            const short = raw.length > 180 ? raw.slice(0, 180) + '…' : raw;
+            toast.error('Contribution failed', { description: short });
+        }
+    };
 
     const handleJoin = async () => {
         if (!isConnected) {
@@ -320,6 +356,37 @@ export default function CircleDetail() {
                     </ul>
                 )}
             </section>
+
+            {/* Contribute CTA (member + circle active + round outstanding) */}
+            {isMember && circle.status === 1 && memberStatus?.owesCurrentRound && (
+                <div className="rounded-[12px] border border-[#AEFFDA] bg-[#AEFFDA]/10 p-5 flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
+                    <div>
+                        <p className="text-[15px] lg:text-[17px] font-semibold">Contribution due this round</p>
+                        <p className="text-[12px] lg:text-[14px] text-[#AAA]">
+                            Send {formatCurrency(circle.amount)} CUSD to stay on-time.
+                            Round {circle.currentRound} of {circle.duration} ·{' '}
+                            {memberStatus.remainingPayments} payment{memberStatus.remainingPayments === 1 ? '' : 's'} left after this.
+                        </p>
+                    </div>
+                    <PurpleBtn
+                        text={contribute.isPending ? 'Contributing…' : 'Contribute now'}
+                        icon={contribute.isPending ? null : 'rightArrow'}
+                        action={handleContribute}
+                        disabled={contribute.isPending}
+                    />
+                </div>
+            )}
+
+            {/* Member but fully paid this round — gentle confirmation */}
+            {isMember && circle.status === 1 && memberStatus && !memberStatus.owesCurrentRound && !memberStatus.hasReceivedPayout && (
+                <div className="rounded-[12px] border border-[#333] bg-[#111111] p-4 flex items-center gap-3 text-[12px] lg:text-[13px] text-[#AAA]">
+                    <FaCheckCircle className="text-[#AEFFDA] shrink-0" />
+                    <span>
+                        You're paid up for round {circle.currentRound}.
+                        {memberStatus.remainingPayments > 0 && ` ${memberStatus.remainingPayments} payment${memberStatus.remainingPayments === 1 ? '' : 's'} remaining.`}
+                    </span>
+                </div>
+            )}
 
             {/* Join CTA (only if joinable) */}
             {canJoin && (

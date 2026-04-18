@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
 import { useCircleDetails } from '../../hooks/useCircleData';
-import { useJoinCircle } from '../../hooks/useCircleActions';
+import { useJoinCircle, useContribute } from '../../hooks/useCircleActions';
+import { useMemberStatus } from '../../hooks/useMemberStatus';
 import { useCircleContract } from '../../hooks/useCircleContract';
 import { getGoalIcon, getGoalColors, formatFrequency, calculateProgress } from '../../utils/circleHelpers';
 import formatCurrency from '../../utils/formatCurrency';
@@ -19,6 +20,8 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
   const { data: circle, isLoading, error } = useCircleDetails(circleId);
   const { userAddress } = useCircleContract();
   const joinCircle = useJoinCircle();
+  const contribute = useContribute();
+  const { data: memberStatus } = useMemberStatus(circleId);
   const previewRef = useRef(null);
 
   const isCreator = circle?.creator?.toLowerCase() === userAddress?.toLowerCase();
@@ -70,6 +73,34 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
       }
       const short = raw.length > 180 ? raw.slice(0, 180) + '…' : raw;
       toast.error('Failed to join circle', { description: short });
+    }
+  };
+
+  const handleContribute = async () => {
+    try {
+      const result = await contribute.mutateAsync(Number(circleId));
+      if (result?.status === 'pending') {
+        toast.info('Contribution pending', {
+          description: 'Signature submitted, confirmations are slow. Refresh in a minute.',
+          duration: 10_000,
+        });
+      } else {
+        toast.success('Contribution sent');
+      }
+    } catch (error) {
+      if (error?.pending) {
+        toast.info('Approval still pending', { description: error.message, duration: 10_000 });
+        return;
+      }
+      const raw = error?.message || '';
+      const lower = raw.toLowerCase();
+      if (lower.includes('user rejected')) return;
+      if (lower.includes('insufficient')) {
+        toast.error('Insufficient CUSD', { description: 'Claim from the faucet first.' });
+        return;
+      }
+      const short = raw.length > 180 ? raw.slice(0, 180) + '…' : raw;
+      toast.error('Contribution failed', { description: short });
     }
   };
 
@@ -335,9 +366,25 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
 
           {!isCreator && isMember && (
             <div className="flex flex-col gap-3 mt-4">
+              {circle.isActive && memberStatus?.owesCurrentRound && (
+                <div onClick={contribute.isPending ? undefined : handleContribute}>
+                  <PurpleBtn
+                    text={contribute.isPending
+                      ? 'Contributing…'
+                      : `Contribute ${formatCurrency(circle.amount)} this round`}
+                    font="bold"
+                    disabled={contribute.isPending}
+                  />
+                </div>
+              )}
+              {circle.isActive && memberStatus && !memberStatus.owesCurrentRound && !memberStatus.hasReceivedPayout && (
+                <div className="text-center text-[#AEFFDA] text-sm lg:text-base border border-[#AEFFDA]/40 bg-[#AEFFDA]/10 rounded-full px-4 py-2">
+                  ✓ Paid up for round {circle.currentRound}
+                </div>
+              )}
               <button
                 onClick={onClose || (() => navigate('/chain/circle'))}
-                className="w-full px-6 py-3 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold"
+                className="w-full px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all font-semibold"
               >
                 View in My Circles
               </button>
@@ -362,6 +409,22 @@ export default function CirclePreview({ circleId, onClose, fromLink = false }) {
 
           {isCreator && (
             <div className="flex flex-col gap-3 mt-4">
+              {circle.isActive && memberStatus?.owesCurrentRound && (
+                <div onClick={contribute.isPending ? undefined : handleContribute}>
+                  <PurpleBtn
+                    text={contribute.isPending
+                      ? 'Contributing…'
+                      : `Contribute ${formatCurrency(circle.amount)} this round`}
+                    font="bold"
+                    disabled={contribute.isPending}
+                  />
+                </div>
+              )}
+              {circle.isActive && memberStatus && !memberStatus.owesCurrentRound && !memberStatus.hasReceivedPayout && (
+                <div className="text-center text-[#AEFFDA] text-sm lg:text-base border border-[#AEFFDA]/40 bg-[#AEFFDA]/10 rounded-full px-4 py-2">
+                  ✓ Paid up for round {circle.currentRound}
+                </div>
+              )}
               <div className="flex gap-3 items-center justify-between">
                 <button
                   onClick={handleShare}
