@@ -3,6 +3,9 @@ import { IoEyeOutline } from "react-icons/io5";
 import { IoEyeOffOutline } from "react-icons/io5";
 import { FaPlus } from "react-icons/fa";
 import DashboardTable from '../Pages/Dashboard/DashboardTable';
+import RemindersBanner from '../Pages/Dashboard/RemindersBanner';
+import DiscoverSection from '../Pages/Dashboard/DiscoverSection';
+import ActivityFeed from '../Pages/Dashboard/ActivityFeed';
 import CreateCircleModal from '../Pages/Circle/CreateCircleModal';
 import CirclePreview from '../Pages/Circle/CirclePreview';
 import { useUserStats, useUserCircles } from '../hooks/useCircleData';
@@ -25,6 +28,7 @@ export default function Dashboard() {
 
   return (
     <div className="h-full overflow-auto flex flex-col gap-10 ">
+      <RemindersBanner />
       <header
         className="px-6 py-4 rounded-[16px] flex flex-col items-center gap-3 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/assets/dashboard-bg-card.png')" }}
@@ -122,6 +126,10 @@ export default function Dashboard() {
       </section>
 
       <DashboardTable />
+
+      <DiscoverSection />
+
+      <ActivityFeed />
 
       {showCreateModal && (
         <CreateCircleModal
