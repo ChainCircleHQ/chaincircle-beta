@@ -7,10 +7,18 @@ import React from 'react';
 import { toast } from 'sonner';
 import { FaHandHoldingUsd } from 'react-icons/fa';
 import { usePendingPayouts } from '../../hooks/usePendingPayouts';
+import { usePayoutDestination } from '../../hooks/usePayoutDestination';
 import { useWithdrawPayout } from '../../hooks/useCircleActions';
+
+const truncate = (addr) => {
+    if (!addr) return '';
+    if (addr.length <= 10) return addr;
+    return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+};
 
 export default function PendingPayoutsBanner({ compact = false }) {
     const { data, isLoading } = usePendingPayouts();
+    const { data: destination } = usePayoutDestination();
     const withdraw = useWithdrawPayout();
 
     if (isLoading || !data || data.items.length === 0) return null;
@@ -40,7 +48,12 @@ export default function PendingPayoutsBanner({ compact = false }) {
                     </h3>
                     <p className="text-[#AAA] text-[12px] lg:text-[13px]">
                         Total <span className="text-[#AEFFDA] font-semibold">{data.totalFormatted}</span>{' '}
-                        escrowed on-chain. Claim to have it delivered to your preferred wallet.
+                        escrowed on-chain.
+                        {destination ? (
+                            <> Delivery to <span className="text-[#F4AEFF]">{destination.chainName}</span>{' '}
+                            at <span className="font-mono text-[#AAA]">{truncate(destination.wallet)}</span>
+                            {destination.isCrossChain && <span className="text-[#D548EC]"> · cross-chain via Push UEA</span>}.</>
+                        ) : ' Delivery address loading…'}
                     </p>
                 </div>
             </header>

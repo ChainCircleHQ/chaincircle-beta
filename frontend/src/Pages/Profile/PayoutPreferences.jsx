@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { FaRegCreditCard, FaInfoCircle, FaCheckCircle } from 'react-icons/fa';
+import { FaRegCreditCard, FaInfoCircle, FaCheckCircle, FaBullseye } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { Link } from 'react-router';
 import { useWalletPreferences } from '../../hooks/useWalletPreferences';
+import { usePayoutDestination } from '../../hooks/usePayoutDestination';
 import { usePushChainClient } from '@pushchain/ui-kit';
 import { SkeletonRow } from '../../Components/Skeleton';
 
@@ -18,6 +19,7 @@ export default function PayoutPreferences() {
   const isTabletOrMobile = useIsTabletOrMobile();
     const { pushChainClient } = usePushChainClient();
     const { getAllWalletDetails, getPreferredWallet, setPreferredWallet } = useWalletPreferences();
+    const { data: destination } = usePayoutDestination();
     const currentWallet = pushChainClient?.universal?.account;
 
     const [wallets, setWallets] = useState([]);
@@ -77,6 +79,24 @@ export default function PayoutPreferences() {
                     </p>
                 </div>
             </header>
+
+            {/* Active destination confirmation — what the contract will route to */}
+            {destination && (
+                <div className="rounded-[12px] border border-[#AEFFDA]/50 bg-[#AEFFDA]/5 p-4 flex gap-3 text-[12px] lg:text-[14px]">
+                    <FaBullseye className="text-[#AEFFDA] mt-0.5 shrink-0" size={16} />
+                    <div className="text-[#AAA] leading-relaxed flex-1 min-w-0">
+                        <p className="text-[#AEFFDA] font-semibold">Active payout destination</p>
+                        <p className="mt-1">
+                            Payouts land on <span className="text-[#F4AEFF]">{destination.chainName}</span>{' '}
+                            at <span className="font-mono text-white break-all">{destination.wallet}</span>
+                            {destination.isCrossChain && (
+                                <span className="text-[#D548EC]"> · routed cross-chain via Push UEA</span>
+                            )}
+                            .
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* v2 live — payouts route through preferred wallet */}
             <div className="rounded-[12px] border border-[#F4AEFF]/30 bg-[#D548EC]/10 p-4 flex gap-3 text-[12px] lg:text-[14px]">
