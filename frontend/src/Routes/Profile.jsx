@@ -1,6 +1,7 @@
 import { PiCirclesThreeBold } from "react-icons/pi";
 import { FaSackDollar } from "react-icons/fa6";
 import ProfileDetails from "../Pages/Profile/ProfileDetails";
+import TierChangeTimeline from "../Pages/Profile/TierChangeTimeline";
 import CountUp from "../Components/CountUp";
 import { useUserStats } from "../hooks/useCircleData";
 import { formatDate } from "../utils/formatDate";
@@ -133,6 +134,8 @@ export default function Profile() {
           </div>
         </div>
       </header>
+
+      <TierChangeTimeline />
 
       <ProfileDetails />
     </div>
