@@ -20,6 +20,7 @@ function useOpenCircles({ search, limit = 12 }) {
                 .from('circles_with_counts')
                 .select('*')
                 .eq('status', 0)
+                .eq('core_version', 2)
                 .order('created_block', { ascending: false })
                 .limit(limit);
             if (search && search.length >= 2) q = q.ilike('name', `%${search}%`);

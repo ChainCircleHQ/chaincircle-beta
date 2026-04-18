@@ -2,9 +2,13 @@
 // Writes still go on-chain via useCircleActions. Return shapes match the
 // pre-Phase-5 hooks so call sites don't need changes.
 //
+// v2 note: every circle-facing read below filters `core_version = 2` so
+// legacy v1 rows (created before the block-13762869 deploy) don't appear as
+// interactable. v1 circles are kept in the table for historical /stats
+// reference, but the current ChainCircleCore has no record of them so any
+// on-chain write against a v1 id would revert with CircleDoesNotExist.
+//
 // Still on-chain (for now):
-//   - useUserStats — reputation data isn't indexed yet (ReputationManager
-//     callbacks aren't wired at the contract level; see GAPS.md §2.3)
 //   - useCircleByInviteCode — invite codes aren't in Supabase yet
 
 import { useQuery } from '@tanstack/react-query';
@@ -90,6 +94,7 @@ export function useUserCircles() {
                 .from('circles_with_counts')
                 .select('*')
                 .in('circle_id', ids)
+                .eq('core_version', 2)
                 .order('created_block', { ascending: false });
             if (error) throw error;
             return (circles ?? []).map(mapCircleRow);
@@ -114,6 +119,7 @@ export function useCircleDetails(circleId) {
                 .from('circles_with_counts')
                 .select('*')
                 .eq('circle_id', id)
+                .eq('core_version', 2)
                 .maybeSingle();
             if (error) throw error;
             if (!data) return null;
@@ -141,6 +147,7 @@ export function useCircleByName(name) {
                 .from('circles_with_counts')
                 .select('*')
                 .eq('name', name)
+                .eq('core_version', 2)
                 .maybeSingle();
             if (error) throw error;
             return mapCircleRow(data);
@@ -365,7 +372,8 @@ export function useUpcomingPayouts() {
                 .from('circles_with_counts')
                 .select('*')
                 .in('circle_id', ids)
-                .eq('status', 1); // Active only
+                .eq('status', 1) // Active only
+                .eq('core_version', 2);
             return (circles ?? []).map((c) => {
                 // rough estimate: next payout = started_at + (currentRound+1) * frequency
                 const freqDays = c.frequency === 1 ? 7 : 30;
@@ -396,6 +404,7 @@ export function useSearchCircles(searchTerm) {
                 .from('circles_with_counts')
                 .select('*')
                 .ilike('name', `%${searchTerm}%`)
+                .eq('core_version', 2)
                 .limit(50);
             if (error) throw error;
             return (data ?? []).map(mapCircleRow);

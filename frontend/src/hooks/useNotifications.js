@@ -1,271 +1,172 @@
-import { useQuery } from '@tanstack/react-query';
-import { useCircleContract } from './useCircleContract';
-import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../constants/contracts';
-import ChainCircleCoreABI from '../abis/ChainCircleCore.json';
-import ReputationManagerABI from '../abis/ReputationManager.json';
-import BadgeNFTABI from '../abis/BadgeNFT.json';
+// Supabase-backed notifications. Prior version event-scanned v1 contracts
+// directly; it hard-coded getUserCircles(address) + PayoutProcessed /
+// InterestDistributed which don't exist in v2, so every call CALL_EXCEPTION'd
+// after the redeploy.
+//
+// Now we pull from the normalized indexed tables (activity_log rolls up
+// contributions, payouts, reputation, badges, tier_changes, circle events)
+// and compute per-round contribution reminders from circle_members +
+// circles.current_round + circle.frequency.
+//
+// Shape kept compatible with RemindersBanner.jsx + Routes/Notification.jsx:
+//   { transactions: [{ type, id, timestamp, circleId?, amount?, ... }],
+//     reminders:    [{ type: 'contributionDue', id, circleId, amount, dueTime, timeUntilDue }] }
 
-// Hook to fetch user notifications from blockchain events
+import { useQuery } from '@tanstack/react-query';
+import { ethers } from 'ethers';
+import { useCircleContract } from './useCircleContract';
+import { supabase } from '../lib/supabase';
+
+const lc = (addr) => (addr ? String(addr).toLowerCase() : addr);
+const fmt = (raw) => (raw == null ? '0' : ethers.formatUnits(String(raw), 6));
+const unix = (iso) => (iso ? Math.floor(new Date(iso).getTime() / 1000) : 0);
+
+// Frequency enum → seconds between rounds. 0 = monthly (30d), 1 = weekly (7d).
+const frequencySeconds = (freq) => (Number(freq) === 1 ? 7 * 86400 : 30 * 86400);
+
 export function useNotifications() {
   const { userAddress, isConnected } = useCircleContract();
 
   return useQuery({
-    queryKey: ['notifications', userAddress],
+    queryKey: ['notifications.db', userAddress],
     queryFn: async () => {
-      const provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
-      const circleContract = new ethers.Contract(CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE, ChainCircleCoreABI.abi, provider);
-      const reputationContract = new ethers.Contract(CONTRACT_ADDRESSES.REPUTATION_MANAGER, ReputationManagerABI.abi, provider);
-      const badgeContract = new ethers.Contract(CONTRACT_ADDRESSES.BADGE_NFT, BadgeNFTABI.abi, provider);
+      const addr = lc(userAddress);
+      const out = { transactions: [], reminders: [] };
 
-      const currentBlock = await provider.getBlockNumber();
-      const fromBlock = Math.max(0, currentBlock - 10000); // Last ~10000 blocks
+      // ---- Transactions: pulled from the per-table indexer rows so we can
+      // render type-specific copy without parsing activity_log.kind strings.
+      const [contribsRes, payoutsRes, repRes, tiersRes, badgesRes, membersRes, emergenciesRes] =
+        await Promise.all([
+          supabase.from('contributions').select('tx_hash, circle_id, amount, block_timestamp')
+            .eq('user_address', addr).order('block_timestamp', { ascending: false }).limit(50),
+          supabase.from('payouts').select('tx_hash, circle_id, amount, block_timestamp')
+            .eq('recipient_address', addr).order('block_timestamp', { ascending: false }).limit(50),
+          supabase.from('reputation_events').select('tx_hash, log_index, delta, score_after, reason, block_timestamp')
+            .eq('user_address', addr).order('block_timestamp', { ascending: false }).limit(50),
+          supabase.from('tier_changes').select('tx_hash, from_tier, to_tier, block_timestamp')
+            .eq('user_address', addr).order('block_timestamp', { ascending: false }).limit(20),
+          supabase.from('badges').select('tx_hash, token_id, badge_type, minted_at')
+            .eq('user_address', addr).order('minted_at', { ascending: false }).limit(20),
+          supabase.from('circle_members').select('circle_id, joined_block, joined_at')
+            .eq('user_address', addr).order('joined_at', { ascending: false }).limit(50),
+          supabase.from('circle_events').select('tx_hash, circle_id, event_type, reason, block_timestamp')
+            .eq('event_type', 'emergency').order('block_timestamp', { ascending: false }).limit(100),
+        ]);
 
-      const notifications = {
-        transactions: [],
-        reminders: []
-      };
-
-      try {
-        // Helper function to safely process events
-        const safelyProcessEvent = async (event, type, processArgs) => {
-          try {
-            const block = await provider.getBlock(event.blockNumber);
-            return {
-              ...processArgs(event),
-              timestamp: block.timestamp,
-              txHash: event.transactionHash
-            };
-          } catch (e) {
-            return null; // Skip failed events
-          }
-        };
-
-        // Fetch CircleCore events
-        const contributionFilter = circleContract.filters.ContributionMade(null, userAddress);
-        const contributionEvents = await circleContract.queryFilter(contributionFilter, fromBlock, currentBlock);
-
-        const payoutFilter = circleContract.filters.PayoutProcessed(null, userAddress);
-        const payoutEvents = await circleContract.queryFilter(payoutFilter, fromBlock, currentBlock);
-
-        const interestFilter = circleContract.filters.InterestDistributed(null, userAddress);
-        const interestEvents = await circleContract.queryFilter(interestFilter, fromBlock, currentBlock);
-
-        const emergencyFilter = circleContract.filters.EmergencyWithdrawal(null, userAddress);
-        const emergencyEvents = await circleContract.queryFilter(emergencyFilter, fromBlock, currentBlock);
-
-        const memberJoinedFilter = circleContract.filters.MemberJoined(null, userAddress);
-        const memberJoinedEvents = await circleContract.queryFilter(memberJoinedFilter, fromBlock, currentBlock);
-
-        const circleCompletedFilter = circleContract.filters.CircleCompleted();
-        const circleCompletedEvents = await circleContract.queryFilter(circleCompletedFilter, fromBlock, currentBlock);
-
-        // Fetch Reputation events
-        const scoreChangedFilter = reputationContract.filters.ScoreChanged(userAddress);
-        const scoreChangedEvents = await reputationContract.queryFilter(scoreChangedFilter, fromBlock, currentBlock);
-
-        const tierChangedFilter = reputationContract.filters.TierChanged(userAddress);
-        const tierChangedEvents = await reputationContract.queryFilter(tierChangedFilter, fromBlock, currentBlock);
-
-        // Fetch Badge events
-        const badgeMintedFilter = badgeContract.filters.BadgeMinted(userAddress);
-        const badgeMintedEvents = await badgeContract.queryFilter(badgeMintedFilter, fromBlock, currentBlock);
-
-        const badgeUpgradedFilter = badgeContract.filters.BadgeUpgraded(null, userAddress);
-        const badgeUpgradedEvents = await badgeContract.queryFilter(badgeUpgradedFilter, fromBlock, currentBlock);
-
-        // Process Contribution events
-        for (const event of contributionEvents) {
-          try {
-            const block = await provider.getBlock(event.blockNumber);
-            const circleId = event.args.circleId.toString();
-            const amount = ethers.formatUnits(event.args.amount, 6);
-
-            notifications.transactions.push({
-              id: `contribution-${event.transactionHash}-${event.logIndex}`,
-              type: 'contribution',
-              circleId,
-              amount,
-              timestamp: block.timestamp,
-              txHash: event.transactionHash
-            });
-          } catch (e) {
-            // Skip this event if we can't process it
-            continue;
-          }
-        }
-
-        // Process Payout events
-        for (const event of payoutEvents) {
-          const block = await provider.getBlock(event.blockNumber);
-          const circleId = event.args.circleId.toString();
-          const amount = ethers.formatUnits(event.args.amount, 6);
-
-          notifications.transactions.push({
-            id: `payout-${event.transactionHash}-${event.logIndex}`,
-            type: 'payout',
-            circleId,
-            amount,
-            timestamp: block.timestamp,
-            txHash: event.transactionHash
-          });
-        }
-
-        // Process Interest events
-        for (const event of interestEvents) {
-          const block = await provider.getBlock(event.blockNumber);
-          const circleId = event.args.circleId.toString();
-          const amount = ethers.formatUnits(event.args.amount, 6);
-
-          notifications.transactions.push({
-            id: `interest-${event.transactionHash}-${event.logIndex}`,
-            type: 'interest',
-            circleId,
-            amount,
-            timestamp: block.timestamp,
-            txHash: event.transactionHash
-          });
-        }
-
-        // Process Emergency Withdrawal events
-        for (const event of emergencyEvents) {
-          const block = await provider.getBlock(event.blockNumber);
-          const circleId = event.args.circleId.toString();
-          const amount = ethers.formatUnits(event.args.amount, 6);
-
-          notifications.transactions.push({
-            id: `emergency-${event.transactionHash}-${event.logIndex}`,
-            type: 'emergency',
-            circleId,
-            amount,
-            timestamp: block.timestamp,
-            txHash: event.transactionHash
-          });
-        }
-
-        // Process Member Joined events
-        for (const event of memberJoinedEvents) {
-          const block = await provider.getBlock(event.blockNumber);
-          const circleId = event.args.circleId.toString();
-
-          notifications.transactions.push({
-            id: `joined-${event.transactionHash}-${event.logIndex}`,
-            type: 'joined',
-            circleId,
-            timestamp: block.timestamp,
-            txHash: event.transactionHash
-          });
-        }
-
-        // Process Score Changed events
-        for (const event of scoreChangedEvents) {
-          const block = await provider.getBlock(event.blockNumber);
-          const newScore = event.args.newScore.toString();
-          const reason = event.args.reason;
-
-          notifications.transactions.push({
-            id: `score-${event.transactionHash}-${event.logIndex}`,
-            type: 'scoreChange',
-            newScore,
-            reason,
-            timestamp: block.timestamp,
-            txHash: event.transactionHash
-          });
-        }
-
-        // Process Tier Changed events
-        for (const event of tierChangedEvents) {
-          const block = await provider.getBlock(event.blockNumber);
-          const newTier = event.args.newTier;
-
-          notifications.transactions.push({
-            id: `tier-${event.transactionHash}-${event.logIndex}`,
-            type: 'tierChange',
-            newTier,
-            timestamp: block.timestamp,
-            txHash: event.transactionHash
-          });
-        }
-
-        // Process Badge Minted events
-        for (const event of badgeMintedEvents) {
-          const block = await provider.getBlock(event.blockNumber);
-          const badgeType = event.args.badgeType;
-
-          notifications.transactions.push({
-            id: `badge-minted-${event.transactionHash}-${event.logIndex}`,
-            type: 'badgeMinted',
-            badgeType,
-            timestamp: block.timestamp,
-            txHash: event.transactionHash
-          });
-        }
-
-        // Process Badge Upgraded events
-        for (const event of badgeUpgradedEvents) {
-          const block = await provider.getBlock(event.blockNumber);
-          const badgeType = event.args.badgeType;
-          const newLevel = event.args.newLevel.toString();
-
-          notifications.transactions.push({
-            id: `badge-upgraded-${event.transactionHash}-${event.logIndex}`,
-            type: 'badgeUpgraded',
-            badgeType,
-            newLevel,
-            timestamp: block.timestamp,
-            txHash: event.transactionHash
-          });
-        }
-
-        // Fetch user's active circles for reminders
-        const userCircles = await circleContract.getUserCircles(userAddress);
-        const currentTime = Math.floor(Date.now() / 1000);
-
-        for (const circleId of userCircles) {
-          try {
-            const circle = await circleContract.getCircle(circleId);
-
-            // Only create reminders for active circles
-            if (circle.status === 1) { // Active status
-              const contributionAmount = ethers.formatUnits(circle.contributionAmount, 6);
-              const contributionPeriod = Number(circle.contributionPeriod);
-              const lastContribution = Number(circle.lastContributionTime);
-
-              // Calculate next contribution due time
-              const nextDueTime = lastContribution + contributionPeriod;
-              const timeUntilDue = nextDueTime - currentTime;
-
-              // Create reminder if due within 7 days
-              if (timeUntilDue > 0 && timeUntilDue < 7 * 24 * 60 * 60) {
-                notifications.reminders.push({
-                  id: `reminder-${circleId}`,
-                  type: 'contributionDue',
-                  circleId: circleId.toString(),
-                  amount: contributionAmount,
-                  dueTime: nextDueTime,
-                  timeUntilDue
-                });
-              }
-            }
-          } catch (err) {
-            // Silent error handling
-          }
-        }
-
-        // Sort by timestamp (newest first)
-        notifications.transactions.sort((a, b) => b.timestamp - a.timestamp);
-        notifications.reminders.sort((a, b) => a.timeUntilDue - b.timeUntilDue);
-
-        return notifications;
-      } catch (error) {
-        console.warn('Error fetching notifications:', error);
-        return { transactions: [], reminders: [] };
+      for (const c of contribsRes.data ?? []) {
+        out.transactions.push({
+          id: `contribution-${c.tx_hash}`,
+          type: 'contribution',
+          circleId: String(c.circle_id),
+          amount: fmt(c.amount),
+          timestamp: unix(c.block_timestamp),
+          txHash: c.tx_hash,
+        });
       }
+      for (const p of payoutsRes.data ?? []) {
+        out.transactions.push({
+          id: `payout-${p.tx_hash}`,
+          type: 'payout',
+          circleId: String(p.circle_id),
+          amount: fmt(p.amount),
+          timestamp: unix(p.block_timestamp),
+          txHash: p.tx_hash,
+        });
+      }
+      for (const r of repRes.data ?? []) {
+        out.transactions.push({
+          id: `rep-${r.tx_hash}-${r.log_index}`,
+          type: 'scoreChange',
+          reason: r.reason || 'score update',
+          newScore: Number(r.score_after) || 0,
+          timestamp: unix(r.block_timestamp),
+          txHash: r.tx_hash,
+        });
+      }
+      for (const t of tiersRes.data ?? []) {
+        out.transactions.push({
+          id: `tier-${t.tx_hash}-${t.to_tier}`,
+          type: 'tierChange',
+          newTier: t.to_tier,
+          fromTier: t.from_tier || null,
+          timestamp: unix(t.block_timestamp),
+          txHash: t.tx_hash,
+        });
+      }
+      for (const b of badgesRes.data ?? []) {
+        out.transactions.push({
+          id: `badge-${b.tx_hash}-${b.token_id}`,
+          type: 'badgeMinted',
+          badgeType: b.badge_type,
+          timestamp: unix(b.minted_at),
+          txHash: b.tx_hash,
+        });
+      }
+      for (const m of membersRes.data ?? []) {
+        out.transactions.push({
+          id: `joined-${m.circle_id}-${m.joined_block}`,
+          type: 'joined',
+          circleId: String(m.circle_id),
+          timestamp: unix(m.joined_at),
+        });
+      }
+      // Emergency withdrawal rows live in circle_events with reason like
+      // "refund=X;penalty=Y;member=0x…" — surface only the user's own exits.
+      for (const e of emergenciesRes.data ?? []) {
+        if (!e.reason?.toLowerCase().includes(addr)) continue;
+        const refund = /refund=(\d+)/.exec(e.reason)?.[1];
+        out.transactions.push({
+          id: `emergency-${e.tx_hash}`,
+          type: 'emergency',
+          circleId: String(e.circle_id),
+          amount: refund ? fmt(refund) : '0',
+          timestamp: unix(e.block_timestamp),
+          txHash: e.tx_hash,
+        });
+      }
+
+      out.transactions.sort((a, b) => b.timestamp - a.timestamp);
+
+      // ---- Reminders: v2 active circles where the user hasn't paid this round.
+      // Compute next-due = started_at + (currentRound + 1) * freqSeconds.
+      const myCircleIds = (membersRes.data ?? []).map((m) => m.circle_id);
+      if (myCircleIds.length) {
+        const { data: circles } = await supabase
+          .from('circles_with_counts')
+          .select('circle_id, contribution_amount, frequency, current_round, duration_months, status, started_ts')
+          .in('circle_id', myCircleIds)
+          .eq('status', 1)
+          .eq('core_version', 2);
+        const myMemberships = new Map(
+          (membersRes.data ?? []).map((m) => [m.circle_id, m]),
+        );
+        const nowSec = Math.floor(Date.now() / 1000);
+        for (const c of circles ?? []) {
+          const membership = myMemberships.get(c.circle_id);
+          if (!membership) continue;
+          const freq = frequencySeconds(c.frequency);
+          const startTs = Number(c.started_ts) || 0;
+          if (!startTs) continue;
+          const nextDue = startTs + (Number(c.current_round) + 1) * freq;
+          const timeUntilDue = nextDue - nowSec;
+          if (timeUntilDue <= 0 || timeUntilDue > 7 * 86400) continue;
+          out.reminders.push({
+            id: `reminder-${c.circle_id}`,
+            type: 'contributionDue',
+            circleId: String(c.circle_id),
+            amount: fmt(c.contribution_amount),
+            dueTime: nextDue,
+            timeUntilDue,
+          });
+        }
+      }
+      out.reminders.sort((a, b) => a.timeUntilDue - b.timeUntilDue);
+
+      return out;
     },
     enabled: isConnected && !!userAddress,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute
-    retry: 2, // Retry twice on failure
-    retryDelay: 1000, // Wait 1 second between retries
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    retry: 1,
   });
 }

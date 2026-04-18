@@ -13,6 +13,7 @@ export function useCirclesDb({ status, creator, limit = 50 } = {}) {
             let q = supabase
                 .from('circles')
                 .select('*')
+                .eq('core_version', 2)
                 .order('created_block', { ascending: false })
                 .limit(limit);
             if (status !== undefined) q = q.eq('status', status);

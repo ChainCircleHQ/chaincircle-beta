@@ -17,7 +17,8 @@ function useCirclesById(ids) {
             const { data, error } = await supabase
                 .from('circles_with_counts')
                 .select('*')
-                .in('circle_id', ids);
+                .in('circle_id', ids)
+                .eq('core_version', 2);
             if (error) throw error;
             return data ?? [];
         },
