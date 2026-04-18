@@ -405,10 +405,11 @@ export function useSearchCircles(searchTerm) {
     });
 }
 
-// useCircleByInviteCode — STILL ON-CHAIN.
-// Invite codes aren't in Supabase yet. To migrate, backfill needs to call
-// getCircleInviteCode(id) during circle enrichment and store in an
-// invite_code column on circles. Tracked as Phase 5 follow-up.
+// useCircleByInviteCode — on-chain fallback (v2-compat).
+// Invite codes aren't in Supabase yet. v2 exposes them via the public
+// `circleInviteCode(uint256)` mapping, and circles + members via `circles(id)`
+// + `getCircleMembers(id)`. Capped at the first 500 circles to bound the
+// batch — once indexer column lands, this goes to Supabase.
 export function useCircleByInviteCode(inviteCode) {
     const { getContract, isConnected } = useCircleContract();
     return useQuery({
@@ -416,7 +417,7 @@ export function useCircleByInviteCode(inviteCode) {
         queryFn: async () => {
             const contract = await getContract('core');
             const circleCounter = await contract.circleCounter();
-            const totalCircles = Number(circleCounter);
+            const totalCircles = Math.min(Number(circleCounter), 500);
             const BATCH_SIZE = 100;
             const normalizedInviteCode = inviteCode.toLowerCase();
 
@@ -426,50 +427,47 @@ export function useCircleByInviteCode(inviteCode) {
                 for (let i = start; i < end; i++) {
                     checkPromises.push(
                         contract
-                            .getCircleInviteCode(i)
-                            .then((code) => ({ id: i, code: code.toLowerCase() }))
+                            .circleInviteCode(i)
+                            .then((code) => ({ id: i, code: (code || '').toLowerCase() }))
                             .catch(() => ({ id: i, code: null })),
                     );
                 }
                 const results = await Promise.all(checkPromises);
                 const match = results.find((r) => r.code === normalizedInviteCode);
                 if (match) {
-                    const [details, progress] = await Promise.all([
-                        contract.getCircleDetails(match.id),
-                        contract.getCircleProgress(match.id),
+                    const [c, memberAddresses] = await Promise.all([
+                        contract.circles(match.id),
+                        contract.getCircleMembers(match.id),
                     ]);
-                    const maxMembers = Number(details.maxMembers);
-                    const memberPromises = [];
-                    for (let j = 0; j < maxMembers; j++) {
-                        memberPromises.push(
-                            contract
-                                .circleMembers(match.id, j)
-                                .then((addr) => (addr !== '0x0000000000000000000000000000000000000000' ? addr : null))
-                                .catch(() => null),
-                        );
-                    }
-                    const memberResults = await Promise.all(memberPromises);
-                    const memberAddresses = memberResults.filter((a) => a !== null);
+                    const maxMembers = Number(c.maxMembers);
+                    const currentRound = Number(c.currentRound);
+                    const duration = Number(c.duration);
+                    const status = Number(c.status);
+                    const progressPct = calculateProgress(
+                        currentRound, duration,
+                        memberAddresses.length, maxMembers,
+                        status === 1, status,
+                    );
                     return {
                         id: match.id.toString(),
-                        name: details.name,
-                        goalType: Number(details.goalType),
-                        amount: ethers.formatUnits(details.amount, 6),
-                        duration: Number(details.duration),
-                        currentRound: Number(details.currentRound),
+                        name: c.name,
+                        goalType: Number(c.goalType),
+                        amount: ethers.formatUnits(c.contributionAmount, 6),
+                        duration,
+                        currentRound,
                         maxMembers,
                         members: memberAddresses.length,
-                        frequency: Number(details.frequency),
-                        isActive: details.isActive,
-                        status: Number(details.status),
-                        createdAt: Number(details.createdAt),
-                        startAt: Number(details.startAt),
-                        vaultBalance: ethers.formatUnits(details.vaultBalance, 6),
-                        creator: details.creator,
-                        progress: Number(progress.percentage),
-                        icon: progress.icon,
+                        frequency: Number(c.frequency),
+                        isActive: status === 1,
+                        status,
+                        createdAt: Number(c.createdAt),
+                        startAt: Number(c.startAt),
+                        vaultBalance: ethers.formatUnits(c.vaultBalance, 6),
+                        creator: c.creator,
+                        progress: progressPct,
+                        icon: null,
                         inviteCode: match.code,
-                        memberAddresses,
+                        memberAddresses: [...memberAddresses],
                     };
                 }
             }

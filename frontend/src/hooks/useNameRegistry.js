@@ -12,6 +12,7 @@ import { ethers } from 'ethers';
 import { useCircleContract } from './useCircleContract';
 import { supabase } from '../lib/supabase';
 import { CONTRACT_ADDRESSES } from '../constants/contracts';
+import { sendUniversalTx } from '../lib/pushchainTx';
 import NameRegistryABI from '../abis/NameRegistry.json';
 
 const lc = (a) => (a ? String(a).toLowerCase() : a);
@@ -77,12 +78,17 @@ export function useSetName() {
             }
             const iface = ethers.Interface.from(NameRegistryABI.abi);
             const data = iface.encodeFunctionData('setName', [trimmed]);
-            const tx = await pushChainClient.universal.sendTransaction({
+            const result = await sendUniversalTx(pushChainClient, {
                 to: CONTRACT_ADDRESSES.NAME_REGISTRY,
                 data,
                 value: 0n,
-            });
-            await tx.wait();
+            }, { label: 'Setting display name' });
+
+            if (result.status === 'pending') {
+                const e = new Error('Name update still pending on origin chain — refresh in a minute.');
+                e.pending = true;
+                throw e;
+            }
 
             // Eager update Supabase users.display_name so UI reflects
             // immediately (indexer will also catch up from the event).
@@ -91,7 +97,7 @@ export function useSetName() {
                     .from('users')
                     .upsert({ address: lc(userAddress), display_name: trimmed }, { onConflict: 'address' });
             }
-            return tx;
+            return result;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['displayName.db'] });

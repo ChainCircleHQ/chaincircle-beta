@@ -6,6 +6,7 @@ import PurpleBtn from '../../Components/PurpleBtn';
 import TransBtn from '../../Components/TransBtn';
 import { SkeletonRow } from '../../Components/Skeleton';
 import { useWalletPreferences } from '../../hooks/useWalletPreferences';
+import { SUPPORTED_PAYOUT_CHAINS } from '../../constants/contracts';
 import { usePushChainClient, usePushWalletContext, PushUI } from '@pushchain/ui-kit';
 
 import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
@@ -50,19 +51,19 @@ export default function LinkedWallets() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [masterAccount, initialized]);
 
-    const handleAdd = async (address, chainName) => {
+    const handleAdd = async (address, chainId, chainName) => {
         if (connectionStatus !== PushUI.CONSTANTS.CONNECTION.STATUS.CONNECTED || !masterAccount) {
             toast.error('Connect your wallet first');
             return false;
         }
         setLoading(true);
         try {
-            await addWallet(address, chainName);
+            await addWallet(address, chainId, chainName);
             await refreshWallets();
             toast.success('Wallet linked');
             return true;
         } catch (err) {
-            if (err.message?.includes('already linked')) {
+            if (err.alreadyLinked || err.message?.includes('already linked')) {
                 toast.info('This wallet is already linked');
             } else {
                 toast.error('Failed to link wallet', { description: err.message });
@@ -106,13 +107,13 @@ export default function LinkedWallets() {
                 </div>
             </header>
 
-            {/* Testnet + not-yet-wired disclaimer */}
+            {/* Disclaimer — cross-chain payout routing is live on v2 */}
             <div className="rounded-[12px] border border-[#F4AEFF]/30 bg-[#D548EC]/10 p-4 flex gap-3 text-[12px] lg:text-[14px]">
                 <FaInfoCircle className="text-[#D548EC] mt-0.5 shrink-0" size={16} />
                 <div className="text-[#AAA] leading-relaxed">
-                    Linked wallets are stored on-chain, but the current ChainCircleCore doesn't
-                    yet route payouts through your preferred wallet — this ships with the
-                    Phase 6 redeploy. For now, this list is <span className="text-[#F4AEFF]">informational</span>.
+                    Linked wallets are stored on-chain. Your <span className="text-[#F4AEFF]">preferred</span>
+                    {' '}wallet is where payouts land — if its chain isn't Push Chain, the payout is routed
+                    cross-chain via Push UEA. Pick a destination chain the whitelist supports when linking.
                 </div>
             </div>
 
@@ -228,8 +229,9 @@ export default function LinkedWallets() {
                 </p>
                 <p>
                     Any EVM-compatible address works (must start with <span className="font-mono text-[#AAA]">0x</span>
-                    and be 42 characters). When Phase 6 ships, the <span className="text-[#D548EC]">preferred
-                    wallet</span> is the one payouts arrive in, resolved cross-chain via Push UEA.
+                    and be 42 characters). The <span className="text-[#D548EC]">preferred wallet</span> is
+                    where payouts arrive, resolved cross-chain via Push UEA if the destination chain isn't
+                    Push Chain.
                 </p>
             </section>
 
@@ -248,7 +250,7 @@ export default function LinkedWallets() {
 
 function AddWalletModal({ onClose, onSubmit, existing, loading }) {
     const [address, setAddress] = useState('');
-    const [chainName, setChainName] = useState('Push Chain');
+    const [chainId, setChainId] = useState(SUPPORTED_PAYOUT_CHAINS[0].chainId);
     const [error, setError] = useState('');
 
     const submit = async (e) => {
@@ -262,8 +264,13 @@ function AddWalletModal({ onClose, onSubmit, existing, loading }) {
             setError('This wallet is already linked.');
             return;
         }
+        const match = SUPPORTED_PAYOUT_CHAINS.find((c) => c.chainId === Number(chainId));
+        if (!match) {
+            setError('Pick a destination chain.');
+            return;
+        }
         setError('');
-        const ok = await onSubmit(trimmed, chainName);
+        const ok = await onSubmit(trimmed, match.chainId, match.name);
         if (ok) onClose();
     };
 
@@ -298,20 +305,15 @@ function AddWalletModal({ onClose, onSubmit, existing, loading }) {
                     </label>
 
                     <label className="flex flex-col gap-2">
-                        <span className="text-[13px] lg:text-[14px] text-[#AAA]">Source chain</span>
+                        <span className="text-[13px] lg:text-[14px] text-[#AAA]">Destination chain</span>
                         <select
-                            value={chainName}
-                            onChange={(e) => setChainName(e.target.value)}
+                            value={chainId}
+                            onChange={(e) => setChainId(Number(e.target.value))}
                             className="w-full bg-black/40 border border-[#333] focus:border-[#D548EC] rounded-[10px] px-4 py-3 text-[13px] lg:text-[14px] text-white outline-none transition-colors"
                         >
-                            <option value="Push Chain">Push Chain</option>
-                            <option value="Ethereum">Ethereum</option>
-                            <option value="Base">Base</option>
-                            <option value="Arbitrum">Arbitrum</option>
-                            <option value="Optimism">Optimism</option>
-                            <option value="Polygon">Polygon</option>
-                            <option value="BSC">BSC</option>
-                            <option value="Solana">Solana</option>
+                            {SUPPORTED_PAYOUT_CHAINS.map((c) => (
+                                <option key={c.chainId} value={c.chainId}>{c.name}</option>
+                            ))}
                         </select>
                     </label>
 

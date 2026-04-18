@@ -5,6 +5,7 @@ import { IoEyeOffOutline } from "react-icons/io5";
 import { FaPlus, FaCompass, FaKey, FaHandHoldingUsd } from "react-icons/fa";
 import DashboardTable from '../Pages/Dashboard/DashboardTable';
 import RemindersBanner from '../Pages/Dashboard/RemindersBanner';
+import PendingPayoutsBanner from '../Pages/Dashboard/PendingPayoutsBanner';
 import DiscoverSection from '../Pages/Dashboard/DiscoverSection';
 import ActivityFeed from '../Pages/Dashboard/ActivityFeed';
 import AiRecommendations from '../Pages/Dashboard/AiRecommendations';
@@ -36,6 +37,7 @@ export default function Dashboard() {
   return (
     <div className="h-full overflow-auto flex flex-col gap-10 ">
       <RemindersBanner />
+      <PendingPayoutsBanner />
       <header
         className="px-6 py-4 rounded-[16px] flex flex-col items-center gap-3 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/assets/dashboard-bg-card.png')" }}

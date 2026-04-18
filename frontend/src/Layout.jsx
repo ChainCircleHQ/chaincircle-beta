@@ -3,7 +3,7 @@ import { TbArrowRightFromArc } from "react-icons/tb";
 import { CiGrid42 } from "react-icons/ci";
 import { PiCirclesThreeBold } from "react-icons/pi";
 import { MdOutlineCreditCard, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight } from "react-icons/md";
-import { FaRegUserCircle, FaTrophy } from "react-icons/fa";
+import { FaRegUserCircle, FaTrophy, FaBalanceScale } from "react-icons/fa";
 import { FaRegBell } from "react-icons/fa6";
 import { PushUniversalAccountButton, usePushWalletContext } from '@pushchain/ui-kit';
 
@@ -89,6 +89,16 @@ export default function chain() {
             >
               <FaTrophy size={28} className="text-[#aaa] " />
               <p>Leaderboard</p>
+            </Link>
+            <Link
+              to={"/chain/governance"}
+              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${location.pathname === "/chain/governance"
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } `}
+            >
+              <FaBalanceScale size={28} className="text-[#aaa] " />
+              <p>Governance</p>
             </Link>
             <Link
               to={"/chain/profile"}

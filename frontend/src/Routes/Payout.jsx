@@ -5,6 +5,7 @@ import { IoEllipsisHorizontalSharp } from "react-icons/io5";
 import { BsPin } from "react-icons/bs";
 import { FiBellOff } from "react-icons/fi";
 import useIsTabletOrMobile from '../hooks/useIsTabletOrMobile';
+import PendingPayoutsBanner from '../Pages/Dashboard/PendingPayoutsBanner';
 
 export default function Payout() {
   const isTabletOrMobile = useIsTabletOrMobile();
@@ -37,6 +38,8 @@ export default function Payout() {
 
   return (
     <div className="flex flex-col gap-10 relative ">
+      <PendingPayoutsBanner />
+
       <div className="flex items-center justify-between ">
         <h3 className="text-[21px] lg:text-[30px] font-bold ">Your Payouts</h3>
         <div className="px-4 py-2 lg:py-3 border-2 border-[#F4AEFF] rounded-[16px] bg-[#1a1a1a] hover:border-[#D548EC] transition-colors">

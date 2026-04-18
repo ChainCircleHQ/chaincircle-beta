@@ -1,162 +1,228 @@
+// Write-path hooks for ChainCircleCoreV2. Every call goes through sendUniversalTx
+// so the TxProgressBanner shows signing → confirming → confirmed and gateway
+// indexer lag is recovered via trackTransaction(hash).
+//
+// v2 differences from v1:
+//   - `circles(id)` / `getCircle(id)` returns struct with `contributionAmount`
+//     (v1 was `amount`). No `getCircleDetails` — that function never existed
+//     in v2; we read the struct via `circles(id)`.
+//   - `withdrawPayout(circleId)` is now a real pull: the contract escrows the
+//     net payout in `pendingWithdrawals[user][circleId]` after finalizeRound
+//     runs on the last contribution of the round; the member pulls when ready.
+//   - `contribute` / finalize-last-payment triggers mandatory reputation +
+//     badge callbacks, so the indexer will pick up ScoreChanged / BadgeMinted
+//     events automatically.
+//   - `emergencyWithdraw` still returns 90%, plus a 10% penalty goes into the
+//     vault; reputation is slashed via mandatory callback.
+
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useCircleContract } from './useCircleContract';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../constants/contracts';
-import ChainCircleCoreABI from '../abis/ChainCircleCore.json';
+import { CONTRACT_ADDRESSES } from '../constants/contracts';
+import ChainCircleCoreABI from '../abis/v2/ChainCircleCoreV2.json';
 import CUSDABI from '../abis/CUSD.json';
 import { sendUniversalTx } from '../lib/pushchainTx';
 
-// Hook for creating a circle
+const coreIface = ethers.Interface.from(ChainCircleCoreABI.abi);
+const cusdIface = ethers.Interface.from(CUSDABI.abi);
+
+// Required common precondition for any write path. Throws a user-friendly
+// error if the wallet isn't connected / initialized / universal client ready.
+function requireWallet({ isInitialized, pushChainClient, userAddress }) {
+  if (!isInitialized || !pushChainClient) {
+    throw new Error('Wallet not connected. Please connect your wallet first.');
+  }
+  if (!pushChainClient.universal?.sendTransaction) {
+    throw new Error('Push Chain client not ready. Reconnect and try again.');
+  }
+  if (!userAddress) {
+    throw new Error('Wallet address unavailable. Please reconnect your wallet.');
+  }
+}
+
+// Returns the CUSD contribution amount for a circle (v2: `circles(id)` struct).
+async function getContributionAmount(getContract, circleId) {
+  const contract = await getContract('core');
+  const c = await contract.circles(circleId);
+  const amount = c.contributionAmount;
+  if (amount === undefined || amount === null) {
+    throw new Error(`Circle ${circleId} not found`);
+  }
+  return amount;
+}
+
+// Step 1 of every circle write: ensure CUSD allowance >= needed. Only
+// submits an approve tx if allowance is insufficient. Prevents the UI from
+// forcing users to pay gas on every join/contribute.
+async function ensureApproval({ pushChainClient, userAddress, getContract, amountNeeded, label }) {
+  const cusd = await getContract('cusd');
+  const current = await cusd.allowance(userAddress, CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE);
+  if (current >= amountNeeded) return; // already approved
+
+  const approveData = cusdIface.encodeFunctionData('approve', [
+    CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE,
+    amountNeeded,
+  ]);
+  const res = await sendUniversalTx(pushChainClient, {
+    to: CONTRACT_ADDRESSES.CUSD,
+    data: approveData,
+    value: 0n,
+  }, { label: label || 'Approving CUSD' });
+  if (res.status === 'pending') {
+    const e = new Error('Approval still pending on origin chain — wait a minute and retry.');
+    e.pending = true;
+    throw e;
+  }
+}
+
 export function useCreateCircle() {
-  const { getContract, pushChainClient, isInitialized, userAddress } = useCircleContract();
+  const { pushChainClient, isInitialized, userAddress, getContract } = useCircleContract();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ name, goalType, amount, duration, maxMembers, frequency }) => {
-      if (!isInitialized || !pushChainClient) {
-        throw new Error('Wallet not connected. Please ensure your wallet is connected via Push Chain.');
+      requireWallet({ isInitialized, pushChainClient, userAddress });
+
+      // Defensive arg coercion — form values arrive as strings. uint8 + uint256
+      // in the ABI; ethers accepts numeric strings but we pin types here so a
+      // bad form value gets a clear error instead of a BigNumberish TypeError.
+      const trimmedName = String(name || '').trim();
+      if (!trimmedName) throw new Error('Circle name is required');
+      if (trimmedName.length > 64) throw new Error('Circle name too long (max 64 chars)');
+
+      const goalTypeInt = Number(goalType);
+      const durationInt = Number(duration);
+      const maxMembersInt = Number(maxMembers);
+      const frequencyInt = Number(frequency);
+      if (!Number.isInteger(goalTypeInt) || goalTypeInt < 0 || goalTypeInt > 255) {
+        throw new Error('Invalid goal type');
+      }
+      if (!Number.isInteger(durationInt) || durationInt < 3 || durationInt > 12) {
+        throw new Error('Duration must be between 3 and 12 months');
+      }
+      if (!Number.isInteger(maxMembersInt) || maxMembersInt < 3 || maxMembersInt > 12) {
+        throw new Error('Members must be between 3 and 12');
+      }
+      if (frequencyInt !== 0 && frequencyInt !== 1) {
+        throw new Error('Frequency must be Weekly or Monthly');
       }
 
-      if (!pushChainClient.universal) {
-        throw new Error('Push Chain universal client not available. Please reconnect your wallet.');
+      const amountInWei = ethers.parseUnits(String(amount), 6);
+      if (amountInWei <= 0n) throw new Error('Contribution amount must be positive');
+
+      // Balance preflight — show a clear error instead of a confusing revert.
+      const cusd = await getContract('cusd');
+      const balance = await cusd.balanceOf(userAddress);
+      if (balance < amountInWei) {
+        throw new Error(
+          `Insufficient CUSD. You have ${ethers.formatUnits(balance, 6)} ` +
+          `but the first contribution requires ${ethers.formatUnits(amountInWei, 6)}. ` +
+          `Claim from the faucet first.`
+        );
       }
 
-      const cusdAddress = CONTRACT_ADDRESSES.CUSD;
-      const coreAddress = CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE;
-      const amountInWei = ethers.parseUnits(amount.toString(), 6);
+      // Creator joins immediately → needs allowance for the first contribution.
+      await ensureApproval({
+        pushChainClient, userAddress, getContract,
+        amountNeeded: amountInWei,
+        label: 'Approving CUSD',
+      });
 
-      // Check balance using read-only provider
-      const provider = new ethers.JsonRpcProvider(NETWORK_CONFIG.rpcUrl);
-      const cusdReadOnly = new ethers.Contract(cusdAddress, CUSDABI.abi, provider);
-      const balance = await cusdReadOnly.balanceOf(userAddress);
+      const createData = coreIface.encodeFunctionData('createCircle', [
+        trimmedName,
+        goalTypeInt,
+        amountInWei,
+        durationInt,
+        maxMembersInt,
+        frequencyInt,
+      ]);
 
-      // Note: Insufficient balance will be caught by the transaction
-
-      // Step 1: Approve CUSD using Push Chain universal transaction
-      const approveData = ethers.Interface.from(CUSDABI.abi).encodeFunctionData(
-        'approve',
-        [coreAddress, amountInWei]
-      );
-
-      const approveResult = await sendUniversalTx(pushChainClient, {
-        to: cusdAddress, data: approveData, value: 0n,
-      }, { label: 'Approving CUSD' });
-      if (approveResult.status === 'pending') {
-        const e = new Error('Approval still pending on origin chain — wait a minute and retry.');
-        e.pending = true;
-        throw e;
-      }
-
-      const createData = ethers.Interface.from(ChainCircleCoreABI.abi).encodeFunctionData(
-        'createCircle',
-        [name, goalType, amountInWei, duration, maxMembers, frequency]
-      );
-
-      const createResult = await sendUniversalTx(pushChainClient, {
-        to: coreAddress, data: createData, value: 0n,
+      return await sendUniversalTx(pushChainClient, {
+        to: CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE,
+        data: createData,
+        value: 0n,
       }, { label: 'Creating circle' });
-      return createResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userCircles'] });
       queryClient.invalidateQueries({ queryKey: ['globalStats'] });
       queryClient.invalidateQueries({ queryKey: ['activeCircles'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
+    },
   });
 }
 
-// Hook for joining a circle
 export function useJoinCircle() {
-  const { getContract, pushChainClient, isInitialized } = useCircleContract();
+  const { pushChainClient, isInitialized, userAddress, getContract } = useCircleContract();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (circleId) => {
-      if (!isInitialized || !pushChainClient) {
-        throw new Error('Wallet not connected');
+      requireWallet({ isInitialized, pushChainClient, userAddress });
+      if (circleId == null) throw new Error('Missing circleId');
+
+      const amountNeeded = await getContributionAmount(getContract, circleId);
+
+      // Balance preflight.
+      const cusd = await getContract('cusd');
+      const balance = await cusd.balanceOf(userAddress);
+      if (balance < amountNeeded) {
+        throw new Error(
+          `Insufficient CUSD. Need ${ethers.formatUnits(amountNeeded, 6)} to join, ` +
+          `you have ${ethers.formatUnits(balance, 6)}. Claim from the faucet first.`
+        );
       }
 
-      const cusdAddress = CONTRACT_ADDRESSES.CUSD;
-      const coreAddress = CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE;
+      await ensureApproval({
+        pushChainClient, userAddress, getContract, amountNeeded,
+        label: 'Approving CUSD',
+      });
 
-      // Get circle details to know contribution amount
-      const contract = await getContract('core');
-      const details = await contract.getCircleDetails(circleId);
-      const amountNeeded = details.amount;
-
-      // Step 1: Approve CUSD
-      const approveData = ethers.Interface.from(CUSDABI.abi).encodeFunctionData(
-        'approve',
-        [coreAddress, amountNeeded]
-      );
-
-      const approveResult = await sendUniversalTx(pushChainClient, {
-        to: cusdAddress, data: approveData, value: 0n,
-      }, { label: 'Approving CUSD' });
-      if (approveResult.status === 'pending') {
-        const e = new Error('Approval still pending on origin chain — wait a minute and retry.');
-        e.pending = true;
-        throw e;
-      }
-
-      const joinData = ethers.Interface.from(ChainCircleCoreABI.abi).encodeFunctionData(
-        'joinCircle',
-        [circleId]
-      );
-
+      const joinData = coreIface.encodeFunctionData('joinCircle', [circleId]);
       return await sendUniversalTx(pushChainClient, {
-        to: coreAddress, data: joinData, value: 0n,
+        to: CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE,
+        data: joinData,
+        value: 0n,
       }, { label: 'Joining circle' });
     },
     onSuccess: (_, circleId) => {
       queryClient.invalidateQueries({ queryKey: ['userCircles'] });
       queryClient.invalidateQueries({ queryKey: ['circleDetails', circleId] });
       queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
-    }
+    },
   });
 }
 
-// Hook for contributing to a circle
 export function useContribute() {
-  const { getContract, pushChainClient, isInitialized } = useCircleContract();
+  const { pushChainClient, isInitialized, userAddress, getContract } = useCircleContract();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (circleId) => {
-      if (!isInitialized || !pushChainClient) {
-        throw new Error('Wallet not connected');
+      requireWallet({ isInitialized, pushChainClient, userAddress });
+      if (circleId == null) throw new Error('Missing circleId');
+
+      const amountNeeded = await getContributionAmount(getContract, circleId);
+
+      const cusd = await getContract('cusd');
+      const balance = await cusd.balanceOf(userAddress);
+      if (balance < amountNeeded) {
+        throw new Error(
+          `Insufficient CUSD. Need ${ethers.formatUnits(amountNeeded, 6)}, ` +
+          `you have ${ethers.formatUnits(balance, 6)}.`
+        );
       }
 
-      const cusdAddress = CONTRACT_ADDRESSES.CUSD;
-      const coreAddress = CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE;
+      await ensureApproval({
+        pushChainClient, userAddress, getContract, amountNeeded,
+        label: 'Approving CUSD',
+      });
 
-      // Get contribution amount
-      const contract = await getContract('core');
-      const details = await contract.getCircleDetails(circleId);
-      const contributionAmount = details.amount;
-
-      // Step 1: Approve CUSD
-      const approveData = ethers.Interface.from(CUSDABI.abi).encodeFunctionData(
-        'approve',
-        [coreAddress, contributionAmount]
-      );
-
-      const approveResult = await sendUniversalTx(pushChainClient, {
-        to: cusdAddress, data: approveData, value: 0n,
-      }, { label: 'Approving CUSD' });
-      if (approveResult.status === 'pending') {
-        const e = new Error('Approval still pending on origin chain — wait a minute and retry.');
-        e.pending = true;
-        throw e;
-      }
-
-      const contributeData = ethers.Interface.from(ChainCircleCoreABI.abi).encodeFunctionData(
-        'contribute',
-        [circleId]
-      );
-
+      const contributeData = coreIface.encodeFunctionData('contribute', [circleId]);
       return await sendUniversalTx(pushChainClient, {
-        to: coreAddress, data: contributeData, value: 0n,
+        to: CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE,
+        data: contributeData,
+        value: 0n,
       }, { label: 'Contributing' });
     },
     onSuccess: (_, circleId) => {
@@ -165,30 +231,27 @@ export function useContribute() {
       queryClient.invalidateQueries({ queryKey: ['userStats'] });
       queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
       queryClient.invalidateQueries({ queryKey: ['globalStats'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ['pendingPayouts'] });
+    },
   });
 }
 
-// Hook for withdrawing payout
+// v2 withdrawPayout is the real pull — reads from pendingWithdrawals and
+// emits PayoutWithdrawn (cross-chain via WalletPreferences routing).
 export function useWithdrawPayout() {
-  const { pushChainClient, isInitialized } = useCircleContract();
+  const { pushChainClient, isInitialized, userAddress } = useCircleContract();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (circleId) => {
-      if (!isInitialized || !pushChainClient) {
-        throw new Error('Wallet not connected');
-      }
+      requireWallet({ isInitialized, pushChainClient, userAddress });
+      if (circleId == null) throw new Error('Missing circleId');
 
-      const coreAddress = CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE;
-
-      const withdrawData = ethers.Interface.from(ChainCircleCoreABI.abi).encodeFunctionData(
-        'withdrawPayout',
-        [circleId]
-      );
-
+      const data = coreIface.encodeFunctionData('withdrawPayout', [circleId]);
       return await sendUniversalTx(pushChainClient, {
-        to: coreAddress, data: withdrawData, value: 0n,
+        to: CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE,
+        data,
+        value: 0n,
       }, { label: 'Claiming payout' });
     },
     onSuccess: (_, circleId) => {
@@ -196,31 +259,26 @@ export function useWithdrawPayout() {
       queryClient.invalidateQueries({ queryKey: ['circleDetails', circleId] });
       queryClient.invalidateQueries({ queryKey: ['payoutHistory'] });
       queryClient.invalidateQueries({ queryKey: ['upcomingPayouts'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingPayouts'] });
       queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
-    }
+    },
   });
 }
 
-// Hook for emergency withdrawal
 export function useEmergencyWithdraw() {
-  const { pushChainClient, isInitialized } = useCircleContract();
+  const { pushChainClient, isInitialized, userAddress } = useCircleContract();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (circleId) => {
-      if (!isInitialized || !pushChainClient) {
-        throw new Error('Wallet not connected');
-      }
+      requireWallet({ isInitialized, pushChainClient, userAddress });
+      if (circleId == null) throw new Error('Missing circleId');
 
-      const coreAddress = CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE;
-
-      const emergencyData = ethers.Interface.from(ChainCircleCoreABI.abi).encodeFunctionData(
-        'emergencyWithdraw',
-        [circleId]
-      );
-
+      const data = coreIface.encodeFunctionData('emergencyWithdraw', [circleId]);
       return await sendUniversalTx(pushChainClient, {
-        to: coreAddress, data: emergencyData, value: 0n,
+        to: CONTRACT_ADDRESSES.CHAIN_CIRCLE_CORE,
+        data,
+        value: 0n,
       }, { label: 'Emergency withdrawal' });
     },
     onSuccess: (_, circleId) => {
@@ -228,44 +286,31 @@ export function useEmergencyWithdraw() {
       queryClient.invalidateQueries({ queryKey: ['circleDetails', circleId] });
       queryClient.invalidateQueries({ queryKey: ['userStats'] });
       queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
-    }
+    },
   });
 }
 
-// Hook for minting CUSD from faucet
 export function useMintCUSD() {
   const { pushChainClient, isInitialized, userAddress } = useCircleContract();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (amount = '1000') => {
-      if (!isInitialized || !pushChainClient) {
-        throw new Error('Wallet not connected');
-      }
-
-      const cusdAddress = CONTRACT_ADDRESSES.CUSD;
-      const amountInWei = ethers.parseUnits(amount, 6);
-
-      const mintData = ethers.Interface.from(CUSDABI.abi).encodeFunctionData(
-        'mint',
-        [userAddress, amountInWei]
-      );
-
-      const tx = await pushChainClient.universal.sendTransaction({
-        to: cusdAddress,
-        data: mintData,
-        value: 0n
-      });
-
-      return await tx.wait();
+      requireWallet({ isInitialized, pushChainClient, userAddress });
+      const amountInWei = ethers.parseUnits(String(amount), 6);
+      const data = cusdIface.encodeFunctionData('mint', [userAddress, amountInWei]);
+      return await sendUniversalTx(pushChainClient, {
+        to: CONTRACT_ADDRESSES.CUSD,
+        data,
+        value: 0n,
+      }, { label: 'Minting CUSD' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cusdBalance'] });
-    }
+    },
   });
 }
 
-// Hook to get CUSD balance
 export function useCUSDBalance() {
   const { getContract, userAddress, isConnected } = useCircleContract();
 
@@ -277,6 +322,6 @@ export function useCUSDBalance() {
       return ethers.formatUnits(balance, 6);
     },
     enabled: isConnected && !!userAddress,
-    staleTime: 10000,
+    staleTime: 10_000,
   });
 }

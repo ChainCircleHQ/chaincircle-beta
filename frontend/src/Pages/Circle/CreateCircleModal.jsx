@@ -117,14 +117,21 @@ export default function CreateCircleModal({ onClose }) {
       // Clear validation error if all checks pass
       setValidationError('');
 
-      // Map goalType string to number
+      // Map goalType string to the on-chain enum. Keys include both the
+      // fancy brand labels used in Step1/Step3 preview AND the plain keys,
+      // so a future switch back to plain labels Just Works.
       const goalTypeMap = {
-        'Home': GOAL_TYPES.HOME,
-        'Education': GOAL_TYPES.EDUCATION,
-        'Business': GOAL_TYPES.BUSINESS,
-        'Emergency': GOAL_TYPES.EMERGENCY,
-        'Travel': GOAL_TYPES.TRAVEL,
-        'Other': GOAL_TYPES.OTHER
+        Home: GOAL_TYPES.HOME,
+        Education: GOAL_TYPES.EDUCATION,
+        Business: GOAL_TYPES.BUSINESS,
+        Emergency: GOAL_TYPES.EMERGENCY,
+        Travel: GOAL_TYPES.TRAVEL,
+        Other: GOAL_TYPES.OTHER,
+        'Dream Home Squad': GOAL_TYPES.HOME,
+        'Project G-Wagon': GOAL_TYPES.TRAVEL,
+        'Our incoming heir': GOAL_TYPES.EMERGENCY,
+        'Detty December': GOAL_TYPES.OTHER,
+        'Next Elon Musks': GOAL_TYPES.BUSINESS,
       };
 
       const goalTypeNum = goalTypeMap[formData.goalType] ?? GOAL_TYPES.OTHER;
@@ -414,7 +421,9 @@ const Step2 = ({ formData, updateFormData }) => {
   );
 }
 
-const Step3 = ({ formData, updateFormData, onShowTerms }) => { 
+const Step3 = ({ formData, updateFormData, onShowTerms }) => {
+  const isTabletOrMobile = useIsTabletOrMobile();
+
   // Theme colors mapping
   const themeColors = {
     'Chain yellow': '#FFA500',
@@ -566,6 +575,7 @@ const Step3 = ({ formData, updateFormData, onShowTerms }) => {
 }
 
 const TermsModal = ({ onClose }) => {
+  const isTabletOrMobile = useIsTabletOrMobile();
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 font-dm">
       <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#111111] rounded-[20px] border border-[#F4AEFF] overflow-hidden flex flex-col">

@@ -78,14 +78,13 @@ export default function PayoutPreferences() {
                 </div>
             </header>
 
-            {/* Testnet disclaimer */}
+            {/* v2 live — payouts route through preferred wallet */}
             <div className="rounded-[12px] border border-[#F4AEFF]/30 bg-[#D548EC]/10 p-4 flex gap-3 text-[12px] lg:text-[14px]">
                 <FaInfoCircle className="text-[#D548EC] mt-0.5 shrink-0" size={16} />
                 <div className="text-[#AAA] leading-relaxed">
-                    Your preference is stored on-chain, but payouts from the current
-                    ChainCircleCore still land at the address that created/joined the circle.
-                    Cross-chain delivery to your preferred wallet ships with the Phase 6
-                    redeploy (Push UEA routing).
+                    Your preference is stored on-chain and is read by ChainCircleCore at
+                    payout time. If the preferred chain isn't Push Chain, the payout is
+                    routed cross-chain via Push UEA.
                 </div>
             </div>
 
