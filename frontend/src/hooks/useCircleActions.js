@@ -22,6 +22,44 @@ import { CONTRACT_ADDRESSES } from '../constants/contracts';
 import ChainCircleCoreABI from '../abis/v2/ChainCircleCoreV2.json';
 import CUSDABI from '../abis/CUSD.json';
 import { sendUniversalTx } from '../lib/pushchainTx';
+import { pokeIndexerSoon } from '../lib/pokeIndexer';
+
+// Query keys the read hooks actually use (see useCircleData.js).
+// invalidating any of these with their `.db` suffix matches; without it
+// React Query doesn't find them and the UI stays stuck on stale data.
+const REFRESH_KEYS = [
+  ['userCircles.db'],
+  ['activeCircles.db'],
+  ['circleDetails.db'],
+  ['recentActivities.db'],
+  ['userStats.db'],
+  ['globalStats.db'],
+  ['payoutHistory.db'],
+  ['upcomingPayouts.db'],
+  ['searchCircles.db'],
+  ['pendingPayouts'],
+  ['crossChainPayouts'],
+  ['circleEvents'],
+  ['tierChanges'],
+  ['notifications.db'],
+  ['memberStatus'],
+  ['payoutDestination'],
+  ['cusdBalance'],
+];
+
+// Common post-write refresh: fire the indexer so new events land in
+// Supabase within ~2s, then wait a tick and invalidate every read-side
+// query so the UI picks up the fresh rows. Safe to call more than once.
+function scheduleRefresh(queryClient) {
+  pokeIndexerSoon(2500);
+  // Invalidate now (in case query result is already stale from a prior tx)
+  // AND on a short delay (after the indexer has actually written).
+  const invalidateAll = () => {
+    for (const key of REFRESH_KEYS) queryClient.invalidateQueries({ queryKey: key });
+  };
+  invalidateAll();
+  setTimeout(invalidateAll, 4500);
+}
 
 const coreIface = ethers.Interface.from(ChainCircleCoreABI.abi);
 const cusdIface = ethers.Interface.from(CUSDABI.abi);
@@ -144,10 +182,7 @@ export function useCreateCircle() {
       }, { label: 'Creating circle' });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userCircles'] });
-      queryClient.invalidateQueries({ queryKey: ['globalStats'] });
-      queryClient.invalidateQueries({ queryKey: ['activeCircles'] });
-      queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
+      scheduleRefresh(queryClient);
     },
   });
 }
@@ -185,10 +220,8 @@ export function useJoinCircle() {
         value: 0n,
       }, { label: 'Joining circle' });
     },
-    onSuccess: (_, circleId) => {
-      queryClient.invalidateQueries({ queryKey: ['userCircles'] });
-      queryClient.invalidateQueries({ queryKey: ['circleDetails', circleId] });
-      queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
+    onSuccess: () => {
+      scheduleRefresh(queryClient);
     },
   });
 }
@@ -225,13 +258,8 @@ export function useContribute() {
         value: 0n,
       }, { label: 'Contributing' });
     },
-    onSuccess: (_, circleId) => {
-      queryClient.invalidateQueries({ queryKey: ['userCircles'] });
-      queryClient.invalidateQueries({ queryKey: ['circleDetails', circleId] });
-      queryClient.invalidateQueries({ queryKey: ['userStats'] });
-      queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
-      queryClient.invalidateQueries({ queryKey: ['globalStats'] });
-      queryClient.invalidateQueries({ queryKey: ['pendingPayouts'] });
+    onSuccess: () => {
+      scheduleRefresh(queryClient);
     },
   });
 }
@@ -254,13 +282,8 @@ export function useWithdrawPayout() {
         value: 0n,
       }, { label: 'Claiming payout' });
     },
-    onSuccess: (_, circleId) => {
-      queryClient.invalidateQueries({ queryKey: ['userCircles'] });
-      queryClient.invalidateQueries({ queryKey: ['circleDetails', circleId] });
-      queryClient.invalidateQueries({ queryKey: ['payoutHistory'] });
-      queryClient.invalidateQueries({ queryKey: ['upcomingPayouts'] });
-      queryClient.invalidateQueries({ queryKey: ['pendingPayouts'] });
-      queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
+    onSuccess: () => {
+      scheduleRefresh(queryClient);
     },
   });
 }
@@ -281,11 +304,8 @@ export function useEmergencyWithdraw() {
         value: 0n,
       }, { label: 'Emergency withdrawal' });
     },
-    onSuccess: (_, circleId) => {
-      queryClient.invalidateQueries({ queryKey: ['userCircles'] });
-      queryClient.invalidateQueries({ queryKey: ['circleDetails', circleId] });
-      queryClient.invalidateQueries({ queryKey: ['userStats'] });
-      queryClient.invalidateQueries({ queryKey: ['recentActivities'] });
+    onSuccess: () => {
+      scheduleRefresh(queryClient);
     },
   });
 }
@@ -306,7 +326,7 @@ export function useMintCUSD() {
       }, { label: 'Minting CUSD' });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cusdBalance'] });
+      scheduleRefresh(queryClient);
     },
   });
 }

@@ -16,6 +16,7 @@ import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, NETWORK_CONFIG, SUPPORTED_PAYOUT_CHAINS } from '../constants/contracts';
 import WalletPreferencesABI from '../abis/v2/WalletPreferencesV2.json';
 import { sendUniversalTx } from '../lib/pushchainTx';
+import { pokeIndexerSoon } from '../lib/pokeIndexer';
 
 const iface = ethers.Interface.from(WalletPreferencesABI.abi);
 
@@ -85,6 +86,7 @@ export function useWalletPreferences() {
       e.pending = true;
       throw e;
     }
+    pokeIndexerSoon(2500);
     return res;
   };
 
@@ -101,6 +103,7 @@ export function useWalletPreferences() {
       e.pending = true;
       throw e;
     }
+    pokeIndexerSoon(2500);
     return res;
   };
 
@@ -117,6 +120,7 @@ export function useWalletPreferences() {
       e.pending = true;
       throw e;
     }
+    pokeIndexerSoon(2500);
     return res;
   };
 

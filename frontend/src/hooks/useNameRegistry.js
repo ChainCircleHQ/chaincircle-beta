@@ -13,6 +13,7 @@ import { useCircleContract } from './useCircleContract';
 import { supabase } from '../lib/supabase';
 import { CONTRACT_ADDRESSES } from '../constants/contracts';
 import { sendUniversalTx } from '../lib/pushchainTx';
+import { pokeIndexerSoon } from '../lib/pokeIndexer';
 import NameRegistryABI from '../abis/NameRegistry.json';
 
 const lc = (a) => (a ? String(a).toLowerCase() : a);
@@ -100,6 +101,7 @@ export function useSetName() {
             return result;
         },
         onSuccess: () => {
+            pokeIndexerSoon(2500);
             queryClient.invalidateQueries({ queryKey: ['displayName.db'] });
             queryClient.invalidateQueries({ queryKey: ['nameAvailable.db'] });
         },

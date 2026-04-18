@@ -16,6 +16,7 @@ import { useCircleContract } from './useCircleContract';
 import { CONTRACT_ADDRESSES } from '../constants/contracts';
 import GovernanceABI from '../abis/v2/GovernanceModuleV2.json';
 import { sendUniversalTx } from '../lib/pushchainTx';
+import { pokeIndexerSoon } from '../lib/pokeIndexer';
 
 const iface = ethers.Interface.from(GovernanceABI.abi);
 
@@ -149,7 +150,9 @@ export function useProposeEarlyExit() {
       }, { label: 'Creating proposal' });
     },
     onSuccess: () => {
+      pokeIndexerSoon(2500);
       queryClient.invalidateQueries({ queryKey: ['governance.all'] });
+      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['governance.all'] }), 4500);
     },
   });
 }
@@ -173,7 +176,9 @@ export function useProposeCancelCircle() {
       }, { label: 'Creating proposal' });
     },
     onSuccess: () => {
+      pokeIndexerSoon(2500);
       queryClient.invalidateQueries({ queryKey: ['governance.all'] });
+      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['governance.all'] }), 4500);
     },
   });
 }
@@ -192,9 +197,14 @@ export function useVote() {
       }, { label: support ? 'Voting yes' : 'Voting no' });
     },
     onSuccess: (_, { proposalId }) => {
-      queryClient.invalidateQueries({ queryKey: ['governance.proposal', proposalId] });
-      queryClient.invalidateQueries({ queryKey: ['governance.hasVoted', proposalId] });
-      queryClient.invalidateQueries({ queryKey: ['governance.all'] });
+      pokeIndexerSoon(2500);
+      const refresh = () => {
+        queryClient.invalidateQueries({ queryKey: ['governance.proposal', proposalId] });
+        queryClient.invalidateQueries({ queryKey: ['governance.hasVoted', proposalId] });
+        queryClient.invalidateQueries({ queryKey: ['governance.all'] });
+      };
+      refresh();
+      setTimeout(refresh, 4500);
     },
   });
 }
@@ -213,8 +223,13 @@ export function useExecuteProposal() {
       }, { label: 'Executing proposal' });
     },
     onSuccess: (_, proposalId) => {
-      queryClient.invalidateQueries({ queryKey: ['governance.proposal', proposalId] });
-      queryClient.invalidateQueries({ queryKey: ['governance.all'] });
+      pokeIndexerSoon(2500);
+      const refresh = () => {
+        queryClient.invalidateQueries({ queryKey: ['governance.proposal', proposalId] });
+        queryClient.invalidateQueries({ queryKey: ['governance.all'] });
+      };
+      refresh();
+      setTimeout(refresh, 4500);
     },
   });
 }
