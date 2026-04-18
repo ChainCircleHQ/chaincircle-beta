@@ -218,30 +218,50 @@ export function useRecentActivities(limit = 10) {
     });
 }
 
-// useUserStats — OFF-CHAIN reputation computation.
-// On-chain ReputationManager isn't wired to the deployed ChainCircleCore
-// bytecode (see GAPS.md §2.3), so getUserReputation() returns zeros.
-// We compute score/tier/etc. from indexed contribution+payout+membership
-// events via the user_reputation Supabase view. When ChainCircleCore is
-// redeployed in Phase 6, switch this back to on-chain reads — at that
-// point this view becomes a historical-estimate mirror.
+// useUserStats — prefers on-chain reputation (from v2 ReputationManagerV2
+// callbacks indexed into reputation_events + tier_changes), falls back to
+// the off-chain user_reputation estimate view for counts the contract
+// doesn't expose (e.g. circles_joined).
 //
-// `reputation.source` in the return surfaces this so UI can show "off-chain"
-// indicator where appropriate.
+// Why: v2 contracts emit ScoreChanged with the authoritative score_after
+// every time a user contributes / completes / gets a payout. The latest
+// row in reputation_events is the truth. Previously we read from the
+// user_reputation view which recomputed from indexed contribution counts;
+// that drifts from chain when the indexer lags or the formula mismatches
+// (e.g. the view doesn't know about streak bonuses).
 export function useUserStats() {
     const { userAddress, isConnected } = useCircleContract();
     return useQuery({
         queryKey: ['userStats.db', userAddress],
         queryFn: async () => {
             const addr = lc(userAddress);
-            const { data, error } = await supabase
+
+            // Latest on-chain reputation row (most recent ScoreChanged) — this
+            // is what v2 ReputationManagerV2 holds authoritatively.
+            const { data: latestRep } = await supabase
+                .from('reputation_events')
+                .select('score_after, block_timestamp')
+                .eq('user_address', addr)
+                .order('block_number', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            const { data: latestTier } = await supabase
+                .from('tier_changes')
+                .select('to_tier')
+                .eq('user_address', addr)
+                .order('block_number', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            // Off-chain estimate view — still useful for counts + totals the
+            // contract doesn't expose (circles_joined, total_contributions_amount).
+            const { data: estimate } = await supabase
                 .from('user_reputation')
                 .select('*')
                 .eq('address', addr)
                 .maybeSingle();
-            if (error) throw error;
 
-            // Also pull the active-circle count (status = 1 among memberships)
+            // Active-circle count (status = 1 among memberships)
             const { data: activeMembers } = await supabase
                 .from('circle_members')
                 .select('circles!inner(status)')
@@ -250,42 +270,32 @@ export function useUserStats() {
                 (m) => m.circles?.status === 1,
             ).length;
 
-            if (!data) {
-                return {
-                    totalSaved: '0',
-                    totalInterest: '0',
-                    activeCircles,
-                    totalCircles: 0,
-                    reputation: {
-                        source: 'off-chain',
-                        score: 0,
-                        tier: 'None',
-                        completedCircles: 0,
-                        onTimeRate: 100,
-                        totalSaved: '0',
-                        accountAge: 0,
-                        longestStreak: 0,
-                    },
-                };
-            }
+            const hasOnChain = !!latestRep;
+            const derivedTier = (score) =>
+                score >= 850 ? 'Gold'
+                : score >= 700 ? 'Silver'
+                : score >= 500 ? 'Bronze'
+                : 'None';
+            const score = hasOnChain
+                ? Number(latestRep.score_after ?? 0)
+                : Number(estimate?.score ?? 0);
+            const tier = latestTier?.to_tier
+                || (hasOnChain ? derivedTier(score) : (estimate?.tier ?? 'None'));
 
             return {
-                totalSaved: fmtUnits(data.total_contributions_amount),
-                totalInterest: fmtUnits(data.total_payouts_amount),
+                totalSaved: fmtUnits(estimate?.total_contributions_amount),
+                totalInterest: fmtUnits(estimate?.total_payouts_amount),
                 activeCircles,
-                totalCircles: Number(data.circles_joined ?? 0),
+                totalCircles: Number(estimate?.circles_joined ?? 0),
                 reputation: {
-                    source: 'off-chain',
-                    score: Number(data.score ?? 0),
-                    tier: data.tier ?? 'None',
-                    completedCircles: Number(data.circles_completed ?? 0),
-                    // On-time rate isn't computable yet (ContributionMade event
-                    // doesn't carry an onTime flag). Defaulting to 100 until we
-                    // wire deadline comparisons against circle.startAt + round interval.
+                    source: hasOnChain ? 'on-chain' : 'off-chain',
+                    score,
+                    tier,
+                    completedCircles: Number(estimate?.circles_completed ?? 0),
                     onTimeRate: 100,
-                    totalSaved: fmtUnits(data.total_contributions_amount),
-                    accountAge: Number(data.first_action_ts ?? 0),
-                    longestStreak: 0, // Streak computation deferred — requires window fn
+                    totalSaved: fmtUnits(estimate?.total_contributions_amount),
+                    accountAge: Number(estimate?.first_action_ts ?? 0),
+                    longestStreak: 0,
                 },
             };
         },
