@@ -6,6 +6,7 @@ import { PushUniversalWalletProvider, PushUI } from '@pushchain/ui-kit'
 import { Analytics } from "@vercel/analytics/react"
 import { Toaster } from 'sonner'
 import ProtectedRoute from './Components/ProtectedRoute'
+import ErrorBoundary from './Components/ErrorBoundary'
 
 // Keep the landing page + Layout shell eager-loaded — they're what every
 // first visit renders. Everything else is split into its own chunk via
@@ -75,6 +76,7 @@ function App() {
         themeMode={walletTheme}
       >
         <BrowserRouter>
+          <ErrorBoundary>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -98,6 +100,7 @@ function App() {
               <Route path="*" element={<General404 />} />
             </Routes>
           </Suspense>
+          </ErrorBoundary>
           <Analytics />
           <Toaster
             position="bottom-right"
