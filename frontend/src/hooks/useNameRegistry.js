@@ -1,122 +1,110 @@
+// Name Registry hooks — rewritten against the real deployed contract.
+// Old version called registerName/updateName/getOwner which don't exist.
+// Real contract: single `setName(string)` write (register or update),
+// `getName(address)`, `getAddress(string)`, `hasName(address)`.
+//
+// Reads go through Supabase (users.display_name populated by the indexer
+// on NameRegistered / NameUpdated events — faster + one RPC less).
+// Writes go on-chain via Push UEA.
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ethers } from 'ethers';
 import { useCircleContract } from './useCircleContract';
+import { supabase } from '../lib/supabase';
+import { CONTRACT_ADDRESSES } from '../constants/contracts';
+import NameRegistryABI from '../abis/NameRegistry.json';
 
-// Hook to get display name for an address
+const lc = (a) => (a ? String(a).toLowerCase() : a);
+
+// Display name for a specific address (Supabase read — fast).
 export function useDisplayName(address) {
-  const { getContract, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['displayName', address],
-    queryFn: async () => {
-      const contract = await getContract('nameRegistry');
-      const name = await contract.getName(address);
-      // If no name is registered, return null
-      return name || null;
-    },
-    enabled: isConnected && !!address,
-    staleTime: 300000, // 5 minutes (names don't change often)
-  });
+    return useQuery({
+        queryKey: ['displayName.db', lc(address)],
+        queryFn: async () => {
+            if (!address) return null;
+            const { data, error } = await supabase
+                .from('users')
+                .select('display_name')
+                .eq('address', lc(address))
+                .maybeSingle();
+            if (error) throw error;
+            return data?.display_name || null;
+        },
+        enabled: !!address,
+        staleTime: 60_000,
+    });
 }
 
-// Hook to get current user's display name
+// Current user's display name.
 export function useMyDisplayName() {
-  const { getContract, userAddress, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['myDisplayName', userAddress],
-    queryFn: async () => {
-      const contract = await getContract('nameRegistry');
-      const name = await contract.getName(userAddress);
-      return name || null;
-    },
-    enabled: isConnected && !!userAddress,
-    staleTime: 300000,
-  });
+    const { userAddress, isConnected } = useCircleContract();
+    return useDisplayName(isConnected ? userAddress : null);
 }
 
-// Hook to check if a name is available
+// Is a name available? Validates against Supabase reverse-lookup first,
+// falls back to on-chain if the indexer hasn't caught up yet.
 export function useIsNameAvailable(name) {
-  const { getContract, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['nameAvailable', name],
-    queryFn: async () => {
-      if (!name || name.length < 3) return false;
-      const contract = await getContract('nameRegistry');
-      const owner = await contract.getOwner(name);
-      // Name is available if owner is zero address
-      return owner === '0x0000000000000000000000000000000000000000';
-    },
-    enabled: isConnected && !!name && name.length >= 3,
-    staleTime: 10000, // 10 seconds
-  });
+    return useQuery({
+        queryKey: ['nameAvailable.db', name],
+        queryFn: async () => {
+            if (!name || name.length < 1 || name.length > 32) return false;
+            const { data, error } = await supabase
+                .from('users')
+                .select('address')
+                .eq('display_name', name)
+                .maybeSingle();
+            if (error) throw error;
+            return !data;
+        },
+        enabled: !!name && name.length >= 1 && name.length <= 32,
+        staleTime: 5_000,
+    });
 }
 
-// Hook to register a display name
-export function useRegisterName() {
-  const queryClient = useQueryClient();
-  const { getContract, userAddress } = useCircleContract();
+// Register or update display name — single `setName` contract call.
+export function useSetName() {
+    const queryClient = useQueryClient();
+    const { pushChainClient, userAddress, isInitialized } = useCircleContract();
 
-  return useMutation({
-    mutationFn: async (name) => {
-      const contract = await getContract('nameRegistry');
-      const tx = await contract.registerName(name);
-      await tx.wait();
-      return tx;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myDisplayName', userAddress] });
-      queryClient.invalidateQueries({ queryKey: ['displayName', userAddress] });
-    },
-  });
+    return useMutation({
+        mutationFn: async (name) => {
+            if (!isInitialized || !pushChainClient?.universal) {
+                throw new Error('Wallet not connected');
+            }
+            const trimmed = (name || '').trim();
+            if (trimmed.length < 1 || trimmed.length > 32) {
+                throw new Error('Name must be 1–32 characters');
+            }
+            const iface = ethers.Interface.from(NameRegistryABI.abi);
+            const data = iface.encodeFunctionData('setName', [trimmed]);
+            const tx = await pushChainClient.universal.sendTransaction({
+                to: CONTRACT_ADDRESSES.NAME_REGISTRY,
+                data,
+                value: 0n,
+            });
+            await tx.wait();
+
+            // Eager update Supabase users.display_name so UI reflects
+            // immediately (indexer will also catch up from the event).
+            if (userAddress) {
+                await supabase
+                    .from('users')
+                    .upsert({ address: lc(userAddress), display_name: trimmed }, { onConflict: 'address' });
+            }
+            return tx;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['displayName.db'] });
+            queryClient.invalidateQueries({ queryKey: ['nameAvailable.db'] });
+        },
+    });
 }
 
-// Hook to update display name
-export function useUpdateName() {
-  const queryClient = useQueryClient();
-  const { getContract, userAddress } = useCircleContract();
-
-  return useMutation({
-    mutationFn: async (newName) => {
-      const contract = await getContract('nameRegistry');
-      const tx = await contract.updateName(newName);
-      await tx.wait();
-      return tx;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myDisplayName', userAddress] });
-      queryClient.invalidateQueries({ queryKey: ['displayName', userAddress] });
-    },
-  });
-}
-
-// Hook to resolve address from name
-export function useResolveAddress(name) {
-  const { getContract, isConnected } = useCircleContract();
-
-  return useQuery({
-    queryKey: ['resolveAddress', name],
-    queryFn: async () => {
-      const contract = await getContract('nameRegistry');
-      const address = await contract.getOwner(name);
-      if (address === '0x0000000000000000000000000000000000000000') {
-        return null;
-      }
-      return address;
-    },
-    enabled: isConnected && !!name,
-    staleTime: 300000,
-  });
-}
-
-// Utility component to display name or address
+// Address → display name or truncated hex. Use everywhere addresses are shown.
 export function formatAddressOrName(address, name) {
-  if (name && name.length > 0) {
-    return name;
-  }
-  // Format address: 0x1234...5678
-  if (address && address.length > 10) {
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  }
-  return address;
+    if (name && name.length > 0) return name;
+    if (address && address.length > 10) {
+        return `${address.substring(0, 6)}…${address.substring(address.length - 4)}`;
+    }
+    return address;
 }

@@ -9,6 +9,7 @@ import Dashboard from './Routes/Dashboard'
 import Circle from './Routes/Circle'
 import Payout from './Routes/Payout'
 import Notification from './Routes/Notification'
+import Leaderboard from './Routes/Leaderboard'
 import FAQ from './Pages/Landing/FAQ'
 import Terms from './Pages/Landing/Terms'
 import About from './Pages/Landing/About'
@@ -70,6 +71,7 @@ function App() {
               <Route path="circle" element={<Circle />} />
               <Route path="payout" element={<Payout />} />
               <Route path="notification" element={<Notification />} />
+              <Route path="leaderboard" element={<Leaderboard />} />
               {/* Dashboard 404 - for when user is on dashboard and requests invalid page */}
               <Route path="*" element={<Dashboard404 />} />
             </Route>

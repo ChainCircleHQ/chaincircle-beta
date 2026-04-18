@@ -3,6 +3,7 @@ import { FiSearch } from "react-icons/fi";
 import { TbArrowRightFromArc } from "react-icons/tb";
 import { useNavigate } from 'react-router';
 import { usePushWalletContext } from '@pushchain/ui-kit';
+import DisplayName from './DisplayName';
 import LinkedWallets from './LinkedWallets';
 import PayoutPreferences from './PayoutPreferences';
 import NotificationSettings from './NotificationSettings';
@@ -42,6 +43,9 @@ export default function ProfileDetails() {
       </header>
 
       <div className="flex flex-col gap-5 ">
+        <DisplayName />
+        {/* Stroke */}
+        <div className="w-full h-[1px] bg-white "></div>
         <LinkedWallets />
         {/* Stroke */}
         <div className="w-full h-[1px] bg-white "></div>

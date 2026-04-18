@@ -3,7 +3,7 @@ import { TbArrowRightFromArc } from "react-icons/tb";
 import { CiGrid42 } from "react-icons/ci";
 import { PiCirclesThreeBold } from "react-icons/pi";
 import { MdOutlineCreditCard, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight } from "react-icons/md";
-import { FaRegUserCircle } from "react-icons/fa";
+import { FaRegUserCircle, FaTrophy } from "react-icons/fa";
 import { FaRegBell } from "react-icons/fa6";
 import { PushUniversalAccountButton, usePushWalletContext } from '@pushchain/ui-kit';
 
@@ -78,6 +78,16 @@ export default function chain() {
             >
               <MdOutlineCreditCard size={32} className="text-[#aaa] " />
               <p>Payouts</p>
+            </Link>
+            <Link
+              to={"/chain/leaderboard"}
+              className={`py-2 px-4 rounded-[8px] flex items-center transition-all ease-in-out gap-4 w-full text-white ${location.pathname === "/chain/leaderboard"
+                ? "bg-[#D548EC] hover:bg-[#B83CC3]"
+                : "bg-transparent hover:bg-[#D548EC]"
+                } `}
+            >
+              <FaTrophy size={28} className="text-[#aaa] " />
+              <p>Leaderboard</p>
             </Link>
             <Link
               to={"/chain/profile"}
