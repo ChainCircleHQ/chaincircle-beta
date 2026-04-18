@@ -28,7 +28,19 @@ const TTL = {
 
 type Kind = keyof typeof TTL;
 
+const CORS_HEADERS: HeadersInit = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Max-Age": "86400",
+};
+
 Deno.serve(async (req: Request) => {
+    // Browsers preflight any POST carrying Authorization + Content-Type headers.
+    // Without a 2xx OPTIONS response, every call from chaincircle.org fails CORS.
+    if (req.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
     try {
         return await handle(req);
     } catch (e) {
@@ -251,6 +263,6 @@ function extractJson(s: string): string {
 function json(body: unknown, status = 200): Response {
     return new Response(JSON.stringify(body, null, 2), {
         status,
-        headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
+        headers: { "content-type": "application/json", ...CORS_HEADERS },
     });
 }
