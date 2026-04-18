@@ -1,463 +1,469 @@
+// Circle preview modal. Opens from dashboard circle cards.
+//
+// Shows: hero (goal icon + name + status pill + role badge), progress,
+// four-stat grid, current round card, roster preview (first 6 members
+// + "N more"), invite code with copy, action block tailored to role
+// (creator / member / visitor). Invite code is read on demand from the
+// contract via useCircleInviteCode.
+
 import React, { useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
+import * as htmlToImage from 'html-to-image';
+import {
+    IoClose, IoShareSocial, IoDownload,
+} from 'react-icons/io5';
+import {
+    FaCopy, FaUsers, FaClock, FaCalendarAlt, FaCoins, FaCheckCircle,
+    FaCrown,
+} from 'react-icons/fa';
+
 import { useCircleDetails } from '../../hooks/useCircleData';
 import { useJoinCircle, useContribute } from '../../hooks/useCircleActions';
 import { useMemberStatus } from '../../hooks/useMemberStatus';
 import { useCircleContract } from '../../hooks/useCircleContract';
-import { getGoalIcon, getGoalColors, formatFrequency, calculateProgress } from '../../utils/circleHelpers';
+import { useCircleInviteCode } from '../../hooks/useCircleInviteCode';
+import { formatAddressOrName } from '../../hooks/useNameRegistry';
+import { getGoalIcon, getGoalColors, formatFrequency } from '../../utils/circleHelpers';
 import formatCurrency from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
 import PurpleBtn from '../../Components/PurpleBtn';
-import { IoClose, IoShareSocial, IoDownload } from "react-icons/io5";
-import { FaCopy } from "react-icons/fa";
-import * as htmlToImage from 'html-to-image';
-import { toast } from 'sonner';
-
 import useIsTabletOrMobile from '../../hooks/useIsTabletOrMobile';
-export default function CirclePreview({ circleId, onClose, fromLink = false }) {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { data: circle, isLoading, error } = useCircleDetails(circleId);
-  const { userAddress } = useCircleContract();
-  const joinCircle = useJoinCircle();
-  const contribute = useContribute();
-  const { data: memberStatus } = useMemberStatus(circleId);
-  const isTabletOrMobile = useIsTabletOrMobile();
-  const previewRef = useRef(null);
 
-  const isCreator = circle?.creator?.toLowerCase() === userAddress?.toLowerCase();
+const STATUS_LABELS = { 0: 'Pending', 1: 'Active', 2: 'Completed', 3: 'Cancelled', 4: 'Paused' };
+const STATUS_TONE = {
+    0: 'border-[#FDA318]/60 text-[#FDA318] bg-[#FDA318]/10',
+    1: 'border-[#AEFFDA]/60 text-[#AEFFDA] bg-[#AEFFDA]/10',
+    2: 'border-[#D548EC]/60 text-[#F4AEFF] bg-[#D548EC]/10',
+    3: 'border-[#FFBDBD]/60 text-[#FFBDBD] bg-[#FFBDBD]/10',
+    4: 'border-[#707070]/60 text-[#AAA] bg-[#707070]/10',
+};
 
-  // Check if user is already a member - check both ways to be safe
-  const isMember = circle?.memberAddresses?.some(
-    addr => addr?.toLowerCase() === userAddress?.toLowerCase()
-  ) || false;
+const truncateAddr = (addr) => {
+    if (!addr) return '';
+    if (addr.length <= 10) return addr;
+    return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+};
 
-  // Simple logic: can join if NOT creator and NOT already a member
-  // Let the smart contract handle all other validations (full, completed, etc)
-  const canJoin = !isCreator && !isMember;
+// Deterministic HSL fill per address — gives each avatar a stable,
+// distinguishable color without any backend lookup.
+function avatarColor(addr) {
+    if (!addr) return { bg: '#333', fg: '#fff' };
+    let hash = 0;
+    for (let i = 0; i < addr.length; i++) hash = (hash * 31 + addr.charCodeAt(i)) | 0;
+    const hue = Math.abs(hash) % 360;
+    return { bg: `hsl(${hue}, 50%, 25%)`, fg: `hsl(${hue}, 80%, 75%)` };
+}
 
-  const handleJoin = async () => {
-    try {
-      const result = await joinCircle.mutateAsync(circleId);
-      if (result?.status === 'pending') {
-        toast.info('Still pending on origin chain', {
-          description: 'Signature submitted, confirmations are slow. Refresh in a minute.',
-          duration: 10_000,
-        });
-      } else {
-        toast.success('Joined circle');
-      }
-      if (onClose) onClose();
-      navigate('/chain/circle');
-    } catch (error) {
-      if (error?.pending) {
-        toast.info('Approval still pending', { description: error.message, duration: 10_000 });
-        return;
-      }
-      const raw = error?.message || '';
-      const lower = raw.toLowerCase();
-      if (lower.includes('user rejected')) return;
-      if (
-        (lower.includes('not confirmed with') && lower.includes('ms')) ||
-        lower.includes('failed to retrieve push chain') ||
-        lower.includes('not been indexed yet')
-      ) {
-        toast.error('Transaction still pending', {
-          description: 'Your wallet chain took too long to confirm. Wait 30s and refresh — if you do not see yourself in the roster, try again.',
-          duration: 10_000,
-        });
-        return;
-      }
-      if (lower.includes('insufficient')) {
-        toast.error('Insufficient CUSD', { description: 'Claim from the faucet first.' });
-        return;
-      }
-      const short = raw.length > 180 ? raw.slice(0, 180) + '…' : raw;
-      toast.error('Failed to join circle', { description: short });
-    }
-  };
-
-  const handleContribute = async () => {
-    try {
-      const result = await contribute.mutateAsync(Number(circleId));
-      if (result?.status === 'pending') {
-        toast.info('Contribution pending', {
-          description: 'Signature submitted, confirmations are slow. Refresh in a minute.',
-          duration: 10_000,
-        });
-      } else {
-        toast.success('Contribution sent');
-      }
-    } catch (error) {
-      if (error?.pending) {
-        toast.info('Approval still pending', { description: error.message, duration: 10_000 });
-        return;
-      }
-      const raw = error?.message || '';
-      const lower = raw.toLowerCase();
-      if (lower.includes('user rejected')) return;
-      if (lower.includes('insufficient')) {
-        toast.error('Insufficient CUSD', { description: 'Claim from the faucet first.' });
-        return;
-      }
-      const short = raw.length > 180 ? raw.slice(0, 180) + '…' : raw;
-      toast.error('Contribution failed', { description: short });
-    }
-  };
-
-  const handleShare = () => {
-    const baseUrl = window.location.origin;
-    const shareUrl = `${baseUrl}/chain/circle/${circleId}?preview=true`;
-
-    if (navigator.share) {
-      navigator.share({
-        title: circle.name,
-        text: `Join my savings circle: ${circle.name}`,
-        url: shareUrl
-      });
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-    }
-  };
-
-  const copyInviteCode = async () => {
-    if (circle?.inviteCode) {
-      try {
-        await navigator.clipboard.writeText(circle.inviteCode);
-        toast.success('Invite code copied');
-      } catch {
-        toast.error('Failed to copy invite code');
-      }
-    }
-  };
-
-  const copyCreatorAddress = async () => {
-    if (circle?.creator) {
-      try {
-        await navigator.clipboard.writeText(circle.creator);
-        toast.success('Creator address copied');
-      } catch {
-        toast.error('Failed to copy creator address');
-      }
-    }
-  };
-
-  const exportAsImage = async () => {
-    if (!previewRef.current || !circle) return;
-
-    try {
-      const element = previewRef.current;
-
-      const dataUrl = await htmlToImage.toPng(element, {
-        quality: 1,
-        pixelRatio: 3,
-        backgroundColor: '#111111',
-        cacheBust: true,
-      });
-
-      const link = document.createElement('a');
-      link.download = `${circle.name.replace(/\s+/g, '-')}-circle.png`;
-      link.href = dataUrl;
-      link.click();
-
-    } catch (error) {
-      toast.error('Failed to export image', { description: error.message || 'Unknown error' });
-    }
-  };
-
-  // Show error only if there's an actual error, not just loading
-  if (error) {
+function MemberAvatar({ address, isCreator, size = 36 }) {
+    const { bg, fg } = avatarColor(address);
+    const initials = (address || '').slice(2, 4).toUpperCase();
     return (
-      <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
-        <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] p-8 max-w-md">
-          <div className="flex flex-col items-center gap-4">
-            <p className="text-red-500 text-xl font-bold">Circle not found</p>
-            <p className="text-[#AAAAAA] text-sm text-center">
-              Circle ID: {circleId}
-            </p>
-            <p className="text-[#AAAAAA] text-xs text-center font-mono">
-              {error?.message || 'Unknown error'}
-            </p>
-            <button
-              onClick={onClose || (() => navigate('/chain/circle'))}
-              className="mt-4 px-6 py-2 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all"
-            >
-              {onClose ? 'Close' : 'Go back to Circles'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show minimal loading state if no data yet
-  if (!circle) {
-    return (
-      <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
-        <div className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] p-8">
-          <p className="text-[#AAAAAA]">Loading circle details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const IconComponent = getGoalIcon(circle.goalType || 0);
-  const colors = getGoalColors(circle.goalType || 0);
-  return (
-    <div className="fixed inset-0 z-90 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4">
-      <div className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {onClose && (
-          <IoClose
-            onClick={onClose}
-            className="absolute -top-2 -right-2 cursor-pointer hover:scale-110 transition-all z-10 bg-[#D548EC] rounded-full p-2"
-            size={24}
-          />
-        )}
-
-        <div ref={previewRef} className="bg-[#111111] border border-[#F4AEFF] rounded-[24px] p-8">
-          <div className="flex flex-col gap-6">
-          {/* Circle Icon and Name */}
-          <div className="flex items-center gap-4 lg:gap-6">
-            <div className={`w-[80px] h-[80px] lg:w-[120px] lg:h-[120px] rounded-full flex items-center justify-center ${colors.bg} ${colors.text}`}>
-              <IconComponent size={isTabletOrMobile ? 33 : 55} />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-[24px] lg:text-[38px] font-bold">{circle.name}</h2>
-              <p className="text-[14px] lg:text-[18px] text-[#AAAAAA]">{circle.members || 0}/{circle.maxMembers} members</p>
-              {isCreator && (
-                <span className="inline-block mt-1 px-3 py-1 bg-[#D548EC] text-xs lg:text-sm rounded-full">
-                  Your Circle
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="w-full">
-            <div className="flex justify-between mb-2">
-              <span className="text-sm lg:text-lg text-[#AAAAAA]">Progress</span>
-              <span className="text-sm lg:text-lg text-primary">{circle.progress}%</span>
-            </div>
-            <div className="w-full h-3 lg:h-4 bg-[#333] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[#D548EC] to-[#F4AEFF] transition-all duration-300"
-                style={{ width: `${circle.progress}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Circle Details - Grid 1 */}
-          <div className="grid grid-cols-2 gap-4 lg:gap-6 font-dm">
-            <div>
-              <p className="text-[#AAAAAA] text-sm lg:text-base">Contribution Amount</p>
-              <p className="text-lg lg:text-2xl font-bold">{formatCurrency(circle.amount)}</p>
-            </div>
-            <div>
-              <p className="text-[#AAAAAA] text-sm lg:text-base">Duration</p>
-              <p className="text-lg lg:text-2xl font-bold">{circle.duration} months</p>
-            </div>
-            <div>
-              <p className="text-[#AAAAAA] text-sm lg:text-base">Frequency</p>
-              <p className="text-lg lg:text-2xl font-bold">{formatFrequency(circle.frequency)}</p>
-            </div>
-            <div>
-              <p className="text-[#AAAAAA] text-sm lg:text-base">Total Pool</p>
-              <p className="text-lg lg:text-2xl font-bold">{formatCurrency(circle.vaultBalance)}</p>
-            </div>
-          </div>
-
-          {/* Additional Details - Grid 2 */}
-          <div className="grid grid-cols-2 gap-4 lg:gap-6 font-dm">
-            <div>
-              <p className="text-[#AAAAAA] text-sm lg:text-base">Current Round</p>
-              <p className="text-base lg:text-xl font-semibold">{circle.currentRound}/{circle.duration}</p>
-            </div>
-            <div>
-              <p className="text-[#AAAAAA] text-sm lg:text-base">Status</p>
-              <p className={`text-base lg:text-xl font-semibold ${circle.isActive ? 'text-green-400' : 'text-red-400'}`}>
-                {circle.isActive ? 'Active' : 'Inactive'}
-              </p>
-            </div>
-            <div>
-              <p className="text-[#AAAAAA] text-sm lg:text-base">Created</p>
-              <p className="text-base lg:text-xl font-semibold">{formatDate(circle.createdAt)}</p>
-            </div>
-            <div>
-              <p className="text-[#AAAAAA] text-sm lg:text-base">Started</p>
-              <p className="text-base lg:text-xl font-semibold">
-                {circle.startAt > 0 ? formatDate(circle.startAt) : 'Not started'}
-              </p>
-            </div>
-          </div>
-
-          {/* Creator & Invite Code */}
-          <div className="border-t border-[#333] pt-4 space-y-3 lg:space-y-4">
-            <div>
-              <p className="text-[#AAAAAA] text-sm lg:text-base mb-1">Creator Address</p>
-              <div className="flex items-center gap-2">
-                <p className="text-xs lg:text-sm font-mono bg-[#222] px-3 py-2 rounded flex-1 truncate">
-                  {circle.creator}
-                </p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    copyCreatorAddress();
-                  }}
-                  className="p-3 hover:bg-[#333] rounded transition-all cursor-pointer flex-shrink-0 active:scale-95"
-                  title="Copy creator address"
-                  type="button"
-                >
-                  <FaCopy size={isTabletOrMobile ? 18 : 20} />
-                </button>
-              </div>
-            </div>
-
-            {circle.inviteCode && (
-              <div>
-                <p className="text-[#AAAAAA] text-sm lg:text-base mb-1">Invite Code</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm lg:text-base font-mono bg-[#222] px-3 py-2 rounded flex-1 break-all">
-                    {circle.inviteCode}
-                  </p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      copyInviteCode();
-                    }}
-                    className="p-3 hover:bg-[#333] rounded transition-all cursor-pointer flex-shrink-0 active:scale-95"
-                    title="Copy invite code"
-                    type="button"
-                  >
-                    <FaCopy size={isTabletOrMobile ? 18 : 20} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          {!isCreator && !isMember && (
-            <div className="flex flex-col gap-3 mt-4">
-              <div className="flex-1" onClick={canJoin ? handleJoin : undefined}>
-                <PurpleBtn
-                  text={joinCircle.isPending ? "Joining..." : "Join Circle"}
-                  font="bold"
-                  disabled={joinCircle.isPending || !canJoin}
+        <div
+            className="relative rounded-full flex items-center justify-center shrink-0 font-mono font-semibold"
+            style={{ width: size, height: size, backgroundColor: bg, color: fg, fontSize: size * 0.36 }}
+            title={address}
+        >
+            {initials}
+            {isCreator && (
+                <FaCrown
+                    className="absolute -top-1 -right-1 text-[#FDA318]"
+                    size={size * 0.35}
+                    title="Creator"
                 />
-              </div>
-              <div className="flex gap-3 items-center justify-between">
-                <button
-                  onClick={handleShare}
-                  className="flex-1 px-4 py-2 lg:px-6 lg:py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all flex items-center justify-center gap-2"
-                >
-                  <IoShareSocial size={20} />
-                  <span className="text-sm lg:text-base font-semibold">Share</span>
-                </button>
-                <button
-                  onClick={exportAsImage}
-                  className="p-3 lg:p-4 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
-                  title="Download as image"
-                >
-                  <IoDownload size={20} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {!isCreator && isMember && (
-            <div className="flex flex-col gap-3 mt-4">
-              {circle.isActive && memberStatus?.owesCurrentRound && (
-                <div onClick={contribute.isPending ? undefined : handleContribute}>
-                  <PurpleBtn
-                    text={contribute.isPending
-                      ? 'Contributing…'
-                      : `Contribute ${formatCurrency(circle.amount)} this round`}
-                    font="bold"
-                    disabled={contribute.isPending}
-                  />
-                </div>
-              )}
-              {circle.isActive && memberStatus && !memberStatus.owesCurrentRound && !memberStatus.hasReceivedPayout && (
-                <div className="text-center text-[#AEFFDA] text-sm lg:text-base border border-[#AEFFDA]/40 bg-[#AEFFDA]/10 rounded-full px-4 py-2">
-                  ✓ Paid up for round {circle.currentRound}
-                </div>
-              )}
-              <button
-                onClick={onClose || (() => navigate('/chain/circle'))}
-                className="w-full px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all font-semibold"
-              >
-                View in My Circles
-              </button>
-              <div className="flex gap-3 items-center justify-between">
-                <button
-                  onClick={handleShare}
-                  className="flex-1 px-4 py-2 lg:px-6 lg:py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all flex items-center justify-center gap-2"
-                >
-                  <IoShareSocial size={20} />
-                  <span className="text-sm lg:text-base font-semibold">Share</span>
-                </button>
-                <button
-                  onClick={exportAsImage}
-                  className="p-3 lg:p-4 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
-                  title="Download as image"
-                >
-                  <IoDownload size={20} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {isCreator && (
-            <div className="flex flex-col gap-3 mt-4">
-              {circle.isActive && memberStatus?.owesCurrentRound && (
-                <div onClick={contribute.isPending ? undefined : handleContribute}>
-                  <PurpleBtn
-                    text={contribute.isPending
-                      ? 'Contributing…'
-                      : `Contribute ${formatCurrency(circle.amount)} this round`}
-                    font="bold"
-                    disabled={contribute.isPending}
-                  />
-                </div>
-              )}
-              {circle.isActive && memberStatus && !memberStatus.owesCurrentRound && !memberStatus.hasReceivedPayout && (
-                <div className="text-center text-[#AEFFDA] text-sm lg:text-base border border-[#AEFFDA]/40 bg-[#AEFFDA]/10 rounded-full px-4 py-2">
-                  ✓ Paid up for round {circle.currentRound}
-                </div>
-              )}
-              <div className="flex gap-3 items-center justify-between">
-                <button
-                  onClick={handleShare}
-                  className="flex-1 px-4 py-2 lg:px-6 lg:py-3 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all font-bold flex items-center justify-center gap-2"
-                >
-                  <IoShareSocial size={20} />
-                  <span className="text-sm lg:text-base">Share</span>
-                </button>
-                <button
-                  onClick={exportAsImage}
-                  className="p-3 lg:p-4 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all"
-                  title="Download as image"
-                >
-                  <IoDownload size={20} />
-                </button>
-              </div>
-              <button
-                onClick={onClose}
-                className="w-full px-6 py-3 border border-[#F4AEFF] rounded-full hover:bg-[#F4AEFF]/10 transition-all"
-              >
-                Close
-              </button>
-            </div>
-          )}
-
-          {!canJoin && !isCreator && (
-            <p className="text-center text-yellow-500 text-sm lg:text-base">
-              {isMember ? "You are already a member of this circle" : "Cannot join this circle"}
-            </p>
-          )}
-          </div>
+            )}
         </div>
-      </div>
-    </div>
-  );
+    );
+}
+
+export default function CirclePreview({ circleId, onClose }) {
+    const navigate = useNavigate();
+    const isTabletOrMobile = useIsTabletOrMobile();
+    const { userAddress } = useCircleContract();
+
+    const { data: circle, isLoading, error } = useCircleDetails(circleId);
+    const { data: inviteCode } = useCircleInviteCode(circleId);
+    const { data: memberStatus } = useMemberStatus(circleId);
+    const joinCircle = useJoinCircle();
+    const contribute = useContribute();
+    const previewRef = useRef(null);
+
+    const lcUser = userAddress?.toLowerCase() ?? '';
+    const isCreator = circle?.creator?.toLowerCase() === lcUser;
+    const isMember = circle?.memberAddresses?.some(
+        (a) => a?.toLowerCase() === lcUser,
+    ) || false;
+    const canJoin = !isCreator && !isMember && circle?.status === 0
+        && (circle?.members ?? 0) < (circle?.maxMembers ?? 0);
+
+    const members = circle?.memberAddresses ?? [];
+
+    const handleJoin = async () => {
+        try {
+            const res = await joinCircle.mutateAsync(circleId);
+            if (res?.status === 'pending') {
+                toast.info('Still pending on origin chain', {
+                    description: 'Signature submitted, confirmations are slow. Refresh in a minute.',
+                    duration: 10_000,
+                });
+            } else {
+                toast.success('Joined circle');
+            }
+            onClose?.();
+            navigate('/chain/circle');
+        } catch (err) {
+            if (err?.pending) {
+                toast.info('Approval still pending', { description: err.message, duration: 10_000 });
+                return;
+            }
+            const raw = err?.message || '';
+            const lower = raw.toLowerCase();
+            if (lower.includes('user rejected')) return;
+            if (lower.includes('insufficient')) {
+                toast.error('Insufficient CUSD', { description: 'Claim from the faucet first.' });
+                return;
+            }
+            toast.error('Failed to join circle', { description: raw.slice(0, 200) });
+        }
+    };
+
+    const handleContribute = async () => {
+        try {
+            const res = await contribute.mutateAsync(Number(circleId));
+            if (res?.status === 'pending') {
+                toast.info('Contribution pending', { description: 'Signature submitted. Refresh in a minute.', duration: 10_000 });
+            } else {
+                toast.success('Contribution sent');
+            }
+        } catch (err) {
+            if (err?.pending) {
+                toast.info('Approval still pending', { description: err.message, duration: 10_000 });
+                return;
+            }
+            const raw = err?.message || '';
+            const lower = raw.toLowerCase();
+            if (lower.includes('user rejected')) return;
+            if (lower.includes('insufficient')) {
+                toast.error('Insufficient CUSD', { description: 'Claim from the faucet first.' });
+                return;
+            }
+            toast.error('Contribution failed', { description: raw.slice(0, 200) });
+        }
+    };
+
+    const handleShare = () => {
+        const baseUrl = window.location.origin;
+        const shareUrl = `${baseUrl}/chain/circle/${circleId}`;
+        if (navigator.share) {
+            navigator.share({ title: circle?.name, text: `Join my savings circle: ${circle?.name}`, url: shareUrl });
+        } else {
+            navigator.clipboard.writeText(shareUrl);
+            toast.success('Link copied');
+        }
+    };
+
+    const copyText = async (text, label) => {
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.success(`${label} copied`);
+        } catch {
+            toast.error('Copy failed');
+        }
+    };
+
+    const exportAsImage = async () => {
+        if (!previewRef.current || !circle) return;
+        try {
+            const dataUrl = await htmlToImage.toPng(previewRef.current, {
+                quality: 1, pixelRatio: 3, backgroundColor: '#111111', cacheBust: true,
+            });
+            const link = document.createElement('a');
+            link.download = `${circle.name.replace(/\s+/g, '-')}-circle.png`;
+            link.href = dataUrl;
+            link.click();
+        } catch (err) {
+            toast.error('Failed to export image', { description: err.message || 'Unknown error' });
+        }
+    };
+
+    // ---- Early returns (all hooks above) ----------------------------------
+
+    if (error) {
+        return (
+            <ModalShell onClose={onClose}>
+                <div className="flex flex-col items-center gap-4 p-8 text-center">
+                    <p className="text-red-400 text-xl font-bold">Circle not found</p>
+                    <p className="text-[#707070] text-sm">Circle ID: {circleId}</p>
+                    <p className="text-[#707070] text-xs font-mono max-w-sm break-all">
+                        {error?.message || 'Unknown error'}
+                    </p>
+                    <button
+                        onClick={onClose || (() => navigate('/chain/circle'))}
+                        className="mt-2 px-6 py-2 bg-[#D548EC] rounded-full hover:bg-[#B83CC3] transition-all text-white"
+                    >
+                        {onClose ? 'Close' : 'Back to Circles'}
+                    </button>
+                </div>
+            </ModalShell>
+        );
+    }
+
+    if (!circle) {
+        return (
+            <ModalShell onClose={onClose}>
+                <div className="p-8 text-center text-[#AAA]">Loading circle…</div>
+            </ModalShell>
+        );
+    }
+
+    const Icon = getGoalIcon(circle.goalType || 0);
+    const colors = getGoalColors(circle.goalType || 0);
+    const iconSize = isTabletOrMobile ? 26 : 34;
+    const statusLabel = STATUS_LABELS[circle.status] || 'Unknown';
+    const statusTone = STATUS_TONE[circle.status] || STATUS_TONE[0];
+    const roleLabel = isCreator ? 'Your Circle' : isMember ? 'Member' : null;
+
+    return (
+        <ModalShell onClose={onClose}>
+            <div ref={previewRef} className="flex flex-col">
+
+                {/* Hero */}
+                <section
+                    className="relative p-6 lg:p-8 flex items-center gap-4 lg:gap-5 border-b border-[#F4AEFF]/20"
+                    style={{ background: `linear-gradient(135deg, ${colors.bg} 0%, #111111 85%)` }}
+                >
+                    <div
+                        className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: colors.iconBg ?? '#00000055', color: colors.iconColor ?? '#fff' }}
+                    >
+                        <Icon size={iconSize} />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                        <h2 className="text-[20px] lg:text-[28px] font-bold truncate">{circle.name}</h2>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-[11px] lg:text-[12px] px-2.5 py-0.5 rounded-full border ${statusTone}`}>
+                                {statusLabel}
+                            </span>
+                            <span className="text-[11px] lg:text-[12px] text-[#707070]">
+                                Circle #{circle.id}
+                            </span>
+                            {roleLabel && (
+                                <span className="text-[11px] lg:text-[12px] px-2.5 py-0.5 rounded-full bg-[#D548EC]/20 text-[#F4AEFF] border border-[#D548EC]/40">
+                                    {roleLabel}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Body */}
+                <section className="p-6 lg:p-7 flex flex-col gap-6">
+
+                    {/* Progress */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-[12px] lg:text-[14px]">
+                            <span className="text-[#AAA]">
+                                Round <span className="text-white font-semibold">{circle.currentRound}</span> of {circle.duration}
+                            </span>
+                            <span className="text-[#F4AEFF] font-semibold">{circle.progress ?? 0}%</span>
+                        </div>
+                        <div className="w-full h-2.5 bg-black/40 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-[#D548EC] to-[#F4AEFF] transition-all"
+                                style={{ width: `${circle.progress ?? 0}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Stat grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <Stat icon={<FaCoins />}       label="Contribution" value={formatCurrency(circle.amount)} />
+                        <Stat icon={<FaCalendarAlt />} label="Duration"     value={`${circle.duration} ${circle.duration === 1 ? 'mo' : 'mos'}`} />
+                        <Stat icon={<FaClock />}       label="Frequency"    value={formatFrequency(circle.frequency)} />
+                        <Stat icon={<FaCoins />}       label="Total pool"   value={formatCurrency(circle.vaultBalance)} />
+                    </div>
+
+                    {/* Per-round status for members */}
+                    {isMember && circle.status === 1 && memberStatus && (
+                        <div className={`rounded-[10px] border p-3 flex items-center gap-3 text-[12px] lg:text-[13px] ${
+                            memberStatus.owesCurrentRound
+                                ? 'border-[#FDA318]/50 bg-[#FDA318]/10 text-[#FDA318]'
+                                : 'border-[#AEFFDA]/50 bg-[#AEFFDA]/10 text-[#AEFFDA]'
+                        }`}>
+                            <FaCheckCircle />
+                            {memberStatus.owesCurrentRound
+                                ? <span>Contribution due this round ({formatCurrency(circle.amount)}).</span>
+                                : <span>Paid up for round {circle.currentRound}. {memberStatus.remainingPayments > 0 && `${memberStatus.remainingPayments} left.`}</span>}
+                        </div>
+                    )}
+
+                    {/* Roster preview */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-[12px] lg:text-[13px] text-[#AAA]">
+                            <span className="flex items-center gap-2"><FaUsers className="text-[#D548EC]" /> Members</span>
+                            <span>{circle.members ?? 0}/{circle.maxMembers ?? 0}</span>
+                        </div>
+                        {members.length === 0 ? (
+                            <div className="rounded-[10px] border border-dashed border-[#333] bg-[#0a0a0a] p-3 text-center text-[#707070] text-[12px]">
+                                No members yet.
+                            </div>
+                        ) : (
+                            <div className="flex items-center -space-x-2">
+                                {members.slice(0, 6).map((addr) => (
+                                    <MemberAvatar
+                                        key={addr}
+                                        address={addr}
+                                        isCreator={addr?.toLowerCase() === circle.creator?.toLowerCase()}
+                                        size={isTabletOrMobile ? 34 : 40}
+                                    />
+                                ))}
+                                {members.length > 6 && (
+                                    <div
+                                        className="rounded-full border border-[#333] bg-[#111111] flex items-center justify-center text-[#AAA] text-[12px] ml-2"
+                                        style={{ width: isTabletOrMobile ? 34 : 40, height: isTabletOrMobile ? 34 : 40 }}
+                                    >
+                                        +{members.length - 6}
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => { onClose?.(); navigate(`/chain/circle/${circle.id}`); }}
+                                    className="ml-3 text-[#F4AEFF] text-[12px] lg:text-[13px] hover:text-white underline underline-offset-4"
+                                >
+                                    View full roster →
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Invite code */}
+                    {inviteCode && (
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-[#AAA] text-[12px] lg:text-[13px]">Invite code</span>
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1 min-w-0 font-mono text-[12px] lg:text-[13px] bg-black/40 border border-[#333] px-3 py-2.5 rounded-[10px] truncate">
+                                    {inviteCode}
+                                </div>
+                                <button
+                                    onClick={() => copyText(inviteCode, 'Invite code')}
+                                    className="p-2.5 rounded-[10px] border border-[#333] hover:border-[#F4AEFF]/60 text-[#AAA] hover:text-[#F4AEFF]"
+                                    title="Copy invite code"
+                                >
+                                    <FaCopy size={14} />
+                                </button>
+                            </div>
+                            <p className="text-[#707070] text-[11px] lg:text-[12px]">
+                                Share this code. Anyone with it can join this circle from the Circle page.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Created / started subtle line */}
+                    <div className="flex items-center gap-4 text-[11px] lg:text-[12px] text-[#707070]">
+                        <span>Created {formatDate(circle.createdAt)}</span>
+                        <span className="text-[#333]">·</span>
+                        <span>{circle.startAt > 0 ? `Started ${formatDate(circle.startAt)}` : 'Not started'}</span>
+                    </div>
+
+                    {/* Creator address — muted */}
+                    <div className="flex items-center gap-2 text-[11px] lg:text-[12px] text-[#707070]">
+                        <span>Creator</span>
+                        <span className="font-mono text-[#AAA]">{truncateAddr(circle.creator)}</span>
+                        <button
+                            onClick={() => copyText(circle.creator, 'Creator address')}
+                            className="p-1 rounded hover:text-[#F4AEFF]"
+                            title="Copy creator address"
+                        >
+                            <FaCopy size={11} />
+                        </button>
+                    </div>
+                </section>
+
+                {/* Action block */}
+                <footer className="px-6 lg:px-7 pb-6 lg:pb-7 pt-0 flex flex-col gap-3">
+                    {/* Primary action */}
+                    {canJoin && (
+                        <div onClick={joinCircle.isPending ? undefined : handleJoin}>
+                            <PurpleBtn
+                                text={joinCircle.isPending ? 'Joining…' : `Join · first contribution ${formatCurrency(circle.amount)}`}
+                                font="bold"
+                                disabled={joinCircle.isPending}
+                            />
+                        </div>
+                    )}
+                    {(isMember || isCreator) && circle.status === 1 && memberStatus?.owesCurrentRound && (
+                        <div onClick={contribute.isPending ? undefined : handleContribute}>
+                            <PurpleBtn
+                                text={contribute.isPending ? 'Contributing…' : `Contribute ${formatCurrency(circle.amount)}`}
+                                font="bold"
+                                disabled={contribute.isPending}
+                            />
+                        </div>
+                    )}
+                    {!canJoin && !isMember && !isCreator && (
+                        <p className="text-center text-[#707070] text-[12px] lg:text-[13px]">
+                            This circle isn't open to new members right now.
+                        </p>
+                    )}
+
+                    {/* Secondary row */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleShare}
+                            className="flex-1 px-4 py-2.5 rounded-full border border-[#F4AEFF]/40 hover:bg-[#F4AEFF]/10 transition-colors flex items-center justify-center gap-2 text-[13px] lg:text-[14px]"
+                        >
+                            <IoShareSocial size={16} /> Share
+                        </button>
+                        <button
+                            onClick={exportAsImage}
+                            className="px-4 py-2.5 rounded-full border border-[#F4AEFF]/40 hover:bg-[#F4AEFF]/10 transition-colors flex items-center justify-center gap-2 text-[13px] lg:text-[14px]"
+                            title="Download preview as image"
+                        >
+                            <IoDownload size={16} />
+                        </button>
+                        {(isMember || isCreator) && (
+                            <button
+                                onClick={() => { onClose?.(); navigate(`/chain/circle/${circle.id}`); }}
+                                className="flex-1 px-4 py-2.5 rounded-full bg-[#D548EC] hover:bg-[#B83CC3] text-white font-semibold text-[13px] lg:text-[14px]"
+                            >
+                                Open full view
+                            </button>
+                        )}
+                    </div>
+                </footer>
+            </div>
+        </ModalShell>
+    );
+}
+
+function ModalShell({ children, onClose }) {
+    return (
+        <div
+            className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-lg flex items-center justify-center p-4 font-dm"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
+        >
+            <div className="relative w-full max-w-[560px] max-h-[92vh] overflow-y-auto rounded-[20px] border border-[#F4AEFF]/40 bg-[#111111]">
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/40 hover:bg-[#D548EC]/30 text-[#AAA] hover:text-white backdrop-blur"
+                    >
+                        <IoClose size={18} />
+                    </button>
+                )}
+                {children}
+            </div>
+        </div>
+    );
+}
+
+function Stat({ icon, label, value }) {
+    return (
+        <div className="rounded-[10px] border border-[#333] bg-[#0a0a0a] p-3 flex flex-col gap-1">
+            <span className="text-[#D548EC] flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
+                {icon} {label}
+            </span>
+            <span className="text-[15px] lg:text-[17px] font-semibold truncate">{value}</span>
+        </div>
+    );
 }
