@@ -24,6 +24,7 @@ const Notification  = lazy(() => import('./Routes/Notification'))
 const Leaderboard   = lazy(() => import('./Routes/Leaderboard'))
 const CircleDetail  = lazy(() => import('./Routes/CircleDetail'))
 const Governance    = lazy(() => import('./Routes/Governance'))
+const History       = lazy(() => import('./Routes/History'))
 const FAQ           = lazy(() => import('./Pages/Landing/FAQ'))
 const Terms         = lazy(() => import('./Pages/Landing/Terms'))
 const About         = lazy(() => import('./Pages/Landing/About'))
@@ -95,6 +96,7 @@ function App() {
                 <Route path="leaderboard" element={<Leaderboard />} />
                 <Route path="circle/:id" element={<CircleDetail />} />
                 <Route path="governance" element={<Governance />} />
+                <Route path="history" element={<History />} />
                 {/* Dashboard 404 - for when user is on dashboard and requests invalid page */}
                 <Route path="*" element={<Dashboard404 />} />
               </Route>
